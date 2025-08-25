@@ -1535,6 +1535,329 @@ public function getworkflow_alta($Id_Activo,$proveedor=null){
 	return $respuesta;
 }
 
+public function generapoliza($fechinicio, $fechfin, $proveedor=null){
+    $respuesta = array();
+	$Data = array();
+	$DataEquipMedProp = array();
+	$Data_Envia = array();
+	$Data_Envia_EquipMedProp = array();
+	$consolidado=array();
+	$equipoPropio=array();
+	$error=false;
+
+	$proveedor = new Proveedor('sqlserver', 'activos');
+	$proveedor->connect();
+	$sql="
+        select 
+			*,
+			case when 
+				Baja_Activo is null and YEAR(CONVERT(date, Fech_Inserddmmaaaa, 103))>=2025  
+				and Id_Activo not in (select Id_Activo from siga_poliza_biomedica spb where spb.Id_Activo=vw_polizabiomedica.Id_Activo and spb.Estatus_Activo='Alta')
+			then 'Alta'
+			else '' end as Alta_Activo
+		from 
+			vw_polizabiomedica 
+		WHERE 
+			Fech_Inser >= CONVERT(DATETIME, '".$fechinicio."', 103)
+  		AND 
+			Fech_Inser <  CONVERT(DATETIME, '".$fechfin."', 103)
+		AND (
+			Baja_Activo IS NULL 
+			OR Baja_Activo != 'Baja'
+			OR (Baja_Activo = 'Baja' AND YEAR(CONVERT(date, Fech_Inserddmmaaaa, 103)) >= 2025)
+		) and Id_Activo not in (select Id_Activo from siga_poliza_biomedica spb where spb.Id_Activo=vw_polizabiomedica.Id_Activo and spb.Estatus_Activo='Baja')	
+    ";
+	//echo "<pre>";
+	//echo $sql;
+	//echo "</pre>";
+	$rentaHS=0;
+	$comodatoHS=0;
+	$sistemaIntegralHS=0;
+	$valorTotalHS=0;
+
+	$comodatorentaCEH=0;
+	$valorTotalCEH=0;
+
+	$comodatorentaCIR=0;
+	$valorTotalCIR=0;
+
+	$rentaCME=0;
+	$comodatoCME=0;
+	$valorTotalCME=0;
+	$TotalNoPropio=0;
+	$TotalGeneral=0;
+	$proveedor->execute($sql);
+	if (!$proveedor->error()) {
+		if ($proveedor->rows($proveedor->stmt) > 0) {
+			while ($row = $proveedor->fetch_array($proveedor->stmt, 0)) {
+				if ($row["Baja_Activo"] != "Baja") {
+					if (!empty($row["ImporteSeguroSF"])) {
+						if ($row["Unidad"] == "HS") {
+							if ($row["Propiedad"] == "RENTA") {
+								$rentaHS += $row["ImporteSeguroSF"];
+							} elseif ($row["Propiedad"] == "COMODATO") {
+								$comodatoHS += $row["ImporteSeguroSF"];
+							} elseif ($row["Propiedad"] == "SISTEMA INTEGRAL") {
+								$sistemaIntegralHS += $row["ImporteSeguroSF"];
+							} else {
+								$DataEquipMedProp = array(
+									"Id_Activo" => $row["Id_Activo"],
+									"AF_BC" => $row["AF_BC"],
+									"Nombre_Activo" => $row["Nombre_Activo"],
+									"Unidad" => $row["Unidad"],
+									"Desc_Ubic_Prim" => rtrim(ltrim($row["Desc_Ubic_Prim"])),
+									"Desc_Ubic_Sec" => rtrim(ltrim($row["Desc_Ubic_Sec"])),
+									"Propiedad" => $row["Propiedad"],
+									"ImporteSeguroSF" => $row["ImporteSeguroSF"]
+								);
+								array_push($Data_Envia_EquipMedProp, $DataEquipMedProp);
+							}
+						} elseif ($row["Unidad"] == "CEH") {
+							if ($row["Propiedad"] == "RENTA" || $row["Propiedad"] == "COMODATO") {
+								$comodatorentaCEH += $row["ImporteSeguroSF"];
+							} else {
+								$DataEquipMedProp = array(
+									"Id_Activo" => $row["Id_Activo"],
+									"AF_BC" => $row["AF_BC"],
+									"Nombre_Activo" => $row["Nombre_Activo"],
+									"Unidad" => $row["Unidad"],
+									"Desc_Ubic_Prim" => rtrim(ltrim($row["Desc_Ubic_Prim"])),
+									"Desc_Ubic_Sec" => rtrim(ltrim($row["Desc_Ubic_Sec"])),
+									"Propiedad" => $row["Propiedad"],
+									"ImporteSeguroSF" => $row["ImporteSeguroSF"]
+								);
+								array_push($Data_Envia_EquipMedProp, $DataEquipMedProp);
+							}
+						} elseif ($row["Unidad"] == "CIR") {
+							if ($row["Propiedad"] == "RENTA" || $row["Propiedad"] == "COMODATO") {
+								$comodatorentaCIR += $row["ImporteSeguroSF"];
+							} else {
+								$DataEquipMedProp = array(
+									"Id_Activo" => $row["Id_Activo"],
+									"AF_BC" => $row["AF_BC"],
+									"Nombre_Activo" => $row["Nombre_Activo"],
+									"Unidad" => $row["Unidad"],
+									"Desc_Ubic_Prim" => rtrim(ltrim($row["Desc_Ubic_Prim"])),
+									"Desc_Ubic_Sec" => rtrim(ltrim($row["Desc_Ubic_Sec"])),
+									"Propiedad" => $row["Propiedad"],
+									"ImporteSeguroSF" => $row["ImporteSeguroSF"]
+								);
+								array_push($Data_Envia_EquipMedProp, $DataEquipMedProp);
+							}
+						} elseif ($row["Unidad"] == "CME") {
+							if ($row["Propiedad"] == "RENTA") {
+								$rentaCME += $row["ImporteSeguroSF"];
+							} elseif ($row["Propiedad"] == "COMODATO") {
+								$comodatoCME += $row["ImporteSeguroSF"];
+							} else {
+								$DataEquipMedProp = array(
+									"Id_Activo" => $row["Id_Activo"],
+									"AF_BC" => $row["AF_BC"],
+									"Nombre_Activo" => $row["Nombre_Activo"],
+									"Unidad" => $row["Unidad"],
+									"Desc_Ubic_Prim" => rtrim(ltrim($row["Desc_Ubic_Prim"])),
+									"Desc_Ubic_Sec" => rtrim(ltrim($row["Desc_Ubic_Sec"])),
+									"Propiedad" => $row["Propiedad"],
+									"ImporteSeguroSF" => $row["ImporteSeguroSF"]
+								);
+								array_push($Data_Envia_EquipMedProp, $DataEquipMedProp);
+							}
+						} else {
+							$DataEquipMedProp = array(
+								"Id_Activo" => $row["Id_Activo"],
+								"AF_BC" => $row["AF_BC"],
+								"Nombre_Activo" => $row["Nombre_Activo"],
+								"Unidad" => $row["Unidad"],
+								"Desc_Ubic_Prim" => rtrim(ltrim($row["Desc_Ubic_Prim"])),
+								"Desc_Ubic_Sec" => rtrim(ltrim($row["Desc_Ubic_Sec"])),
+								"Propiedad" => $row["Propiedad"],
+								"ImporteSeguroSF" => $row["ImporteSeguroSF"]
+							);
+							array_push($Data_Envia_EquipMedProp, $DataEquipMedProp);
+						}
+					}
+				}
+				
+				
+				$Data= array(		
+					"Hoja"=>$row["Hoja"],
+					"Id_Activo" => rtrim(ltrim($row["Id_Activo"])),
+					"AF_BC" => rtrim(ltrim($row["AF_BC"])),
+					"Nombre_Activo" => rtrim(ltrim($row["Nombre_Activo"])),
+					"Fech_Inserddmmaaaa" => rtrim(ltrim($row["Fech_Inserddmmaaaa"])),
+					"Fech_Inser" => rtrim(ltrim($row["Fech_Inser"])),
+					"Marca" => rtrim(ltrim($row["Marca"])),
+					"Modelo" => rtrim(ltrim($row["Modelo"])),
+                    "NumSerie" => rtrim(ltrim($row["NumSerie"])),
+                    "Desc_Ubic_Prim" => rtrim(ltrim($row["Desc_Ubic_Prim"])),
+					"Desc_Ubic_Sec" => rtrim(ltrim($row["Desc_Ubic_Sec"])),
+					"Unidad" => rtrim(ltrim($row["Unidad"])),
+                    "Propiedad" => rtrim(ltrim($row["Propiedad"])),
+                    "ImporteSeguros" => rtrim(ltrim($row["ImporteSeguros"])),
+					"ImporteSeguroSF" => rtrim(ltrim($row["ImporteSeguroSF"])),
+					"Baja_Activo" => rtrim(ltrim($row["Baja_Activo"])),
+					"Alta_Activo" => rtrim(ltrim($row["Alta_Activo"]))
+				);
+				array_push($Data_Envia, $Data);
+            }
+
+			
+			$valorTotalHS = $rentaHS + $comodatoHS + $sistemaIntegralHS;
+			$valorTotalCEH = $comodatorentaCEH;
+			$valorTotalCIR = $comodatorentaCIR;
+			$valorTotalCME = $rentaCME + $comodatoCME;
+			$TotalNoPropio= $valorTotalHS + $valorTotalCEH + $valorTotalCIR + $valorTotalCME;
+
+			$agrupado = array();
+			$totalequipopropio = 0;
+			for($i=0; $i<count($Data_Envia_EquipMedProp); $i++){
+				$unidad = $Data_Envia_EquipMedProp[$i]['Unidad'];
+				$importe = floatval($Data_Envia_EquipMedProp[$i]['ImporteSeguroSF']);
+				
+				if (!isset($agrupado[$unidad])) {
+					$agrupado[$unidad] = 0;
+				}
+				$agrupado[$unidad] += $importe;
+			}
+
+			// Convertir a array de la forma solicitada
+			$data = array();
+			foreach ($agrupado as $unidad => $importe) {
+				$totalequipopropio += $importe;
+				$data[] = array("unidad" => $unidad, "importe" => $importe);
+			}
+			$TotalGeneral=$TotalNoPropio + $totalequipopropio;
+			$consolidado = array(
+				"rentaHS" => $rentaHS,
+				"comodatoHS" => $comodatoHS,
+				"sistemaIntegralHS" => $sistemaIntegralHS,
+				"valorTotalHS" => $valorTotalHS,
+				"comodatorentaCEH" => $comodatorentaCEH,
+				"valorTotalCEH" => $valorTotalCEH,
+				"comodatorentaCIR" => $comodatorentaCIR,
+				"valorTotalCIR" => $valorTotalCIR,
+				"rentaCME" => $rentaCME,
+				"comodatoCME" => $comodatoCME,
+				"valorTotalCME" => $valorTotalCME,
+				"TotalNoPropio" => $TotalNoPropio,
+				"equiposMedPropDetTotal" => count($Data_Envia_EquipMedProp),
+				"equiposMedPropDet" => $Data_Envia_EquipMedProp,
+				"equiposMedPropConsolidado" => $data,
+				"TotalPropio" => $totalequipopropio,
+				"TotalGeneral" => $TotalGeneral
+			);
+		}
+	}else{
+		$error=true;
+	}
+	$proveedor->close();
+	
+	//Fin 
+	if($error==false){
+		$respuesta = array("totalCount" => count($Data_Envia), "data" => $Data_Envia, "consolidado" => $consolidado, "estatus" => "ok", "mensaje" => "Registros Encontrados");   	
+	}else{
+		$respuesta = array("totalCount" => "0", "data" => "", "estatus" => "error", "mensaje" => "Ocurrio un Error al Buscar");   	
+	}
+	
+	return $respuesta;
+}
+
+public function polizasegurosbiomedica($fechinicio, $fechfin, $arrayres, $proveedor=null){
+    $respuesta = array();
+	$error=false;
+	$arrayinsert = json_decode($arrayres, true);
+	
+	$proveedor = new Proveedor('sqlserver', 'activos');
+	$proveedor->connect();
+	
+	$proveedor->beginTransaction();
+
+	for($i=0; $i<$arrayinsert["totalCount"]; $i++){
+		$estatus="";
+		if($arrayinsert["data"][$i]["Baja_Activo"]!=""){
+			$estatus = $arrayinsert["data"][$i]["Baja_Activo"];
+		}
+
+		if($arrayinsert["data"][$i]["Alta_Activo"]!=""){
+			$estatus = $arrayinsert["data"][$i]["Alta_Activo"];
+		}
+
+
+		if($estatus!=""){
+			//$EstatusAltaBaja= $arrayinsert["data"][$i]["Baja_Activo"]??$arrayinsert["data"][$i]["Alta_Activo"];
+			$sql = "INSERT INTO siga_poliza_biomedica (
+					Id_Activo, 
+					AF_BC, 
+					Nombre_Activo, 
+					Fech_Alta_Baja, 
+					Hoja, 
+					Unidad, 
+					Importe_Seguro, 
+					Estatus_Activo, 
+					Periodo_Busqueda, 
+					FechaAlta) VALUES (";
+			$sql .=$arrayinsert["data"][$i]["Id_Activo"].", ";
+			$sql .="'".$arrayinsert["data"][$i]["AF_BC"]."', ";
+			$sql .="'".$arrayinsert["data"][$i]["Nombre_Activo"]."', ";
+			$sql .="'".$arrayinsert["data"][$i]["Fech_Inserddmmaaaa"]."', ";
+			$sql .="'".$arrayinsert["data"][$i]["Hoja"]."', ";
+			$sql .="'".$arrayinsert["data"][$i]["Unidad"]."', ";
+			$sql .="'".$arrayinsert["data"][$i]["ImporteSeguros"]."', ";
+			$sql .="'".$estatus."', ";
+			$sql .="'".$fechinicio."-".$fechfin."', ";
+			$sql .="getdate())";
+
+			//echo $sql;
+			//echo "<br>";
+			$proveedor->execute($sql);
+			if (!$proveedor->error()) {
+			}else{
+				$error = true;
+			}
+		}
+	}
+
+	if($error==false){
+		$proveedor->commit();
+		$respuesta = array("totalCount" => "1", "estatus" => "ok", "text" => "POLIZA GENERADA CORRECTAMENTE");
+	}else{
+		$proveedor->rollback();
+		$respuesta = array("totalCount" => "0",  "estatus" => "error", "text" => "OCURRIO UN ERROR AL GUARDAR");
+	}
+	$proveedor->close();
+	
+	return $respuesta;
+}
+
+public function resetearpoliza($proveedor=null){
+    $respuesta = array();
+	$error=false;
+	
+	$proveedor = new Proveedor('sqlserver', 'activos');
+	$proveedor->connect();
+	
+	$proveedor->beginTransaction();
+
+	$sql = "DELETE FROM siga_poliza_biomedica ";
+
+	$proveedor->execute($sql);
+	if (!$proveedor->error()) {
+	}else{
+		$error = true;
+	}
+
+	if($error==false){
+		$proveedor->commit();
+		$respuesta = array("totalCount" => "1", "estatus" => "ok", "text" => "POLIZA ELIMINADA CORRECTAMENTE");
+	}else{
+		$proveedor->rollback();
+		$respuesta = array("totalCount" => "0",  "estatus" => "error", "text" => "OCURRIO UN ERROR AL ELIMINAR");
+	}
+	$proveedor->close();
+	
+	return $respuesta;
+}
+
 public function selectbusqueda_activos_nota_salida_gtiqx($siga_activosDto,$Empresa, $Cadena, $Id_Usuario, $proveedor=null){
   $Data = array();
 	$Data_Envia = array();
@@ -2844,14 +3167,14 @@ public function workflowaltaactivos($Siga_activosDto, $proveedor=null){
 		$sql="INSERT INTO siga_workflow_alta_activo (CveWorkflow, DescWorflow, FechaAlta, Correo, Aceptado, Id_Activo, No_Empleado, Nombre)";
 		$sql.="values ";
 		$sql.="(1,'Usuario Solicitante',getdate(),'".$EmailSolicitante."', 0, ".$idActivo.", ".$numEmpleadoSolicitante.", '".$NombreSolicitante."'),";
-		$sql.="(2,'Usuario Responsable',getdate(),'".$EmailResponsable."', 0, ".$idActivo.", ".$numEmpleadoResponsable.", '".$NombreResponsable."'),";
-		$sql.="(3,'Responsable Área Gestora',getdate(),(select Correo from siga_jefe_area where Id_Area=".$Id_Area."), 0, ".$idActivo.", (select Num_Empleado from siga_jefe_area where Id_Area=".$Id_Area."), (select Nombre from siga_jefe_area where Id_Area=".$Id_Area."));";
+		$sql.="(2,'Responsable Área Gestora',getdate(),(select Correo from siga_jefe_area where Id_Area=".$Id_Area."), 0, ".$idActivo.", (select Num_Empleado from siga_jefe_area where Id_Area=".$Id_Area."), (select Nombre from siga_jefe_area where Id_Area=".$Id_Area.")),";
+		$sql.="(3,'Usuario Responsable',getdate(),'".$EmailResponsable."', 0, ".$idActivo.", ".$numEmpleadoResponsable.", '".$NombreResponsable."');";
 		
-		//echo $sql;
 		$proveedor->execute($sql);
 		if (!$proveedor->error()){
 			$email=$this->email_alta_activo($idActivo, 1, $proveedor);
 		}else{
+			//echo "error";
 			$error=true;
 		}
 		$proveedor->close();

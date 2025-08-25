@@ -446,10 +446,10 @@
 							// 17. Por Estatus (Workflow)
 							case "WorkFlowPaso":
 								if($parametrosConsulta->NombreTabla == "tablaactivos") {
-									array_push($arrayFiltrosExcel, " AND S.Id_Activo IN (SELECT W_A.Id_Activo FROM siga_workflow_activos W_A WHERE W_A.Id_Activo = S.Id_Activo AND (W_A.Id_Baja IS NULL AND W_A.Id_Activo_Reubicacion IS NULL) GROUP BY W_A.Id_Activo HAVING MAX(W_A.CveWorkflow) IN (" . $parametrosConsulta->{ "Filtro_" . trim($lstFiltrosSuperior[$i]) } . ")) ");
+									array_push($arrayFiltrosExcel, " AND S.Id_Activo IN (SELECT W_A.Id_Activo FROM siga_workflow_alta_activo W_A WHERE W_A.Id_Activo = S.Id_Activo AND W_A.FechaAceptado is not null GROUP BY W_A.Id_Activo HAVING MAX(W_A.CveWorkflow) IN (" . $parametrosConsulta->{ "Filtro_" . trim($lstFiltrosSuperior[$i]) } . ")) ");
 								}
 								else if($parametrosConsulta->NombreTabla == "tablereubicacion") {
-									array_push($arrayFiltrosExcel, " AND S.Id_Activo IN (SELECT W_A.Id_Activo FROM siga_workflow_activos W_A WHERE W_A.Id_Activo = S.Id_Activo AND (W_A.Id_Baja IS NULL AND W_A.Id_Activo_Reubicacion = SR.Id_Activo_Reubicacion) GROUP BY W_A.Id_Activo HAVING MAX(W_A.CveWorkflow) IN (" . $parametrosConsulta->{ "Filtro_" . trim($lstFiltrosSuperior[$i]) } . ")) ");
+									array_push($arrayFiltrosExcel, " AND S.Id_Activo IN (SELECT W_A.Id_Activo FROM siga_workflow_reubicacion_activo W_A WHERE W_A.Id_Activo = S.Id_Activo AND W_A.Id_Reubicacion_Activo = SR.Id_Activo_Reubicacion and W_A.FechaAceptado is not null GROUP BY W_A.Id_Activo HAVING MAX(W_A.CveWorkflow) IN (" . $parametrosConsulta->{ "Filtro_" . trim($lstFiltrosSuperior[$i]) } . ")) ");
 								}
 								else {
 									array_push($arrayFiltrosExcel, " AND S.Id_Activo IN (SELECT W.Id_Activo FROM siga_workflow_activo W WHERE W.Aceptado = 1 GROUP BY W.Id_Activo HAVING MAX(W.CveWorkflow) IN (" . $parametrosConsulta->{ "Filtro_" . trim($lstFiltrosSuperior[$i]) } . ")) ");
@@ -742,11 +742,13 @@
 
 				// Determina el paso correspondiente en el workflow
 				if($parametrosConsulta->estatus == "tablaactivos") {
-					$sqltotal .= " (SELECT MAX(CveWorkflow) FROM siga_workflow_activos W_A WHERE W_A.Id_Activo = S.Id_Activo AND (Id_Baja IS NULL AND Id_Activo_Reubicacion IS NULL)) AS WorkFlowPaso, ";
+					//$sqltotal .= " (SELECT MAX(CveWorkflow) FROM siga_workflow_activos W_A WHERE W_A.Id_Activo = S.Id_Activo AND (Id_Baja IS NULL AND Id_Activo_Reubicacion IS NULL)) AS WorkFlowPaso, ";
+					$sqltotal .= " (SELECT TOP(1) CveWorkflow FROM siga_workflow_alta_activo W_A WHERE W_A.Id_Activo = S.Id_Activo and W_A.FechaAceptado is not null ORDER BY W_A.FechaAceptado DESC) AS WorkFlowPaso, ";
 				}
 				else if($parametrosConsulta->estatus == "tablereubicacion") {
 					// Paso máximo del workflow del activo cuando es una reubicación
-					$sqltotal .= " (SELECT TOP(1) CveWorkflow FROM siga_workflow_activos W_A WHERE W_A.Id_Activo = S.Id_Activo AND (Id_Baja IS NULL AND Id_Activo_Reubicacion IS NOT NULL) AND Id_Activo_Reubicacion = SR.Id_Activo_Reubicacion ORDER BY FechaAlta DESC) AS WorkFlowPaso " . $baja_reubicacion . ", ";
+					//$sqltotal .= " (SELECT TOP(1) CveWorkflow FROM siga_workflow_activos W_A WHERE W_A.Id_Activo = S.Id_Activo AND (Id_Baja IS NULL AND Id_Activo_Reubicacion IS NOT NULL) AND Id_Activo_Reubicacion = SR.Id_Activo_Reubicacion ORDER BY FechaAlta DESC) AS WorkFlowPaso " . $baja_reubicacion . ", ";
+					$sqltotal .= " (SELECT TOP(1) CveWorkflow FROM siga_workflow_reubicacion_activo W_A WHERE W_A.Id_Activo = S.Id_Activo  AND W_A.Id_Reubicacion_Activo = SR.Id_Activo_Reubicacion and W_A.FechaAceptado is not null ORDER BY W_A.FechaAceptado DESC) AS WorkFlowPaso " . $baja_reubicacion . ", ";
 				}
 				else {
 					$sqltotal .= " (select WorkFlowPaso from siga_baja_activo A where A.Id_Activo=S.Id_Activo and Estatus_Cancelacion<>1) as WorkFlowPaso " . $baja_reubicacion . ", ";				

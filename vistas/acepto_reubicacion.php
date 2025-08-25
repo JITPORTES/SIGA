@@ -164,6 +164,24 @@
 															<label style="font-size: x-large;" class="text-center">
 																<?php if ($existe==0) {?>
 																	Acepto la reubicación del activo fijo <b><?php echo $workflowReubicacion[0]["Nombre_Activo"]; ?></b> con clave <b><?php echo $workflowReubicacion[0]["AF_BC"] ?></b>
+																
+																	<br>
+																	<div class="row">
+																		<div class="col-md-12">
+																			<div class="form-group has-feedback">
+																				<h4 class="text-left">Usuario:</h4>
+																				<input type="text" class="form-control" value="" placeholder="Usuario" id="txtUsuario" name="txtUsuario">
+																			</div>
+																		</div>
+																	</div>
+																	<div class="row">
+																		<div class="col-md-12">
+																			<div class="form-group has-feedback">
+																				<h4 class="text-left">Contraseña:</h4>
+																				<input type="password" class="form-control" placeholder="Contraseña" id="txtPassword" name="txtPassword">
+																			</div>
+																		</div>
+																	</div>	
 																<?php } else {?>
 																	LA REUBICACIÓN YA HA SIDO ACEPTADA
 																<?php }?>
@@ -181,6 +199,7 @@
 														<?php }?>
 													</div>
 												</div>
+												<br>
 												<div class="row">
 													<div class="col-md-12">
 														<div class="alert alert-danger alert-dismissible fade in" role="alert" style="display:none" id="divmensajeerror">
@@ -207,50 +226,108 @@
 
 		<script type="text/javascript">
 			 Aceptar = function() {
+					var usuario = $.trim($("#txtUsuario").val());
+					var password = $.trim($("#txtPassword").val());
+
+					if (usuario == "" || password == "") {
+						$("#divmensajeerror").show();
+						$("#divErrorMnj").html("Debe ingresar el usuario y la contraseña");
+						return;
+					}
+
 					if (confirm("¿Estás seguro de que deseas aceptar la reubicación del activo?")) {
 							$("#btnIngresar").prop("disabled", true);
 							$("#btnNo").prop("disabled", true);
-							$.post("../fachadas/activos/siga_reubicacion_activo/Siga_reubicacion_activoFacade.Class.php", {
-								Aceptado: 1,
-								Id_Workflow_Reubicacion_Activo: <?php echo $Id_Workflow_Reubicacion_Activo; ?>,
-								Paso: <?php echo $Paso; ?>,
-								accion: "workflow_reubicacion"
-							})
-							.done(function (result) {
-								location.reload();
-							})
-							.fail(function (jqXHR, textStatus, errorThrown) {
-								alert("Ocurrió un error: Comunicate con el area de TI");
-								location.reload();
-							});
+							login(function(resplogin){
+								if(resplogin==true){
+									console.log("entro al login aceptar");
+										$.post("../fachadas/activos/siga_reubicacion_activo/Siga_reubicacion_activoFacade.Class.php", {
+											Aceptado: 1,
+											Id_Workflow_Reubicacion_Activo: <?php echo $Id_Workflow_Reubicacion_Activo; ?>,
+											Paso: <?php echo $Paso; ?>,
+											accion: "workflow_reubicacion"
+										})
+										.done(function (result) {
+											location.reload();
+										})
+										.fail(function (jqXHR, textStatus, errorThrown) {
+											alert("Ocurrió un error: Comunicate con el area de TI");
+											location.reload();
+										});
+								}
+							});		
 					} else {
 							// Si se presiona "Cancelar", no hace nada
 					}
 			}
 			
 			Cancelar = function() {
+					var usuario = $.trim($("#txtUsuario").val());
+					var password = $.trim($("#txtPassword").val());
+
+					if (usuario == "" || password == "") {
+						$("#divmensajeerror").show();
+						$("#divErrorMnj").html("Debe ingresar el usuario y la contraseña");
+						return;
+					}
+
 					if (confirm("¿Estás seguro de que deseas rechazar la reubicación del activo?")) {
 							$("#btnIngresar").prop("disabled", true);
 							$("#btnNo").prop("disabled", true);
-							$.post("../fachadas/activos/siga_reubicacion_activo/Siga_reubicacion_activoFacade.Class.php", {
-								Aceptado: 2,
-								Id_Workflow_Reubicacion_Activo: <?php echo $Id_Workflow_Reubicacion_Activo; ?>,
-								Paso: <?php echo $Paso; ?>,
-								accion: "workflow_reubicacion"
-							})
-							.done(function (result) {
-								location.reload();
-							})
-							.fail(function (jqXHR, textStatus, errorThrown) {
-								alert("Ocurrió un error: Comunicate con el area de TI");
-								location.reload();
-							});
+							login(function(resplogin){
+								if(resplogin==true){
+									console.log("entro al login cancelar");
+									$.post("../fachadas/activos/siga_reubicacion_activo/Siga_reubicacion_activoFacade.Class.php", {
+										Aceptado: 2,
+										Id_Workflow_Reubicacion_Activo: <?php echo $Id_Workflow_Reubicacion_Activo; ?>,
+										Paso: <?php echo $Paso; ?>,
+										accion: "workflow_reubicacion"
+									})
+									.done(function (result) {
+										location.reload();
+									})
+									.fail(function (jqXHR, textStatus, errorThrown) {
+										alert("Ocurrió un error: Comunicate con el area de TI");
+										location.reload();
+									});
+								}
+							});	
 					} else {
 							// Si se presiona "Cancelar", no hace nada
 					}
 			}
 		
-		
+			login = function (callback) {
+				$("#divmensajeerror").hide();
+				$("#divErrorMnj").html("");
+				$.post("../fachadas/activos/siga_usuarios/Siga_usuariosFacade.Class.php", {
+				Usuario: $.trim($('#txtUsuario').val()), 
+				Password: $.trim($('#txtPassword').val()),
+				accion: "login"
+				},
+				function (result) {
+					//$("#btnIngresar").show();
+					if (result !== "") {
+						var jsonResult = eval("(" + result + ")");
+						if (jsonResult.estatus === "ok") {
+							callback(true);
+						}else {
+							$("#btnIngresar").prop("disabled", false);
+							$("#btnNo").prop("disabled", false);
+							$("#divmensajeerror").show();
+							$("#divErrorMnj").html("Usuario o contraseña incorrectos");
+							callback(false);
+						}
+					}else{
+						$("#btnIngresar").prop("disabled", false);
+						$("#btnNo").prop("disabled", false);
+						$("#divmensajeerror").show();
+						$("#divErrorMnj").html("Usuario o contraseña incorrectos");
+						callback(false);
+					}
+				});
+			};
+			
 			$("#alertClose").click(function(e) {
 				$("#divmensajeerror").hide();
 			});

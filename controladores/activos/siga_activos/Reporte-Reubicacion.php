@@ -73,6 +73,15 @@ include_once(dirname(__FILE__)."/../../../datos/connect/Proveedor.Class.php");
 	$Desc_Area_Historico="";
 	$Responsable_Activo_Procedencia="";
 	
+	$WF_Usr_1=null;
+	$WF_FechaAceptado_1=null;
+	$WF_Usr_2=null;
+	$WF_FechaAceptado_2=null;
+	$WF_Usr_3=null;
+	$WF_FechaAceptado_3=null;
+	$WF_Usr_4=null;
+	$WF_FechaAceptado_4=null;
+	$WF_EstatusWorkflow=false;
 	
 if($Id_Activo!=""){
 	$proveedor = new Proveedor('sqlserver', 'activos');
@@ -277,6 +286,52 @@ if($Id_Activo_Reubicacion!=""){
 	}
 	$proveedor_hist->close();
 	
+	
+	
+	$proveedor = new Proveedor('sqlserver', 'activos');
+		$proveedor->connect();
+		$sql="
+			select 
+				SW.Id_Workflow_Reubicacion_Activo,
+				SW.CveWorkflow,
+				UPPER(SW.DescWorflow) as DescWorflow,
+				SW.FechaAlta,
+				SW.Correo,
+				SW.Aceptado,
+				SW.Id_Reubicacion_Activo,
+				SW.Id_Activo,
+				SW.No_Empleado,
+				SW.Nombre,
+				FORMAT(SW.FechaAceptado, 'dd/MM/yyyy HH:mm:ss') as FechaAceptado,
+				SW.Comentarios
+			from siga_workflow_reubicacion_activo SW 
+			where Id_Reubicacion_Activo='".$Id_Activo_Reubicacion."' order by CveWorkflow asc
+		";
+		$proveedor->execute($sql);
+		if (!$proveedor->error()){
+			if ($proveedor->rows($proveedor->stmt) > 0) {
+				while ($row = $proveedor->fetch_array($proveedor->stmt, 0)) {
+					$WF_EstatusWorkflow=true;
+					if($row["CveWorkflow"]==1){
+						$WF_Usr_1=$row["Nombre"];
+						$WF_FechaAceptado_1=$row["FechaAceptado"];
+					}
+					if($row["CveWorkflow"]==2){
+						$WF_Usr_2=$row["Nombre"];
+						$WF_FechaAceptado_2=$row["FechaAceptado"];
+					}
+					if($row["CveWorkflow"]==3){
+						$WF_Usr_3=$row["Nombre"];
+						$WF_FechaAceptado_3=$row["FechaAceptado"];
+					}
+					if($row["CveWorkflow"]==4){
+						$WF_Usr_4=$row["Nombre"];
+						$WF_FechaAceptado_4=$row["FechaAceptado"];
+					}
+				}
+			}
+		}
+		$proveedor->close();
 }
 
 ?>
@@ -562,6 +617,7 @@ if($Id_Activo_Reubicacion!=""){
 		</table>
 		</nobreak>
 		<?php }}}?>
+<?php if($WF_EstatusWorkflow==false){ ?>		
 		<br>
 		<table id="tbl" border cellpadding="10"  cellspacing="0">
 		  <thead class="thead">
@@ -602,9 +658,49 @@ if($Id_Activo_Reubicacion!=""){
 			</tr>
 		  </tbody>
 		</table>
+<?php }else{ ?>
+		<br>
+		<table id="tbl" border cellpadding="10"  cellspacing="0">
+		  <thead class="thead">
+			<tr id="tr">
+			  <td colspan="2" class="td" style="border-top: 1px solid #ddd;line-height: 1.42857143;padding: 8px;vertical-align: top;font-size:13px">NOMBRE Y FIRMA RESPONSABLES</td>
+			</tr>
+		  </thead>
+		  <tbody class="tbody">
+			<tr id="tr">
+			  <td class="td" style="width: 50%;">USUARIO SOLICITANTE REUBICACIÓN</td>
+			  <td class="td" style="width: 50%;">USUARIO RESGUARDO ACTIVO PROCEDENCIA</td>
+			</tr>
+			<tr id="tr">
+			  <td class="td sign" style="width: 50%;">Firma	<br><br><?php if ($WF_FechaAceptado_1 != null) echo " FIRMADO DIGITALMENTE POR: <br>".$WF_Usr_1."<br>Fecha: ".$WF_FechaAceptado_1; ?></td>
+			  <td class="td sign" style="width: 50%;">Firma	<br><br><?php if ($WF_FechaAceptado_2 != null) echo " FIRMADO DIGITALMENTE POR: <br>".$WF_Usr_2."<br>Fecha: ".$WF_FechaAceptado_2; ?></td>
+			</tr>
+			<tr id="tr">
+			  <td class="td author" align="center" style="width: 50%;"></td>
+			  <td class="td author" align="center" style="width: 50%;"></td>
+			</tr>
+		  </tbody>
+		</table>
+		<BR><br><br>
+		<table id="tbl" border cellpadding="10"  cellspacing="0">
+		 
+		  <tbody class="tbody">
+			<tr id="tr">
+			  <td class="td" style="width: 50%;">USUARIO RESGUARDO/RESPONSABLE ACTIVO DESTINO</td>
+			  <td class="td" style="width: 50%;">RESPONSABLE DEL ÁREA GESTORA</td>
+			</tr>
+			<tr id="tr">
+			  <td class="td sign" style="width: 50%;">Firma	<br><br><?php if ($WF_FechaAceptado_3 != null) echo " FIRMADO DIGITALMENTE POR: <br>".$WF_Usr_3."<br>Fecha: ".$WF_FechaAceptado_3; ?></td>
+			  <td class="td sign" style="width: 50%;">Firma	<br><br><?php if ($WF_FechaAceptado_4 != null) echo " FIRMADO DIGITALMENTE POR: <br>".$WF_Usr_4."<br>Fecha: ".$WF_FechaAceptado_4; ?></td>
+			</tr>
+			<tr id="tr">
+			  <td class="td author" align="center" style="width: 50%;"></td>
+			  <td class="td author" align="center" style="width: 50%;"></td>
+			</tr>
+		  </tbody>
+		</table>
+<?php } ?>	
 	</div>	
-	
-	
 
 	<br>
   <!-- /.login-box-body -->

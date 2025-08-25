@@ -129,6 +129,9 @@ include_once(dirname(__FILE__) . "/../modelos/simple_mvc/ActivoFijoInventarioRep
 										<li role="presentation"><a href="#bajas" aria-controls="bajas" role="tab" data-toggle="tab" id="tabbaja_definitiva" data-id-tabla="tablebajas" data-estatus-baja="1" onclick="$('#Estatus_baja').val(1); generarTablaEncabezados(this);">Baja definitiva</a>
 										</li>
 										<li role="presentation" style="<?php if($Id_Menu==25){echo"display:none";}?>"><a href="#reubicacion" data-id-tabla="tablereubicacion" aria-controls="reubicacion" role="tab" data-toggle="tab" onclick="generarTablaEncabezados(this);" id="tabreubicacion_activo">Reubicación</a></li>
+										<li role="presentation" style="display:none" id="lipoliza">
+											<a href="#poliza" data-id-tabla="tablpoliza" aria-controls="poliza" role="tab" data-toggle="tab" onclick="" id="tabpoliza">Info póliza de seguro</a>
+										</li>
 									</ul>
               </div>
 
@@ -233,7 +236,6 @@ include_once(dirname(__FILE__) . "/../modelos/simple_mvc/ActivoFijoInventarioRep
 					<div class="barrasLateralesDataTableDerecho"></div>
 				</div>
 			</div>
-
 
 			<!-- ==== Area para Reasignación de Activos ==== -->
 			<div role="tabpanel" class="tab-pane" id="reasignacion">
@@ -559,6 +561,205 @@ include_once(dirname(__FILE__) . "/../modelos/simple_mvc/ActivoFijoInventarioRep
 					</div> -->
 				</form>
 			</div>
+		
+			<div role="tabpanel" class="tab-pane" id="poliza">
+				<div class="col-md-12">
+					<div class="box">
+						<div class="box-body">
+							<div>
+								<table border="0" cellspacing="5" cellpadding="5" width="100%">
+									<tbody>
+										<tr>
+											<td><div class="col-md-12">Fecha inicial:</div></td>
+											<td><div class="col-md-12"><input type="text" class="form-control" id="fechaDelPoliza" name="fechaDelPoliza" autocomplete="off"></div></td>
+											<td><div class="col-md-12">Fecha Final:</div></td>
+											<td><div class="col-md-12"><input type="text" class="form-control" id="fechaAlPoliza" name="fechaAlPoliza" autocomplete="off"></div></td>
+											<td align="center">
+												<button type="button" class="btn chs" id="genera_poliza" onclick="Poliza()">Buscar</button><br>
+											</td>
+										</tr>
+									</tbody>
+								</table>
+								<br><br>
+								<div id="dtpoliza">
+								<div>
+								
+
+								<script>
+									$(document).ready(function() {
+										/* var Id_Area_Poliza = $("#idareasesion").val();
+										if(Id_Area_Poliza==1){
+											$("#lipoliza").show();
+										} */
+										Poliza=function(){
+											let fechinicio= $("#fechaDelPoliza").val();
+											let fechfin= $("#fechaAlPoliza").val();
+
+											if(fechinicio=="" || fechfin==""){
+												alert("Atención: Debe seleccionar las fechas de inicio y fin para generar la póliza de seguro");
+												return;
+											}
+											generarPoliza(fechinicio, fechfin);
+										}
+
+										generarPoliza = function(fechinicio, fechfin) {
+											var resultado = new Array();
+											var data = { accion: "generapoliza", fechinicio: fechinicio, fechfin: fechfin };
+											resultado = cargo_cmb("../fachadas/activos/siga_activos/Siga_activosFacade.Class.php", false, data);
+
+											$("#dtpoliza").html("");
+											var tablapoliza='<button type="button" class="btn btn-success" onclick="exportar_poliza()">Exportar a Excel</button>';
+											tablapoliza+='<br><br>';
+											tablapoliza+='<table id="tablaPoliza" class="table table-bordered table-striped" style="width: 100%;">';
+											tablapoliza+='	<thead>';
+											tablapoliza+='		<tr>';
+											tablapoliza+='			<th>Área Gestora</th>';
+											tablapoliza+='			<th>Unidad</th>';
+											tablapoliza+='			<th>Unidad (Establecimiento)</th>';
+											tablapoliza+='			<th>Ubicación Primaria</th>';	
+											tablapoliza+='			<th>Ubicación Secundaria</th>';
+											tablapoliza+='			<th>Propiedad</th>';
+											tablapoliza+='			<th>No. Inventario</th>';
+											tablapoliza+='			<th>Descripción Equipo</th>';
+											tablapoliza+='			<th>Marca</th>';
+											tablapoliza+='			<th>Modelo</th>';
+											tablapoliza+='			<th>No. Serie</th>';
+											tablapoliza+='			<th>Fecha Alta</th>';
+											tablapoliza+='			<th>Importe</th>';
+											tablapoliza+='			<th>Estatus/Actualización</th>';
+											tablapoliza+='		</tr>';
+											tablapoliza+='	</thead>';
+											tablapoliza+='	<tbody></tbody>';
+											tablapoliza+='</table>';
+											$("#dtpoliza").html(tablapoliza);
+											// Limpia la tabla antes de llenarla
+											if ($.fn.DataTable.isDataTable('#tablaPoliza')) {
+												$('#tablaPoliza').DataTable().clear().destroy();
+											}
+											$('#tablaPoliza tbody').empty();
+
+											if (resultado.totalCount > 0) {
+												// Crea el array de datos para el DataTable
+												var datos = [];
+												for (var i = 0; i < resultado.totalCount; i++) {
+													var item = resultado.data[i];
+													// Ajusta las columnas según los datos que recibes
+													datos.push([
+														'Ingeniería Biomédica',
+														item.Hoja || '',
+														item.Unidad || '',
+														item.Desc_Ubic_Prim || '',
+														item.Desc_Ubic_Sec || '',
+														item.Propiedad || '',
+														item.AF_BC || '',
+														item.Nombre_Activo || '',
+														item.Marca || '',
+														item.Modelo || '',
+														item.Num_Serie || '',
+														item.Fech_Inserddmmaaaa || '',
+														item.ImporteSeguros || '',
+														item.Baja_Activo || '',
+													]);
+												}
+
+												$('#tablaPoliza thead tr').clone(true).appendTo('#tablaPoliza thead');
+												$('#tablaPoliza thead tr:eq(1) th').each(function (i) {
+													var title = $(this).text();
+													$(this).html('<input type="text" class="search-input" placeholder="Buscar ' + title + '" style="width: 100%;"/>');
+													$('.search-input').css('color', 'black');
+													// Agregar evento de búsqueda por columna
+													$('input', this).on('keyup change', function () {
+													if ($('#tablaPoliza').DataTable().column(i).search() !== this.value) {
+														$('#tablaPoliza').DataTable()
+														.column(i)
+														.search(this.value)
+														.draw();
+													}
+													});
+												});
+
+												// Inicializa el DataTable
+												$('#tablaPoliza').DataTable({
+													"lengthMenu": [
+														[ 25, 50, 100, 100000 ],
+														[ '25 Filas', '50 Filas', '100 Filas', 'Todos' ]
+													],
+													
+													"scrollY": 400,
+													"scrollX": true,
+													"processing": true,
+													"serverSide": false,
+													"orderCellsTop": true,
+													"fixedHeader": false,
+													data: datos,
+													columns: [
+														{ title: "Área Gestora" },
+														{ title: "Unidad" },
+														{ title: "Unidad (Establecimiento)" },
+														{ title: "Ubicación Primaria" },
+														{ title: "Ubicación Secundaria" },
+														{ title: "Propiedad" },
+														{ title: "No. Inventario" },
+														{ title: "Descripción Equipo" },
+														{ title: "Marca" },
+														{ title: "Modelo" },
+														{ title: "No. Serie" },
+														{ title: "Fecha Alta" },
+														{ title: "Importe" },
+														{ title: "Estatus/Actualización" },
+													],
+													destroy: true,
+													
+													"language": {
+														"lengthMenu": "Mostrando _MENU_ registros por página",
+														"zeroRecords": "Sin resultados",
+														"info": "Mostrando página _PAGE_ de _PAGES_, resultados filtrados: _TOTAL_ de _MAX_ registros",
+														"infoEmpty": "Sin resultados",
+														"infoFiltered": "",
+														"search": "Búsqueda: ",
+														"paginate": {
+															"first": "Primera",
+															"last": "Última",
+															"next": "Siguiente",
+															"previous": "Anterior"
+														}
+													},
+													"rowCallback": function(row, data, index) {
+														// La columna "Estatus/Actualización" es la número 13 (índice base 0)
+														if (data[13] && data[13].toString().toLowerCase().indexOf('baja') !== -1) {
+															$(row).css('background-color', '#ffcccc'); // Rojo claro
+														}
+													}
+												});
+											} else {
+												// Si no hay resultados, muestra mensaje
+												$('#tablaPoliza tbody').html('<tr><td colspan="12" class="text-center">Sin Resultados</td></tr>');
+											}
+										}
+
+										exportar_poliza=function() {
+											var fechinicio = $("#fechaDelPoliza").val();
+											var fechfin = $("#fechaAlPoliza").val();
+											if (!fechinicio || !fechfin) {
+												alert("Selecciona las fechas de inicio y fin");
+												return;
+											}
+											// Crea y envía un formulario oculto para POST
+											var form = $('<form method="POST" action="exportar_poliza_excel.php" target="_blank">' +
+												'<input type="hidden" name="fechainicio" value="' + fechinicio + '"/>' +
+												'<input type="hidden" name="fechafin" value="' + fechfin + '"/>' +
+												'</form>');
+											$('body').append(form);
+											form.submit();
+											form.remove();
+										}
+									});
+								</script>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>			
 		</div>
 	</div>
 
@@ -4060,6 +4261,17 @@ if(Agregar){
 	  //tablabaja.draw();
    });
 
+    $('#fechaAlPoliza').datepicker({
+		format: 'dd/mm/yyyy',
+	}).datepicker().on('changeDate', function(e) {
+	  /*var dateString = $('#fechaAl').val();
+	  alert('Fecha1='+dateString);
+	  var dateParts = dateString.split("/");
+	  var minDateFilter = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]).getTime();*/
+	  //alert('Fecha='+minDateFilter);
+	  //tablabaja.draw();
+   });
+
 $('#fechaAlR').datepicker({
     format: 'dd/mm/yyyy',
     }).datepicker().on('changeDate', function(e) {
@@ -4073,6 +4285,17 @@ $('#fechaAlR').datepicker({
    });
 
 $('#fechaDel').datepicker({
+    format: 'dd/mm/yyyy',
+    }).datepicker().on('changeDate', function(e) {
+	  /*var dateString = $('#fechaAl').val();
+	  alert('Fecha1='+dateString);
+	  var dateParts = dateString.split("/");
+	  var minDateFilter = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]).getTime();*/
+	  //alert('Fecha='+minDateFilter);
+	  //tablabaja.draw();
+   });
+
+   $('#fechaDelPoliza').datepicker({
     format: 'dd/mm/yyyy',
     }).datepicker().on('changeDate', function(e) {
 	  /*var dateString = $('#fechaAl').val();

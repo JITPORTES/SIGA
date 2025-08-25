@@ -73,6 +73,15 @@
 	$siga_cmb_condicion_recepcion="";
 	$siga_activos_fch_recepcion_equipo="";
 	$siga_activos_fch_operacion="";
+	
+	
+	$WF_Usr_1=null;
+	$WF_FechaAceptado_1=null;
+	$WF_Usr_2=null;
+	$WF_FechaAceptado_2=null;
+	$WF_Usr_3=null;
+	$WF_FechaAceptado_3=null;
+	$WF_EstatusWorkflow=false;
 
 	if($Id_Activo!=""){
 		$proveedor = new Proveedor('sqlserver', 'activos');
@@ -216,6 +225,47 @@
 					$Url_Otro_Doc=$row["Url_Otro_Doc"];
 					$Url_Xml=$row["Url_Xml"];
 					$Link=$row["Link"];
+				}
+			}
+		}
+		$proveedor->close();
+		
+		
+		$proveedor = new Proveedor('sqlserver', 'activos');
+		$proveedor->connect();
+		$sql="
+			select 
+				SW.Id_Alta_Activo,
+				SW.CveWorkflow,
+				UPPER(SW.DescWorflow) as DescWorflow,
+				SW.FechaAlta,
+				SW.Correo,
+				SW.Aceptado,
+				SW.Id_Activo,
+				SW.No_Empleado,
+				SW.Nombre,
+				FORMAT(SW.FechaAceptado, 'dd/MM/yyyy HH:mm:ss') as FechaAceptado,
+				SW.Comentarios
+			from siga_workflow_alta_activo SW 
+			where Id_Activo='".$Id_Activo."' order by CveWorkflow asc
+		";
+		$proveedor->execute($sql);
+		if (!$proveedor->error()){
+			if ($proveedor->rows($proveedor->stmt) > 0) {
+				while ($row = $proveedor->fetch_array($proveedor->stmt, 0)) {
+					$WF_EstatusWorkflow=true;
+					if($row["CveWorkflow"]==1){
+						$WF_Usr_1=$row["Nombre"];
+						$WF_FechaAceptado_1=$row["FechaAceptado"];
+					}
+					if($row["CveWorkflow"]==2){
+						$WF_Usr_2=$row["Nombre"];
+						$WF_FechaAceptado_2=$row["FechaAceptado"];
+					}
+					if($row["CveWorkflow"]==3){
+						$WF_Usr_3=$row["Nombre"];
+						$WF_FechaAceptado_3=$row["FechaAceptado"];
+					}
 				}
 			}
 		}
@@ -581,7 +631,7 @@
 				}
 			} ?>
 		<br>
-
+<?php if($WF_EstatusWorkflow==false){ ?>
 		<nobreak>
 			<!-- === Nombre y firma de Responsables ==== -->
 			<table id="tbl" border cellpadding="10"  cellspacing="0">
@@ -610,7 +660,44 @@
 			</table>
 		</nobreak>
 		<br>
-		<!-- /.login-box-body -->
+<?php }else{ ?>
+		<nobreak>
+			<!-- === Nombre y firma de Responsables ==== -->
+			<table id="tbl" border cellpadding="10"  cellspacing="0">
+				<thead class="thead">
+					<tr id="tr">
+						<td colspan="3" class="td" style="border-top: 1px solid #ddd;line-height: 1.42857143;padding: 8px;vertical-align: top;font-size:13px">NOMBRE Y FIRMA RESPONSABLES</td>
+					</tr>
+				</thead>
+				<tbody class="tbody">
+					<tr id="tr">
+						<td class="td" style="width: 33.33%;">USUARIO SOLICITANTE</td>
+						<td class="td" style="width: 33.33%;">RESPONSABLE DEL ÁREA GESTORA</td>
+						<td class="td" style="width: 33.33%;">USUARIO RESPONSABLE</td>
+					</tr>
+					<tr id="tr">
+						<td class="td sign" style="width: 33.33%;">
+							Firma	<br><br><?php if ($WF_FechaAceptado_1 != null) echo " FIRMADO DIGITALMENTE POR: <br>".$WF_Usr_1."<br>Fecha: ".$WF_FechaAceptado_1; ?>
+						</td>
+						<td class="td sign" style="width: 33.33%;">
+							Firma	<br><br><?php if ($WF_FechaAceptado_2 != null) echo " FIRMADO DIGITALMENTE POR: <br>".$WF_Usr_2."<br>Fecha: ".$WF_FechaAceptado_2; ?>
+						</td>
+						<td class="td sign" style="width: 33.33%;">
+							Firma	<br><br><?php if ($WF_FechaAceptado_3 != null) echo " FIRMADO DIGITALMENTE POR: <br>".$WF_Usr_3."<br>Fecha: ".$WF_FechaAceptado_3; ?>
+						</td>
+					</tr>
+					<tr id="tr">
+						<td class="td author" align="center" style="width: 33.33%;"></td>
+						<td class="td author" align="center" style="width: 33.33%;"></td>
+						<td class="td author" align="center" style="width: 33.33%;"></td>
+					</tr>
+				</tbody>
+			</table>
+		</nobreak>
+		<br>
+
+<?php } ?>
+
 	</page> 
 
 <?php

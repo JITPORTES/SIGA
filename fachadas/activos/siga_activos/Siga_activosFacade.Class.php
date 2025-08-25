@@ -417,6 +417,30 @@ public function getworkflow_alta($Id_Activo){
 	return $jsonDto->encode($Siga_activosDto);
 }
 
+public function generapoliza($fechinicio, $fechfin){
+	$Siga_activosController = new Siga_activosController();
+	$Siga_activosDto = $Siga_activosController->generapoliza($fechinicio, $fechfin);
+
+	$jsonDto = new Encode_JSON();
+	return $jsonDto->encode($Siga_activosDto);
+}
+
+public function polizasegurosbiomedica($fechinicio, $fechfin, $arrayres){
+	$Siga_activosController = new Siga_activosController();
+	$Siga_activosDto = $Siga_activosController->polizasegurosbiomedica($fechinicio, $fechfin, $arrayres);
+
+	$jsonDto = new Encode_JSON();
+	return $jsonDto->encode($Siga_activosDto);
+}
+
+public function resetearpoliza(){
+	$Siga_activosController = new Siga_activosController();
+	$Siga_activosDto = $Siga_activosController->resetearpoliza();
+
+	$jsonDto = new Encode_JSON();
+	return $jsonDto->encode($Siga_activosDto);
+}
+
 public function grafica_estatus_activo($Siga_activosDto){
 	$Siga_activosController = new Siga_activosController();
 	$Siga_activosDto = $Siga_activosController->grafica_estatus_activo($Siga_activosDto);
@@ -552,6 +576,9 @@ return $year . "-" . $mes . "-" . $dia;
 	@$Aceptado = $_POST["Aceptado"];
 	@$Id_Alta_Activo = $_POST["Id_Alta_Activo"];
 	@$Paso = $_POST["Paso"];
+	@$fechinicio = $_POST["fechinicio"];
+	@$fechfin = $_POST["fechfin"];
+	@$arrayres = $_POST["arrayres"];
 	// se agregaron estos tres campos Alex Arias 25/04/24
 	@$siga_cmb_condicion_recepcion 	 = $_POST["siga_cmb_condicion_recepcion"];
 	@$siga_activo_alta_fch_recepcion = $_POST["siga_activo_alta_fch_recepcion"];
@@ -847,6 +874,12 @@ return $year . "-" . $mes . "-" . $dia;
 		echo $siga_activosDto;
 	}else if($accion=="workflow_alta") {
 		echo $siga_activosFacade->workflow_alta($Aceptado, $Id_Alta_Activo, $Paso);
+	}else if($accion=="generapoliza") {
+		echo $siga_activosFacade->generapoliza($fechinicio, $fechfin);
+	}else if($accion=="polizasegurosbiomedica") {
+		echo $siga_activosFacade->polizasegurosbiomedica($fechinicio, $fechfin, $arrayres);
+	}else if($accion=="resetearpoliza") {
+		echo $siga_activosFacade->resetearpoliza();
 	}
 	else if (isset ($draw) && ($draw != "")) {
 		
