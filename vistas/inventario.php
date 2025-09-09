@@ -3357,6 +3357,7 @@ include_once(dirname(__FILE__) . "/../modelos/simple_mvc/ActivoFijoInventarioRep
 		$("#jefearea_baja").val("");
 
 		var valida = true;
+		
 
 		if ($("#Id_baja_activo").val() == "")
 		{
@@ -5828,7 +5829,7 @@ $('#fechaDelR').datepicker({
 						}
 
 						if (data.data[i].Aceptado == 0 && sinlink==false) {
-							//workflow += '    <small><span><a href="">link</a></span></small>';
+							workflow += '    <small><span><a href="">link</a></span></small>';
 						}
 						workflow += '</p></div>';
 					}
