@@ -3350,7 +3350,7 @@ public function Archivos_Chat($Siga_solicitud_ticketsDto, $proveedor=null){
 	$sql="
 		select * from siga_cat_ticket_adjuntos where Id_Chat in(
 		select Id_Chat from siga_ticket_chat where Id_Solicitud='".$Siga_solicitud_ticketsDto->getId_Solicitud()."' and Estatus_Reg<>'3' and Url_Adjunto is not null
-		) and (Url_Adjunto like '%.png%' or Url_Adjunto like '%.jpg%')
+		) and (Url_Adjunto like '%.png%' or Url_Adjunto like '%.jpg%' or Url_Adjunto like '%.jpeg%')
 	";
 	$proveedor->execute($sql);
 	

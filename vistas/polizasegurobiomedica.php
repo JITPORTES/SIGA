@@ -80,7 +80,7 @@
 				tablapoliza+='			<th>Marca</th>';
 				tablapoliza+='			<th>Modelo</th>';
 				tablapoliza+='			<th>No. Serie</th>';
-				tablapoliza+='			<th>Fecha Alta</th>';
+				tablapoliza+='			<th>Fecha Alta/Baja</th>';
 				tablapoliza+='			<th>Importe</th>';
 				tablapoliza+='			<th>Estatus/Actualización</th>';
 				tablapoliza+='		</tr>';
@@ -99,6 +99,15 @@
 					var datos = [];
 					for (var i = 0; i < resultado.totalCount; i++) {
 						var item = resultado.data[i];
+
+						// Lógica para determinar el estatus
+						var estatus = '';
+						if (item.Proceso_Baja === 'Proceso de Baja') {
+							estatus = item.Proceso_Baja; // Mostrar "Proceso de Baja"
+						} else {
+							estatus = item.Baja_Activo || item.Alta_Activo || '';
+						}
+
 						// Ajusta las columnas según los datos que recibes
 						datos.push([
 							'Ingeniería Biomédica',
@@ -111,10 +120,10 @@
 							item.Nombre_Activo || '',
 							item.Marca || '',
 							item.Modelo || '',
-							item.Num_Serie || '',
+							item.NumSerie || '',
 							item.Fech_Inserddmmaaaa || '',
 							item.ImporteSeguros || '',
-							item.Baja_Activo || item.Alta_Activo || '',
+							estatus
 						]);
 					}
 					$('#tablaPoliza thead tr').clone(true).appendTo('#tablaPoliza thead');
@@ -157,7 +166,7 @@
 							{ title: "Marca" },
 							{ title: "Modelo" },
 							{ title: "No. Serie" },
-							{ title: "Fecha Alta" },
+							{ title: "Fecha Alta/Baja" },
 							{ title: "Importe" },
 							{ title: "Estatus/Actualización" },
 						],
@@ -185,6 +194,10 @@
 							if (data[13] && data[13].toString().toLowerCase().indexOf('alta') !== -1) {
 								$(row).css('background-color', '#ccffcc'); // Verde claro
 							}
+
+							if (data[13] && data[13].toString().toLowerCase().indexOf('proceso de baja') !== -1) {
+								$(row).css('background-color', '#ffcccc'); // Verde claro
+							}
 						}
 					});
 				} else {
@@ -211,6 +224,7 @@
 			}
 
 			polizagenerar = async function() {
+				jsShowWindowLoad("Por favor espere, generando poliza...");
 				let fechinicio = $("#fechaDelPoliza").val();
 				let fechfin = $("#fechaAlPoliza").val();
 				if (resultado.totalCount > 0) {
@@ -219,6 +233,10 @@
 						return;
 					}
 					await exportar_poliza();
+
+					// Retraso de 3 segundos
+        			await new Promise(resolve => setTimeout(resolve, 3000));
+					
 					var data = { accion: "polizasegurosbiomedica", fechinicio: fechinicio, fechfin: fechfin, arrayres: JSON.stringify(resultado) };
 					res = cargo_cmb("../fachadas/activos/siga_activos/Siga_activosFacade.Class.php", false, data);
 					if (res.totalCount > 0) {
@@ -226,13 +244,15 @@
 						$("#dtpoliza").html("");
 						$('#tablaPoliza').DataTable().clear().destroy();
 						Poliza();
+						setTimeout(function() { jsRemoveWindowLoad(); }, 500);
 						alert("Póliza generada exitosamente.");
 					} else {
+						setTimeout(function() { jsRemoveWindowLoad(); }, 500);
 						alert("Error al generar la póliza: ");
 					}
 				} else {
 					alert("No hay datos para generar la póliza.");
-				
+					setTimeout(function() { jsRemoveWindowLoad(); }, 500);
 				}	
 			}
 

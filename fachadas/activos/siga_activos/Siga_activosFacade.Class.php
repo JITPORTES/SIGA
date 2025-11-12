@@ -316,6 +316,14 @@ public function guardar_firma($Id_Nota_Salida, $Estatus_Proceso, $Firma_Digital,
 	return $jsonDto->encode($Siga_activosDto);
 }
 
+public function guardarEspTecFinan($Id_Esp_Tec, $Id_Activo, $esptecnicas, $Usr_Mod){
+	$Siga_activosController = new Siga_activosController();
+	$Siga_activosDto = $Siga_activosController->guardarEspTecFinan($Id_Esp_Tec, $Id_Activo, $esptecnicas, $Usr_Mod);
+
+	$jsonDto = new Encode_JSON();
+	return $jsonDto->encode($Siga_activosDto);
+}
+
 public function proceso_notas_salida($Id_Area){
 	$Siga_activosController = new Siga_activosController();
 	$Siga_activosDto = $Siga_activosController->proceso_notas_salida($Id_Area);
@@ -449,6 +457,30 @@ public function grafica_estatus_activo($Siga_activosDto){
 	return $jsonDto->encode($Siga_activosDto);
 }
 
+public function getcatalogo($tabla, $id_campo, $campo){
+	$Siga_activosController = new Siga_activosController();
+	$Siga_activosDto = $Siga_activosController->getcatalogo($tabla, $id_campo, $campo);
+
+	$jsonDto = new Encode_JSON();
+	return $jsonDto->encode($Siga_activosDto);
+}
+
+public function getespecificacionestecnicas($Id_Activo){
+	$Siga_activosController = new Siga_activosController();
+	$Siga_activosDto = $Siga_activosController->getespecificacionestecnicas($Id_Activo);
+
+	$jsonDto = new Encode_JSON();
+	return $jsonDto->encode($Siga_activosDto);
+}
+
+public function reporteEspecificacionesTecnicas($Id_Activo){
+	$Siga_activosController = new Siga_activosController();
+	$Siga_activosDto = $Siga_activosController->reporteEspecificacionesTecnicas($Id_Activo);
+
+	$jsonDto = new Encode_JSON();
+	return $jsonDto->encode($Siga_activosDto);
+}
+
 public function autocomplete_activos($Siga_activosDto,$soloactivos){
 	$Siga_activosController = new Siga_activosController();
 	$Siga_activosDto = $Siga_activosController->autocomplete_activos($Siga_activosDto,null,$soloactivos);
@@ -464,10 +496,10 @@ public function Tabla_Activos_Asis_Esp($Siga_activosDto,$soloactivos){
 }
 
 
-public function insertSiga_activos($Siga_activosDto){
+public function insertSiga_activos($Siga_activosDto, $esptecnicas){
 //$Siga_activosDto=$this->validarSiga_activos($Siga_activosDto);
 $Siga_activosController = new Siga_activosController();
-$Siga_activosDto = $Siga_activosController->insertSiga_activos($Siga_activosDto);
+$Siga_activosDto = $Siga_activosController->insertSiga_activos($Siga_activosDto, $esptecnicas);
 if($Siga_activosDto!=""){
 $dtoToJson = new DtoToJson($Siga_activosDto);
 return $dtoToJson->toJson("REGISTRO REALIZADO DE FORMA CORRECTA");
@@ -476,10 +508,10 @@ $jsonDto = new Encode_JSON();
 return $jsonDto->encode(array("totalCount"=>"0","text"=>"OCURRIO UN ERROR AL REALIZAR EL REGISTRO"));
 }
 
-public function updateSiga_activos($Siga_activosDto){
+public function updateSiga_activos($Siga_activosDto, $esptecnicas, $Id_Esp_Tec){
 //$Siga_activosDto=$this->validarSiga_activos($Siga_activosDto);
 $Siga_activosController = new Siga_activosController();
-$Siga_activosDto = $Siga_activosController->updateSiga_activos($Siga_activosDto);
+$Siga_activosDto = $Siga_activosController->updateSiga_activos($Siga_activosDto, $esptecnicas, $Id_Esp_Tec);
 if($Siga_activosDto!=""){
 $dtoToJson = new DtoToJson($Siga_activosDto);
 return $dtoToJson->toJson("REGISTRO ACTUALIZADO");
@@ -579,6 +611,11 @@ return $year . "-" . $mes . "-" . $dia;
 	@$fechinicio = $_POST["fechinicio"];
 	@$fechfin = $_POST["fechfin"];
 	@$arrayres = $_POST["arrayres"];
+	@$tabla = $_POST["tabla"];
+	@$id_campo = $_POST["id_campo"];
+	@$campo = $_POST["campo"];
+	@$esptecnicas = $_POST["esptecnicas"];
+	@$Id_Esp_Tec = $_POST["Id_Esp_Tec"];
 	// se agregaron estos tres campos Alex Arias 25/04/24
 	@$siga_cmb_condicion_recepcion 	 = $_POST["siga_cmb_condicion_recepcion"];
 	@$siga_activo_alta_fch_recepcion = $_POST["siga_activo_alta_fch_recepcion"];
@@ -722,11 +759,15 @@ return $year . "-" . $mes . "-" . $dia;
 	$siga_activosDto->setsiga_activo_alta_fch_operacion($siga_activo_alta_fch_operacion);
 	
 	if(($accion == "guardar") && ($Id_Activo == "")) {
-		$siga_activosDto=$siga_activosFacade->insertSiga_activos($siga_activosDto);
+		$siga_activosDto=$siga_activosFacade->insertSiga_activos($siga_activosDto, $esptecnicas);
 		echo $siga_activosDto;
 	}
 	else if(($accion == "guardar") && ($Id_Activo!="")) {
-		$siga_activosDto=$siga_activosFacade->updateSiga_activos($siga_activosDto);
+		$siga_activosDto=$siga_activosFacade->updateSiga_activos($siga_activosDto, $esptecnicas, $Id_Esp_Tec);
+		echo $siga_activosDto;
+	}
+	else if($accion == "guardarEspTecFinan") {
+		$siga_activosDto=$siga_activosFacade->guardarEspTecFinan($Id_Esp_Tec, $Id_Activo, $esptecnicas, $Usr_Mod);
 		echo $siga_activosDto;
 	}
 	else if($accion == "consultar") {
@@ -880,6 +921,12 @@ return $year . "-" . $mes . "-" . $dia;
 		echo $siga_activosFacade->polizasegurosbiomedica($fechinicio, $fechfin, $arrayres);
 	}else if($accion=="resetearpoliza") {
 		echo $siga_activosFacade->resetearpoliza();
+	}else if($accion=="getcatalogo") {
+		echo $siga_activosFacade->getcatalogo($tabla, $id_campo, $campo);
+	}else if($accion=="getespecificacionestecnicas") {
+		echo $siga_activosFacade->getespecificacionestecnicas($Id_Activo);
+	}else if($accion=="reporteEspecificacionesTecnicas") {
+		echo $siga_activosFacade->reporteEspecificacionesTecnicas($Id_Activo);
 	}
 	else if (isset ($draw) && ($draw != "")) {
 		

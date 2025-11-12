@@ -5,7 +5,7 @@
 			<!-- ==== Titulo de la Ventana Modal ==== -->
 			<div class="modal-header azul">
 				<button type="button" class="close" aria-label="Close" onclick="confirmacion_cerrar('altaEquipo')"><span aria-hidden="true">&times;</span></button>
-				<h4 class="modal-title"><i class="fa fa-arrow-circle-o-up" aria-hidden="true"></i> alta equipo <?php echo date("Y")?></h4>
+				<h4 class="modal-title"><i class="fa fa-arrow-circle-o-up" aria-hidden="true"></i> alta equipo <?php echo date("Y")?>::</h4>
 			</div>
 
 			<!-- ==== Cuerpo de la Ventana Modal ==== -->
@@ -24,7 +24,7 @@
 				<ul class="nav nav-tabs azul" role="tablist" id="interest_tabs">
 					<li role="presentation" class="active"><a href="#generales" onclick="javascript:activaBoton(1);" aria-controls="generales" role="tab" data-toggle="tab" id="tab1">Datos Generales</a></li>
 					<li role="presentation"><a href="#proveedor" aria-controls="proveedor"  onclick="javascript:activaBoton(2);" role="tab" data-toggle="tab" id="tab2">Datos Proveedor</a></li>
-					<li role="presentation"><a href="#seguimientoAlta" aria-controls="seguimientoAlta"  onclick="" role="tab" data-toggle="tab" id="tab3">Seguimiento</a></li>
+					<!-- <li role="presentation"><a href="#seguimientoAlta" aria-controls="seguimientoAlta"  onclick="" role="tab" data-toggle="tab" id="tab3">Seguimiento</a></li> -->
 					<?php if (isset($_SESSION["Id_Cargo"])) {?><li role="presentation" id="tabContabilidad"><a href="#contabilidad" aria-controls="contabilidad" onclick="javascript:activaBoton(3);" role="tab" data-toggle="tab"  id="tab3">Contabilidad</a></li><?php }?>
 				</ul>
 
@@ -280,6 +280,17 @@
 											<label for="polizagarantia" class="control-label" id="polizagarantiaLabel" style="font-size: 11px;">Descripción Larga</label>
 											<textarea rows="4" class="form-control" id="DescLarga" placeholder="Descripción Larga"></textarea>
 										</div>
+									</div>
+								</div>
+							</div>
+							<div class="row" id="especificaciones_tecnicas" style="display:none">
+								<div class="col-md-10 col-md-offset-1">
+									<div class="col-md-12">
+										<h4><b>Especificaciones Técnicas, requerimientos de Instalación y Operación</b></h4>
+									</div>
+									<div class="col-md-12">
+										<br>
+										<?php include("include_especificaciones_tecnicas.php") ?>
 									</div>
 								</div>
 							</div>
@@ -602,7 +613,7 @@
 					</div>
 					<!-- ==== Datos del Proveedor tab#2 ==== -->
 
-					<!-- ==== Datos del seguimientoAlta tab#3 ==== -->
+					<!-- ==== Datos del seguimientoAlta tab#3 Eliminar==== -->
 					<div role="tabpanel" class="tab-pane" id="seguimientoAlta">
 						<form>
 							<div class="gray">

@@ -3973,7 +3973,7 @@ gestores_ejecutantes();
 					
 					let Fecha = '<span style="display:none">'+obj.Fecha_Num+'</span><br>';
 					Fecha+= obj.Fecha;
-					return Fecha;
+					return obj.Fecha_Num;
 				}
 			},
 			{"width": "6%","data": function (obj) {
@@ -4207,7 +4207,7 @@ gestores_ejecutantes();
 					
 					let Fecha = '<span style="display:none">'+obj.Fecha_Num+'</span><br>';
 					Fecha+= obj.Fecha;
-					return Fecha;
+					return obj.Fecha_Num;
 				}
 			},
 			//{ "width": "5%","data": "Fecha_Seguimiento"},
@@ -4215,7 +4215,7 @@ gestores_ejecutantes();
 					
 					let Fecha = '<span style="display:none">'+obj.Fecha_Seguimiento_Num+'</span><br>';
 					Fecha+= obj.Fecha_Seguimiento;
-					return Fecha;
+					return obj.Fecha_Seguimiento;
 				}
 			},
 			{ "width": "6%","data": function (obj) {
@@ -4273,9 +4273,9 @@ gestores_ejecutantes();
 				"data": function (obj) {
 					var Desc = '';
 					
-					if(obj.Datos_Activo!=""){
-						Desc='<a href="#noir" id="Ver_Info_Activos'+obj.Id_Solicitud+'" onclick="Ver_info_Activos('+obj.Id_Solicitud+')" style="display:none">Activos </a>';//Desc+='<a href="#noir" id="Ocult_Activos'+obj.Id_Solicitud+'" onclick="Ocultar_info_Activos('+obj.Id_Solicitud+')" style="display:none">Ocultar Info Activos</a>';
-						Desc+='<div id="Div_Info_Activos'+obj.Id_Solicitud+'" style="display:inline">'+obj.Datos_Activo+"</div>";
+					if(obj.Datos_Activo != "") {
+						Desc = "<a href=\"#noir\" id=\"Ver_Info_Activos" + obj.Id_Solicitud + "\" onclick=\"Ver_info_Activos(" + obj.Id_Solicitud + ")\" style=\"display:none\">Activos </a>";
+						Desc += "<div id=\"Div_Info_Activos" + obj.Id_Solicitud + "\" style=\"display:inline\">" + obj.Datos_Activo + "</div>";
 					}
 					return Desc;
 				}
@@ -4419,7 +4419,7 @@ gestores_ejecutantes();
 					
 					let Fecha = '<span style="display:none">'+obj.Fecha_Num+'</span><br>';
 					Fecha+= obj.Fecha;
-					return Fecha;
+					return obj.Fecha_Num;
 				}
 			},
 			//{ "width": "5%","data": "Fecha_Seguimiento"},
@@ -4427,7 +4427,7 @@ gestores_ejecutantes();
 					
 					let Fecha = '<span style="display:none">'+obj.Fecha_Seguimiento_Num+'</span><br>';
 					Fecha+= obj.Fecha_Seguimiento;
-					return Fecha;
+					return obj.Fecha_Seguimiento;
 				}
 			},
 			//{ "width": "5%","data": "Fecha_Esp_Cierre"},
@@ -4435,7 +4435,7 @@ gestores_ejecutantes();
 					
 					let Fecha = '<span style="display:none">'+obj.Fecha_Esp_Cierre_Num+'</span><br>';
 					Fecha+= obj.Fecha_Esp_Cierre;
-					return Fecha;
+					return obj.Fecha_Esp_Cierre;
 				}
 			},
 			{ "width": "6%","data": function (obj) {
@@ -4603,7 +4603,7 @@ gestores_ejecutantes();
 					
 					let Fecha = '<span style="display:none">'+obj.Fecha_Num+'</span><br>';
 					Fecha+= obj.Fecha;
-					return Fecha;
+					return obj.Fecha_Num;
 				}
 			},
 			//{ "width": "5%","data": "Fecha_Seguimiento"},
@@ -4611,7 +4611,7 @@ gestores_ejecutantes();
 					
 					let Fecha = '<span style="display:none">'+obj.Fecha_Seguimiento_Num+'</span><br>';
 					Fecha+= obj.Fecha_Seguimiento;
-					return Fecha;
+					return obj.Fecha_Seguimiento;
 				}
 			},
 			//{ "width": "5%","data": "Fecha_Esp_Cierre"},
@@ -4619,7 +4619,7 @@ gestores_ejecutantes();
 					
 					let Fecha = '<span style="display:none">'+obj.Fecha_Esp_Cierre_Num+'</span><br>';
 					Fecha+= obj.Fecha_Esp_Cierre;
-					return Fecha;
+					return obj.Fecha_Esp_Cierre;
 				}
 			},
 			//{ "width": "5%", "data": "Fecha_Cierre"},
@@ -4627,7 +4627,7 @@ gestores_ejecutantes();
 					
 					let Fecha = '<span style="display:none">'+obj.Fecha_Cierre_Num+'</span><br>';
 					Fecha+= obj.Fecha_Cierre;
-					return Fecha;
+					return obj.Fecha_Cierre;
 				}
 			},
 			{ "width": "6%", "data": function (obj) {

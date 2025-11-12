@@ -1548,24 +1548,35 @@ public function generapoliza($fechinicio, $fechfin, $proveedor=null){
 	$proveedor = new Proveedor('sqlserver', 'activos');
 	$proveedor->connect();
 	$sql="
-        select 
+		select 
 			*,
 			case when 
 				Baja_Activo is null and YEAR(CONVERT(date, Fech_Inserddmmaaaa, 103))>=2025  
-				and Id_Activo not in (select Id_Activo from siga_poliza_biomedica spb where spb.Id_Activo=vw_polizabiomedica.Id_Activo and spb.Estatus_Activo='Alta')
+				and Id_Activo not in (select Id_Activo from siga_poliza_biomedica spb where spb.Id_Activo=fn.Id_Activo and spb.Estatus_Activo='Alta')
 			then 'Alta'
 			else '' end as Alta_Activo
 		from 
-			vw_polizabiomedica 
+			fn_vw_polizabiomedica('".$fechinicio."', '".$fechfin."')  fn
 		WHERE 
-			Fech_Inser >= CONVERT(DATETIME, '".$fechinicio."', 103)
-  		AND 
-			Fech_Inser <  CONVERT(DATETIME, '".$fechfin."', 103)
+		(
+			(
+				CONVERT(DATE, Fech_Inser, 103) >= CONVERT(DATE, '".$fechinicio."', 103)
+  				AND 
+				CONVERT(DATE, Fech_Inser, 103) <=  CONVERT(DATE, '".$fechfin."', 103)
+			)
+			or
+			(
+				CONVERT(DATE, Fech_Inserddmmaaaa, 103) >= CONVERT(DATE, '".$fechinicio."', 103)
+  				AND 
+				CONVERT(DATE, Fech_Inserddmmaaaa, 103) <=  CONVERT(DATE, '".$fechfin."', 103)
+			)
+		)
 		AND (
 			Baja_Activo IS NULL 
 			OR Baja_Activo != 'Baja'
 			OR (Baja_Activo = 'Baja' AND YEAR(CONVERT(date, Fech_Inserddmmaaaa, 103)) >= 2025)
-		) and Id_Activo not in (select Id_Activo from siga_poliza_biomedica spb where spb.Id_Activo=vw_polizabiomedica.Id_Activo and spb.Estatus_Activo='Baja')	
+		) 
+		and Id_Activo not in (select Id_Activo from siga_poliza_biomedica spb where spb.Id_Activo=fn.Id_Activo and spb.Estatus_Activo in('Baja', 'Proceso de Baja') )	
     ";
 	//echo "<pre>";
 	//echo $sql;
@@ -1590,7 +1601,7 @@ public function generapoliza($fechinicio, $fechfin, $proveedor=null){
 	if (!$proveedor->error()) {
 		if ($proveedor->rows($proveedor->stmt) > 0) {
 			while ($row = $proveedor->fetch_array($proveedor->stmt, 0)) {
-				if ($row["Baja_Activo"] != "Baja") {
+				if ($row["Baja_Activo"] != "Baja" && $row["Proceso_Baja"] != "Proceso de Baja") {
 					if (!empty($row["ImporteSeguroSF"])) {
 						if ($row["Unidad"] == "HS") {
 							if ($row["Propiedad"] == "RENTA") {
@@ -1696,6 +1707,7 @@ public function generapoliza($fechinicio, $fechfin, $proveedor=null){
                     "ImporteSeguros" => rtrim(ltrim($row["ImporteSeguros"])),
 					"ImporteSeguroSF" => rtrim(ltrim($row["ImporteSeguroSF"])),
 					"Baja_Activo" => rtrim(ltrim($row["Baja_Activo"])),
+					"Proceso_Baja" => rtrim(ltrim($row["Proceso_Baja"])),
 					"Alta_Activo" => rtrim(ltrim($row["Alta_Activo"]))
 				);
 				array_push($Data_Envia, $Data);
@@ -1782,6 +1794,10 @@ public function polizasegurosbiomedica($fechinicio, $fechfin, $arrayres, $provee
 			$estatus = $arrayinsert["data"][$i]["Alta_Activo"];
 		}
 
+		if($arrayinsert["data"][$i]["Proceso_Baja"]!=""){
+			$estatus = $arrayinsert["data"][$i]["Proceso_Baja"];
+		}
+
 
 		if($estatus!=""){
 			//$EstatusAltaBaja= $arrayinsert["data"][$i]["Baja_Activo"]??$arrayinsert["data"][$i]["Alta_Activo"];
@@ -1794,6 +1810,7 @@ public function polizasegurosbiomedica($fechinicio, $fechfin, $arrayres, $provee
 					Unidad, 
 					Importe_Seguro, 
 					Estatus_Activo, 
+					Proceso_Baja,
 					Periodo_Busqueda, 
 					FechaAlta) VALUES (";
 			$sql .=$arrayinsert["data"][$i]["Id_Activo"].", ";
@@ -1804,6 +1821,7 @@ public function polizasegurosbiomedica($fechinicio, $fechfin, $arrayres, $provee
 			$sql .="'".$arrayinsert["data"][$i]["Unidad"]."', ";
 			$sql .="'".$arrayinsert["data"][$i]["ImporteSeguros"]."', ";
 			$sql .="'".$estatus."', ";
+			$sql .="'".$arrayinsert["data"][$i]["Proceso_Baja"]."', ";
 			$sql .="'".$fechinicio."-".$fechfin."', ";
 			$sql .="getdate())";
 
@@ -2117,7 +2135,7 @@ public function select_activos($siga_activosDto,$soloactivos,$proveedor=null){
 		$sql.=" left outer join siga_baja_activo SB on A.Id_Activo=SB.Id_Activo and SB.Estatus_Cancelacion<>0 ";
 	}
 	
-	$sql.=" WHERE A.Estatus_Reg <> '3' and A.Id_Situacion_Activo<>'12' "; 
+	$sql.=" WHERE A.Estatus_Reg <> '3' "; //and A.Id_Situacion_Activo<>'12'
 	//if($soloactivos==1){
 	//	$sql="	and SB.Estatus_Cancelacion<>0 and";
 	//}
@@ -2264,20 +2282,16 @@ public function autocomplete_activos($siga_activosDto,$proveedor=null,$soloactiv
 
 	$proveedor = new Proveedor('sqlserver', 'activos');
 	$proveedor->connect();
-	$sql="SELECT Id_Activo, AF_BC, Marca, Modelo, NumSerie, Num_Empleado, Nombre_Completo, Nombre_Activo, Id_Situacion_Activo, Id_Clase 
-				FROM siga_activos 
-				WHERE  Estatus_Reg <>'3' AND Id_Situacion_Activo <> '12' 				
-				";
+	$sql="
+		select Id_Activo, AF_BC, Marca, Modelo, NumSerie, Num_Empleado, Nombre_Completo, Nombre_Activo, Id_Situacion_Activo, Id_Clase from siga_activos 
+		where Estatus_Reg <>'3' ";//and Id_Situacion_Activo<>'12'
 	
-    // if ($soloactivos ==1){
-		// 	$sql .="  AND Id_Activo not in (select Id_Activo from siga_baja_activo where Estatus_Cancelacion<>1) ";
-		// }
-
+    if ($soloactivos ==1)	
+	$sql .="  and Id_Activo not in (select Id_Activo from siga_baja_activo where Estatus_Cancelacion<>1) ";
+	
 	if($siga_activosDto->getId_Area()!=""){
 		$sql.=" and Id_Area='".$siga_activosDto->getId_Area()."'";
 	}
-	$sql .="  AND Id_Activo not in (select Id_Activo from siga_baja_activo where Estatus_Cancelacion<>1) ";
-
 
 	//echo $sql;
 	$proveedor->execute($sql);
@@ -3140,14 +3154,6 @@ public function llenarDataTable($draw, $columns, $order, $start, $length, $searc
 	return $Siga_activosDao->llenarDataTable($draw, $columns, $order, $start, $length, $search,$orden,$siga_activosDto,$estatus,$perfil, $Fech_Inicial, $Fech_Final, $Tab, $Filtro_AF_BC_Activos, $Filtro_Nombre_Activos, $Filtro_Clasific_Activos, $Filtro_Marca_Activos, $Filtro_Modelo_Activos, $Filtro_NumSerie_Activos, $Filtro_Propiedad_Activos, $Filtro_Usr_Responsable_Activos, $Filtro_UPrimaria_Activos, $Filtro_USecundaria_Activos, $Filtro_Estatus_Activos, $Filtro_Importe_Seguro_Activos, $Filtro_Monto_Factura_Activos, $Filtro_Fecha_Alta_Activos, $Filtro_Fecha_Reubicacion_Activos, $Filtro_Descripcion_Activos, $Filtro_Filtro_UPrimariaOrigen_Activos, $Filtro_Filtro_USecundariaOrigen_Activos, $Filtro_Tipo_Activo_Activos, $Filtro_Fecha_Baja_Usr_Solicitante_Activos, $Filtro_Fecha_Baja_Usr_DirFinanciera_Activos, $Filtro_Fecha_Baja_Usr_Contabilidad_Activos, $Filtro_Estatus_Workflow_Activos, $Filtro_UbicacionEspecifica_Activos, $Filtro_Motivo_Baja_Activos);
 }
 
-public function insertSiga_activos($Siga_activosDto,$proveedor=null){
-//$Siga_activosDto=$this->validarSiga_activos($Siga_activosDto);
-$Siga_activosDao = new Siga_activosDAO();
-$Siga_activosDto = $Siga_activosDao->insertSiga_activos($Siga_activosDto,$proveedor);
-$this->workflowaltaactivos($Siga_activosDto,$proveedor);
-return $Siga_activosDto;
-}
-
 public function workflowaltaactivos($Siga_activosDto, $proveedor=null){
 	foreach ($Siga_activosDto as $activo) {
 		$idActivo = $activo->getId_Activo();
@@ -3179,6 +3185,2403 @@ public function workflowaltaactivos($Siga_activosDto, $proveedor=null){
 		}
 		$proveedor->close();
 	}
+}
+public function insertEspecificacionesTecnicas($Id_Activo, $Usr_Inser, $esptecnicas, $proveedor=null){
+	$error=false;
+	$esptecnicasRaw = $esptecnicas ?? '';
+	$esptecnicas = [];
+	if ($esptecnicasRaw !== '') {
+		$tmp = json_decode($esptecnicasRaw, true);
+		if (json_last_error() === JSON_ERROR_NONE && is_array($tmp)) {
+			$esptecnicas = $tmp;
+		}
+	}
+	// Datos
+	$Identif_Simbologia = $esptecnicas['Identif_Simbologia'] ?? null;
+
+	//$condicion  = $esptecnicas['condicion']  ?? null;
+	$proyeccion = $esptecnicas['proyeccion'] ?? null;
+	$movilidad  = $esptecnicas['movilidad']  ?? null;
+
+	$f_largo    = $esptecnicas['f_largo']    ?? null;
+	$f_profundo = $esptecnicas['f_profundo'] ?? null;
+	$f_alto    = $esptecnicas['f_alto']    ?? null;
+	$f_peso    = $esptecnicas['f_peso']    ?? null;
+	$f_observaciones = $esptecnicas['f_observaciones'] ?? null;
+
+	$Mob_Req_Esp = $esptecnicas['Mob_Req_Esp'] ?? null;
+	$Mob_Lugar_Resg_Eq = $esptecnicas['Mob_Lugar_Resg_Eq'] ?? null;
+	$Mob_Observaciones = $esptecnicas['Mob_Observaciones'] ?? null;
+	
+	$Elec_Tip_Bateria = $esptecnicas['Elec_Tip_Bateria'] ?? null;
+	$Elec_Tip_Direct_Volt = $esptecnicas['Elec_Tip_Direct_Volt'] ?? null;
+	$Elec_Tip_Direct_Amp = $esptecnicas['Elec_Tip_Direct_Amp'] ?? null;
+	$Elec_Tip_Alt_Sis_El = $esptecnicas['Elec_Tip_Alt_Sis_El'] ?? null;
+	$Elec_Tip_Alt_Volt = $esptecnicas['Elec_Tip_Alt_Volt'] ?? null;
+	$Elec_Tip_Alt_Amp = $esptecnicas['Elec_Tip_Alt_Amp'] ?? null;
+	$Elec_Tip_Alt_Consum = $esptecnicas['Elec_Tip_Alt_Consum'] ?? null;
+	$Elec_Bat_Integrada = $esptecnicas['Elec_Bat_Integrada'] ?? null;
+	$Elec_Req_UPS = $esptecnicas['Elec_Req_UPS'] ?? null;
+	$Elec_Req_Ener_Regul = $esptecnicas['Elec_Req_Ener_Regul'] ?? null;
+	$Elec_Planta_Emerg = $esptecnicas['Elec_Planta_Emerg'] ?? null;
+	$Elec_Cont_Tipo = $esptecnicas['Elec_Cont_Tipo'] ?? null;
+	$Elec_Cont_Color = $esptecnicas['Elec_Cont_Color'] ?? null;
+	$Elec_Cont_Cant = $esptecnicas['Elec_Cont_Cant'] ?? null;
+	$Elec_Cont_Alt_SNPT = $esptecnicas['Elec_Cont_Alt_SNPT'] ?? null;
+	$Elec_Cont_Ubicacion = $esptecnicas['Elec_Cont_Ubicacion'] ?? null;
+	$Elec_Observaciones = $esptecnicas['Elec_Observaciones'] ?? null;
+	$Elec_Carg_Elec_QTY = $esptecnicas['Elec_Carg_Elec_QTY'] ?? null;
+	$Elec_Carg_Elec_Total = $esptecnicas['Elec_Carg_Elec_Total'] ?? null;
+
+	$Hvac_Temp_Set_Point = $esptecnicas['Hvac_Temp_Set_Point'] ?? null;
+	$Hvac_Temp_Rang_Oper_Min = $esptecnicas['Hvac_Temp_Rang_Oper_Min'] ?? null;
+	$Hvac_Temp_Rang_Oper_Max = $esptecnicas['Hvac_Temp_Rang_Oper_Max'] ?? null;
+	$Hvac_Temp_Gradiente = $esptecnicas['Hvac_Temp_Gradiente'] ?? null;
+	$Hvac_Humedad_Rango_Min = $esptecnicas['Hvac_Humedad_Rango_Min'] ?? null;
+	$Hvac_Humedad_Rango_Max = $esptecnicas['Hvac_Humedad_Rango_Max'] ?? null;
+	$Hvac_Discip_Term = $esptecnicas['Hvac_Discip_Term'] ?? null;
+	$Hvac_Recam_X_Hora = $esptecnicas['Hvac_Recam_X_Hora'] ?? null;
+	$Hvac_Renovaciones_Aire = $esptecnicas['Hvac_Renovaciones_Aire'] ?? null;
+	$Hvac_Efici_Filtrado = $esptecnicas['Hvac_Efici_Filtrado'] ?? null;
+
+	$Tel_Nodred_Cantidad = $esptecnicas['Tel_Nodred_Cantidad'] ?? null;
+	$Tel_Nodred_Tipo = $esptecnicas['Tel_Nodred_Tipo'] ?? null;
+	$Tel_Nodred_Alt_Sntp = $esptecnicas['Tel_Nodred_Alt_Sntp'] ?? null;
+	$Tel_Nodred_Ubicacion = $esptecnicas['Tel_Nodred_Ubicacion'] ?? null;
+	$Tel_Nodcom_Cantidad = $esptecnicas['Tel_Nodcom_Cantidad'] ?? null;
+	$Tel_Nodcom_Tipo = $esptecnicas['Tel_Nodcom_Tipo'] ?? null;
+	$Tel_Nodcom_Alt_Sntp = $esptecnicas['Tel_Nodcom_Alt_Sntp'] ?? null;
+	$Tel_Nodcom_Ubicacion = $esptecnicas['Tel_Nodcom_Ubicacion'] ?? null;
+	$Tel_Nodvideo_Cantidad = $esptecnicas['Tel_Nodvideo_Cantidad'] ?? null;
+	$Tel_Nodvideo_Tipo = $esptecnicas['Tel_Nodvideo_Tipo'] ?? null;
+	$Tel_Nodvideo_Alt_Sntp = $esptecnicas['Tel_Nodvideo_Alt_Sntp'] ?? null;
+	$Tel_Nodvideo_Ubicacion = $esptecnicas['Tel_Nodvideo_Ubicacion'] ?? null;
+	$Tel_Ec_Tipo = $esptecnicas['Tel_Ec_Tipo'] ?? null;
+	$Tel_Ec_Req_Min = $esptecnicas['Tel_Ec_Req_Min'] ?? null;
+	$Tel_Observaciones = $esptecnicas['Tel_Observaciones'] ?? null;
+
+	$Hid_Agcal_Material = $esptecnicas['Hid_Agcal_Material'] ?? null;
+	$Hid_Agcal_Diametro = $esptecnicas['Hid_Agcal_Diametro'] ?? null;
+	$Hid_Agcal_Presion = $esptecnicas['Hid_Agcal_Presion'] ?? null;
+	$Hid_Agcal_Gasto = $esptecnicas['Hid_Agcal_Gasto'] ?? null;
+	$Hid_Agcal_Temp = $esptecnicas['Hid_Agcal_Temp'] ?? null;
+	$Hid_Agcal_Calidad = $esptecnicas['Hid_Agcal_Calidad'] ?? null;
+	$Hid_Agcal_Cantidad = $esptecnicas['Hid_Agcal_Cantidad'] ?? null;
+	$Hid_Agcal_Alt_SNPT = $esptecnicas['Hid_Agcal_Alt_SNPT'] ?? null;
+	$Hid_Agcal_Ubicacion = $esptecnicas['Hid_Agcal_Ubicacion'] ?? null;
+	$Hid_Agfria_Material = $esptecnicas['Hid_Agfria_Material'] ?? null;
+	$Hid_Agfria_Diametro = $esptecnicas['Hid_Agfria_Diametro'] ?? null;
+	$Hid_Agfria_Presion = $esptecnicas['Hid_Agfria_Presion'] ?? null;
+	$Hid_Agfria_Gasto = $esptecnicas['Hid_Agfria_Gasto'] ?? null;
+	$Hid_Agfria_Temp = $esptecnicas['Hid_Agfria_Temp'] ?? null;
+	$Hid_Agfria_Calidad = $esptecnicas['Hid_Agfria_Calidad'] ?? null;
+	$Hid_Agfria_Cantidad = $esptecnicas['Hid_Agfria_Cantidad'] ?? null;
+	$Hid_Agfria_Alt_SNPT = $esptecnicas['Hid_Agfria_Alt_SNPT'] ?? null;
+	$Hid_Agfria_Ubicacion = $esptecnicas['Hid_Agfria_Ubicacion'] ?? null;
+	$Hid_Observaciones = $esptecnicas['Hid_Observaciones'] ?? null;
+	$Hid_Sanit_Material = $esptecnicas['Hid_Sanit_Material'] ?? null;
+	$Hid_Sanit_Diametro = $esptecnicas['Hid_Sanit_Diametro'] ?? null;
+	$Hid_Sanit_Caudal = $esptecnicas['Hid_Sanit_Caudal'] ?? null;
+	$Hid_Sanit_Cantidad = $esptecnicas['Hid_Sanit_Cantidad'] ?? null;
+	$Hid_Sanit_Alt_SNPT = $esptecnicas['Hid_Sanit_Alt_SNPT'] ?? null;
+	$Hid_Sanit_Ubicacion = $esptecnicas['Hid_Sanit_Ubicacion'] ?? null;
+	$Hid_Sanit_Observaciones = $esptecnicas['Hid_Sanit_Observaciones'] ?? null;
+
+	$GM_Ox_Presion_Rang_Max = $esptecnicas['GM_Ox_Presion_Rang_Max'] ?? null;
+	$GM_Ox_Presion_Rang_Min = $esptecnicas['GM_Ox_Presion_Rang_Min'] ?? null;
+	$GM_Ox_Fluj_Oper_Max = $esptecnicas['GM_Ox_Fluj_Oper_Max'] ?? null;
+	$GM_Ox_Fluj_Oper_Min = $esptecnicas['GM_Ox_Fluj_Oper_Min'] ?? null;
+	$GM_Ox_Pres_Tom_Mural = $esptecnicas['GM_Ox_Pres_Tom_Mural'] ?? null;
+	$GM_Ox_Fluj_Min = $esptecnicas['GM_Ox_Fluj_Min'] ?? null;
+	$GM_Ox_Tipo_Conect = $esptecnicas['GM_Ox_Tipo_Conect'] ?? null;
+	$GM_Ox_Cantidad = $esptecnicas['GM_Ox_Cantidad'] ?? null;
+	$GM_Ox_Alt_SNTP = $esptecnicas['GM_Ox_Alt_SNTP'] ?? null;
+	$GM_Ox_Ubicacion = $esptecnicas['GM_Ox_Ubicacion'] ?? null;
+	$GM_Ox_Observaciones = $esptecnicas['GM_Ox_Observaciones'] ?? null;
+	$GM_Air_Presion_Rang_Max = $esptecnicas['GM_Air_Presion_Rang_Max'] ?? null;
+	$GM_Air_Presion_Rang_Min = $esptecnicas['GM_Air_Presion_Rang_Min'] ?? null;
+	$GM_Air_Fluj_Oper_Max = $esptecnicas['GM_Air_Fluj_Oper_Max'] ?? null;
+	$GM_Air_Fluj_Oper_Min = $esptecnicas['GM_Air_Fluj_Oper_Min'] ?? null;
+	$GM_Air_Pres_Tom_Mural = $esptecnicas['GM_Air_Pres_Tom_Mural'] ?? null;
+	$GM_Air_Fluj_Min = $esptecnicas['GM_Air_Fluj_Min'] ?? null;
+	$GM_Air_Tipo_Conect = $esptecnicas['GM_Air_Tipo_Conect'] ?? null;
+	$GM_Air_Cantidad = $esptecnicas['GM_Air_Cantidad'] ?? null;
+	$GM_Air_Alt_SNTP = $esptecnicas['GM_Air_Alt_SNTP'] ?? null;
+	$GM_Air_Ubicacion = $esptecnicas['GM_Air_Ubicacion'] ?? null;
+	$GM_Air_Observaciones = $esptecnicas['GM_Air_Observaciones'] ?? null;
+	$GM_N2_Presion_Rang_Max = $esptecnicas['GM_N2_Presion_Rang_Max'] ?? null;
+	$GM_N2_Presion_Rang_Min = $esptecnicas['GM_N2_Presion_Rang_Min'] ?? null;
+	$GM_N2_Fluj_Oper_Max = $esptecnicas['GM_N2_Fluj_Oper_Max'] ?? null;
+	$GM_N2_Fluj_Oper_Min = $esptecnicas['GM_N2_Fluj_Oper_Min'] ?? null;
+	$GM_N2_Pres_Tom_Mural = $esptecnicas['GM_N2_Pres_Tom_Mural'] ?? null;
+	$GM_N2_Fluj_Min = $esptecnicas['GM_N2_Fluj_Min'] ?? null;
+	$GM_N2_Tipo_Conect = $esptecnicas['GM_N2_Tipo_Conect'] ?? null;
+	$GM_N2_Cantidad = $esptecnicas['GM_N2_Cantidad'] ?? null;
+	$GM_N2_Alt_SNTP = $esptecnicas['GM_N2_Alt_SNTP'] ?? null;
+	$GM_N2_Ubicacion = $esptecnicas['GM_N2_Ubicacion'] ?? null;
+	$GM_N2_Observaciones = $esptecnicas['GM_N2_Observaciones'] ?? null;
+	$GM_Co2_Presion_Rang_Max = $esptecnicas['GM_Co2_Presion_Rang_Max'] ?? null;
+	$GM_Co2_Presion_Rang_Min = $esptecnicas['GM_Co2_Presion_Rang_Min'] ?? null;
+	$GM_Co2_Fluj_Oper_Max = $esptecnicas['GM_Co2_Fluj_Oper_Max'] ?? null;
+	$GM_Co2_Fluj_Oper_Min = $esptecnicas['GM_Co2_Fluj_Oper_Min'] ?? null;
+	$GM_Co2_Pres_Tom_Mural = $esptecnicas['GM_Co2_Pres_Tom_Mural'] ?? null;
+	$GM_Co2_Fluj_Min = $esptecnicas['GM_Co2_Fluj_Min'] ?? null;
+	$GM_Co2_Tipo_Conect = $esptecnicas['GM_Co2_Tipo_Conect'] ?? null;
+	$GM_Co2_Cantidad = $esptecnicas['GM_Co2_Cantidad'] ?? null;
+	$GM_Co2_Alt_SNTP = $esptecnicas['GM_Co2_Alt_SNTP'] ?? null;
+	$GM_Co2_Ubicacion = $esptecnicas['GM_Co2_Ubicacion'] ?? null;
+	$GM_Co2_Observaciones = $esptecnicas['GM_Co2_Observaciones'] ?? null;
+	$GM_Vac_Presion_Rang_Max = $esptecnicas['GM_Vac_Presion_Rang_Max'] ?? null;
+	$GM_Vac_Presion_Rang_Min = $esptecnicas['GM_Vac_Presion_Rang_Min'] ?? null;
+	$GM_Vac_Fluj_Oper_Max = $esptecnicas['GM_Vac_Fluj_Oper_Max'] ?? null;
+	$GM_Vac_Fluj_Oper_Min = $esptecnicas['GM_Vac_Fluj_Oper_Min'] ?? null;
+	$GM_Vac_Pres_Tom_Mural = $esptecnicas['GM_Vac_Pres_Tom_Mural'] ?? null;
+	$GM_Vac_Fluj_Min = $esptecnicas['GM_Vac_Fluj_Min'] ?? null;
+	$GM_Vac_Tipo_Conect = $esptecnicas['GM_Vac_Tipo_Conect'] ?? null;
+	$GM_Vac_Cantidad = $esptecnicas['GM_Vac_Cantidad'] ?? null;
+	$GM_Vac_Alt_SNTP = $esptecnicas['GM_Vac_Alt_SNTP'] ?? null;
+	$GM_Vac_Ubicacion = $esptecnicas['GM_Vac_Ubicacion'] ?? null;
+	$GM_Vac_Observaciones = $esptecnicas['GM_Vac_Observaciones'] ?? null;
+
+	$Finan_Proveedor = $esptecnicas['Finan_Proveedor'] ?? null;
+	$Finan_Inv_Esti_Unit = $esptecnicas['Finan_Inv_Esti_Unit'] ?? null;
+	$Finan_Cant_A_Adquirir = $esptecnicas['Finan_Cant_A_Adquirir'] ?? null;
+	$Finan_Tot_Inv_Estim = $esptecnicas['Finan_Tot_Inv_Estim'] ?? null;
+
+	// Limpia vacíos
+	$Identif_Simbologia = ($Identif_Simbologia === '') ? null : $Identif_Simbologia;
+
+	//$condicion  = ($condicion === '') ? null : $condicion;
+	$proyeccion = ($proyeccion === '') ? null : $proyeccion;
+	$movilidad  = ($movilidad === '') ? null : $movilidad;
+
+	$f_largo    = ($f_largo === '') ? null : $f_largo;
+	$f_profundo = ($f_profundo === '') ? null : $f_profundo;
+	$f_alto     = ($f_alto === '') ? null : $f_alto;
+	$f_peso     = ($f_peso === '') ? null : $f_peso;
+	$f_observaciones = ($f_observaciones === '') ? null : $f_observaciones;
+
+	$Mob_Req_Esp       = ($Mob_Req_Esp === '') ? null : $Mob_Req_Esp;
+	$Mob_Lugar_Resg_Eq = ($Mob_Lugar_Resg_Eq === '') ? null : $Mob_Lugar_Resg_Eq;
+	$Mob_Observaciones = ($Mob_Observaciones === '') ? null : $Mob_Observaciones;
+	
+	$Elec_Tip_Bateria       	= ($Elec_Tip_Bateria === '') ? null : $Elec_Tip_Bateria;
+	$Elec_Tip_Direct_Volt       = ($Elec_Tip_Direct_Volt === '') ? null : $Elec_Tip_Direct_Volt;
+	$Elec_Tip_Direct_Amp       	= ($Elec_Tip_Direct_Amp === '') ? null : $Elec_Tip_Direct_Amp;
+	$Elec_Tip_Alt_Sis_El       	= ($Elec_Tip_Alt_Sis_El === '') ? null : $Elec_Tip_Alt_Sis_El;
+	$Elec_Tip_Alt_Volt       	= ($Elec_Tip_Alt_Volt === '') ? null : $Elec_Tip_Alt_Volt;
+	$Elec_Tip_Alt_Amp       	= ($Elec_Tip_Alt_Amp === '') ? null : $Elec_Tip_Alt_Amp;
+	$Elec_Tip_Alt_Consum       	= ($Elec_Tip_Alt_Consum === '') ? null : $Elec_Tip_Alt_Consum;
+	$Elec_Bat_Integrada       	= ($Elec_Bat_Integrada === '') ? null : $Elec_Bat_Integrada;
+	$Elec_Req_UPS       		= ($Elec_Req_UPS === '') ? null : $Elec_Req_UPS;
+	$Elec_Req_Ener_Regul       	= ($Elec_Req_Ener_Regul === '') ? null : $Elec_Req_Ener_Regul;
+	$Elec_Planta_Emerg       	= ($Elec_Planta_Emerg === '') ? null : $Elec_Planta_Emerg;
+	$Elec_Cont_Tipo       		= ($Elec_Cont_Tipo === '') ? null : $Elec_Cont_Tipo;
+	$Elec_Cont_Color       		= ($Elec_Cont_Color === '') ? null : $Elec_Cont_Color;
+	$Elec_Cont_Cant       		= ($Elec_Cont_Cant === '') ? null : $Elec_Cont_Cant;
+	$Elec_Cont_Alt_SNPT       	= ($Elec_Cont_Alt_SNPT === '') ? null : $Elec_Cont_Alt_SNPT;
+	$Elec_Cont_Ubicacion       	= ($Elec_Cont_Ubicacion === '') ? null : $Elec_Cont_Ubicacion;
+	$Elec_Observaciones       	= ($Elec_Observaciones === '') ? null : $Elec_Observaciones;
+	$Elec_Carg_Elec_QTY       	= ($Elec_Carg_Elec_QTY === '') ? null : $Elec_Carg_Elec_QTY;
+	$Elec_Carg_Elec_Total       = ($Elec_Carg_Elec_Total === '') ? null : $Elec_Carg_Elec_Total;
+
+	$Hvac_Temp_Set_Point       	= ($Hvac_Temp_Set_Point === '') ? null : $Hvac_Temp_Set_Point;
+	$Hvac_Temp_Rang_Oper_Min    = ($Hvac_Temp_Rang_Oper_Min === '') ? null : $Hvac_Temp_Rang_Oper_Min;
+	$Hvac_Temp_Rang_Oper_Max    = ($Hvac_Temp_Rang_Oper_Max === '') ? null : $Hvac_Temp_Rang_Oper_Max;
+	$Hvac_Temp_Gradiente       	= ($Hvac_Temp_Gradiente === '') ? null : $Hvac_Temp_Gradiente;
+	$Hvac_Humedad_Rango_Min     = ($Hvac_Humedad_Rango_Min === '') ? null : $Hvac_Humedad_Rango_Min;
+	$Hvac_Humedad_Rango_Max     = ($Hvac_Humedad_Rango_Max === '') ? null : $Hvac_Humedad_Rango_Max;
+	$Hvac_Discip_Term       	= ($Hvac_Discip_Term === '') ? null : $Hvac_Discip_Term;
+	$Hvac_Recam_X_Hora       	= ($Hvac_Recam_X_Hora === '') ? null : $Hvac_Recam_X_Hora;
+	$Hvac_Renovaciones_Aire     = ($Hvac_Renovaciones_Aire === '') ? null : $Hvac_Renovaciones_Aire;
+	$Hvac_Efici_Filtrado       	= ($Hvac_Efici_Filtrado === '') ? null : $Hvac_Efici_Filtrado;
+
+	$Tel_Nodred_Cantidad 	= ($Tel_Nodred_Cantidad === '') ? null : $Tel_Nodred_Cantidad;
+	$Tel_Nodred_Tipo 		= ($Tel_Nodred_Tipo === '') ? null : $Tel_Nodred_Tipo;
+	$Tel_Nodred_Alt_Sntp 	= ($Tel_Nodred_Alt_Sntp === '') ? null : $Tel_Nodred_Alt_Sntp;
+	$Tel_Nodred_Ubicacion 	= ($Tel_Nodred_Ubicacion === '') ? null : $Tel_Nodred_Ubicacion;
+	$Tel_Nodcom_Cantidad 	= ($Tel_Nodcom_Cantidad === '') ? null : $Tel_Nodcom_Cantidad;
+	$Tel_Nodcom_Tipo 		= ($Tel_Nodcom_Tipo === '') ? null : $Tel_Nodcom_Tipo;
+	$Tel_Nodcom_Alt_Sntp 	= ($Tel_Nodcom_Alt_Sntp === '') ? null : $Tel_Nodcom_Alt_Sntp;
+	$Tel_Nodcom_Ubicacion 	= ($Tel_Nodcom_Ubicacion === '') ? null : $Tel_Nodcom_Ubicacion;
+	$Tel_Nodvideo_Cantidad 	= ($Tel_Nodvideo_Cantidad === '') ? null : $Tel_Nodvideo_Cantidad;
+	$Tel_Nodvideo_Tipo 		= ($Tel_Nodvideo_Tipo === '') ? null : $Tel_Nodvideo_Tipo;
+	$Tel_Nodvideo_Alt_Sntp 	= ($Tel_Nodvideo_Alt_Sntp === '') ? null : $Tel_Nodvideo_Alt_Sntp;
+	$Tel_Nodvideo_Ubicacion = ($Tel_Nodvideo_Ubicacion === '') ? null : $Tel_Nodvideo_Ubicacion;
+	$Tel_Ec_Tipo 			= ($Tel_Ec_Tipo === '') ? null : $Tel_Ec_Tipo;
+	$Tel_Ec_Req_Min 		= ($Tel_Ec_Req_Min === '') ? null : $Tel_Ec_Req_Min;
+	$Tel_Observaciones 		= ($Tel_Observaciones === '') ? null : $Tel_Observaciones;
+
+	$Hid_Agcal_Material 	= ($Hid_Agcal_Material === '') ? null : $Hid_Agcal_Material;
+	$Hid_Agcal_Diametro 	= ($Hid_Agcal_Diametro === '') ? null : $Hid_Agcal_Diametro;
+	$Hid_Agcal_Presion 		= ($Hid_Agcal_Presion === '') ? null : $Hid_Agcal_Presion;
+	$Hid_Agcal_Gasto 		= ($Hid_Agcal_Gasto === '') ? null : $Hid_Agcal_Gasto;
+	$Hid_Agcal_Temp 		= ($Hid_Agcal_Temp === '') ? null : $Hid_Agcal_Temp;
+	$Hid_Agcal_Calidad 	= ($Hid_Agcal_Calidad === '') ? null : $Hid_Agcal_Calidad;
+	$Hid_Agcal_Cantidad 	= ($Hid_Agcal_Cantidad === '') ? null : $Hid_Agcal_Cantidad;
+	$Hid_Agcal_Alt_SNPT 	= ($Hid_Agcal_Alt_SNPT === '') ? null : $Hid_Agcal_Alt_SNPT;
+	$Hid_Agcal_Ubicacion 	= ($Hid_Agcal_Ubicacion === '') ? null : $Hid_Agcal_Ubicacion;
+	$Hid_Agfria_Material 	= ($Hid_Agfria_Material === '') ? null : $Hid_Agfria_Material;
+	$Hid_Agfria_Diametro 	= ($Hid_Agfria_Diametro === '') ? null : $Hid_Agfria_Diametro;
+	$Hid_Agfria_Presion 	= ($Hid_Agfria_Presion === '') ? null : $Hid_Agfria_Presion;
+	$Hid_Agfria_Gasto 		= ($Hid_Agfria_Gasto === '') ? null : $Hid_Agfria_Gasto;
+	$Hid_Agfria_Temp 		= ($Hid_Agfria_Temp === '') ? null : $Hid_Agfria_Temp;
+	$Hid_Agfria_Calidad 	= ($Hid_Agfria_Calidad === '') ? null : $Hid_Agfria_Calidad;
+	$Hid_Agfria_Cantidad 	= ($Hid_Agfria_Cantidad === '') ? null : $Hid_Agfria_Cantidad;
+	$Hid_Agfria_Alt_SNPT 	= ($Hid_Agfria_Alt_SNPT === '') ? null : $Hid_Agfria_Alt_SNPT;
+	$Hid_Agfria_Ubicacion 	= ($Hid_Agfria_Ubicacion === '') ? null : $Hid_Agfria_Ubicacion;
+	$Hid_Observaciones 		= ($Hid_Observaciones === '') ? null : $Hid_Observaciones;
+	$Hid_Sanit_Material 	= ($Hid_Sanit_Material === '') ? null : $Hid_Sanit_Material;
+	$Hid_Sanit_Diametro 	= ($Hid_Sanit_Diametro === '') ? null : $Hid_Sanit_Diametro;
+	$Hid_Sanit_Caudal 		= ($Hid_Sanit_Caudal === '') ? null : $Hid_Sanit_Caudal;
+	$Hid_Sanit_Cantidad 	= ($Hid_Sanit_Cantidad === '') ? null : $Hid_Sanit_Cantidad;
+	$Hid_Sanit_Alt_SNPT 	= ($Hid_Sanit_Alt_SNPT === '') ? null : $Hid_Sanit_Alt_SNPT;
+	$Hid_Sanit_Ubicacion 	= ($Hid_Sanit_Ubicacion === '') ? null : $Hid_Sanit_Ubicacion;
+	$Hid_Sanit_Observaciones = ($Hid_Sanit_Observaciones === '') ? null : $Hid_Sanit_Observaciones;
+	
+	$GM_Ox_Presion_Rang_Max			= ($GM_Ox_Presion_Rang_Max === '') ? null : $GM_Ox_Presion_Rang_Max;
+	$GM_Ox_Presion_Rang_Min			= ($GM_Ox_Presion_Rang_Min === '') ? null : $GM_Ox_Presion_Rang_Min;
+	$GM_Ox_Fluj_Oper_Max            = ($GM_Ox_Fluj_Oper_Max === '') ? null : $GM_Ox_Fluj_Oper_Max;
+	$GM_Ox_Fluj_Oper_Min            = ($GM_Ox_Fluj_Oper_Min === '') ? null : $GM_Ox_Fluj_Oper_Min;
+	$GM_Ox_Pres_Tom_Mural       = ($GM_Ox_Pres_Tom_Mural === '') ? null : $GM_Ox_Pres_Tom_Mural;
+	$GM_Ox_Fluj_Min             = ($GM_Ox_Fluj_Min === '') ? null : $GM_Ox_Fluj_Min;
+	$GM_Ox_Tipo_Conect          = ($GM_Ox_Tipo_Conect === '') ? null : $GM_Ox_Tipo_Conect;
+	$GM_Ox_Cantidad             = ($GM_Ox_Cantidad === '') ? null : $GM_Ox_Cantidad;
+	$GM_Ox_Alt_SNTP             = ($GM_Ox_Alt_SNTP === '') ? null : $GM_Ox_Alt_SNTP;
+	$GM_Ox_Ubicacion            = ($GM_Ox_Ubicacion === '') ? null : $GM_Ox_Ubicacion;
+	$GM_Ox_Observaciones        = ($GM_Ox_Observaciones === '') ? null : $GM_Ox_Observaciones;
+	$GM_Air_Presion_Rang_Max        = ($GM_Air_Presion_Rang_Max === '') ? null : $GM_Air_Presion_Rang_Max;
+	$GM_Air_Presion_Rang_Min        = ($GM_Air_Presion_Rang_Min === '') ? null : $GM_Air_Presion_Rang_Min;
+	$GM_Air_Fluj_Oper_Max           = ($GM_Air_Fluj_Oper_Max === '') ? null : $GM_Air_Fluj_Oper_Max;
+	$GM_Air_Fluj_Oper_Min           = ($GM_Air_Fluj_Oper_Min === '') ? null : $GM_Air_Fluj_Oper_Min;
+	$GM_Air_Pres_Tom_Mural      = ($GM_Air_Pres_Tom_Mural === '') ? null : $GM_Air_Pres_Tom_Mural;
+	$GM_Air_Fluj_Min            = ($GM_Air_Fluj_Min === '') ? null : $GM_Air_Fluj_Min;
+	$GM_Air_Tipo_Conect         = ($GM_Air_Tipo_Conect === '') ? null : $GM_Air_Tipo_Conect;
+	$GM_Air_Cantidad            = ($GM_Air_Cantidad === '') ? null : $GM_Air_Cantidad;
+	$GM_Air_Alt_SNTP            = ($GM_Air_Alt_SNTP === '') ? null : $GM_Air_Alt_SNTP;
+	$GM_Air_Ubicacion           = ($GM_Air_Ubicacion === '') ? null : $GM_Air_Ubicacion;
+	$GM_Air_Observaciones       = ($GM_Air_Observaciones === '') ? null : $GM_Air_Observaciones;
+	$GM_N2_Presion_Rang_Max         = ($GM_N2_Presion_Rang_Max === '') ? null : $GM_N2_Presion_Rang_Max;
+	$GM_N2_Presion_Rang_Min         = ($GM_N2_Presion_Rang_Min === '') ? null : $GM_N2_Presion_Rang_Min;
+	$GM_N2_Fluj_Oper_Max            = ($GM_N2_Fluj_Oper_Max === '') ? null : $GM_N2_Fluj_Oper_Max;
+	$GM_N2_Fluj_Oper_Min            = ($GM_N2_Fluj_Oper_Min === '') ? null : $GM_N2_Fluj_Oper_Min;
+	$GM_N2_Pres_Tom_Mural       = ($GM_N2_Pres_Tom_Mural === '') ? null : $GM_N2_Pres_Tom_Mural;
+	$GM_N2_Fluj_Min             = ($GM_N2_Fluj_Min === '') ? null : $GM_N2_Fluj_Min;
+	$GM_N2_Tipo_Conect          = ($GM_N2_Tipo_Conect === '') ? null : $GM_N2_Tipo_Conect;
+	$GM_N2_Cantidad             = ($GM_N2_Cantidad === '') ? null : $GM_N2_Cantidad;
+	$GM_N2_Alt_SNTP             = ($GM_N2_Alt_SNTP === '') ? null : $GM_N2_Alt_SNTP;
+	$GM_N2_Ubicacion            = ($GM_N2_Ubicacion === '') ? null : $GM_N2_Ubicacion;
+	$GM_N2_Observaciones        = ($GM_N2_Observaciones === '') ? null : $GM_N2_Observaciones;
+	$GM_Co2_Presion_Rang_Max        = ($GM_Co2_Presion_Rang_Max === '') ? null : $GM_Co2_Presion_Rang_Max;
+	$GM_Co2_Presion_Rang_Min        = ($GM_Co2_Presion_Rang_Min === '') ? null : $GM_Co2_Presion_Rang_Min;
+	$GM_Co2_Fluj_Oper_Max           = ($GM_Co2_Fluj_Oper_Max === '') ? null : $GM_Co2_Fluj_Oper_Max;
+	$GM_Co2_Fluj_Oper_Min           = ($GM_Co2_Fluj_Oper_Min === '') ? null : $GM_Co2_Fluj_Oper_Min;
+	$GM_Co2_Pres_Tom_Mural      = ($GM_Co2_Pres_Tom_Mural === '') ? null : $GM_Co2_Pres_Tom_Mural;
+	$GM_Co2_Fluj_Min            = ($GM_Co2_Fluj_Min === '') ? null : $GM_Co2_Fluj_Min;
+	$GM_Co2_Tipo_Conect         = ($GM_Co2_Tipo_Conect === '') ? null : $GM_Co2_Tipo_Conect;
+	$GM_Co2_Cantidad            = ($GM_Co2_Cantidad === '') ? null : $GM_Co2_Cantidad;
+	$GM_Co2_Alt_SNTP            = ($GM_Co2_Alt_SNTP === '') ? null : $GM_Co2_Alt_SNTP;
+	$GM_Co2_Ubicacion           = ($GM_Co2_Ubicacion === '') ? null : $GM_Co2_Ubicacion;
+	$GM_Co2_Observaciones       = ($GM_Co2_Observaciones === '') ? null : $GM_Co2_Observaciones;
+	$GM_Vac_Presion_Rang_Max        = ($GM_Vac_Presion_Rang_Max === '') ? null : $GM_Vac_Presion_Rang_Max;
+	$GM_Vac_Presion_Rang_Min        = ($GM_Vac_Presion_Rang_Min === '') ? null : $GM_Vac_Presion_Rang_Min;
+	$GM_Vac_Fluj_Oper_Max           = ($GM_Vac_Fluj_Oper_Max === '') ? null : $GM_Vac_Fluj_Oper_Max;
+	$GM_Vac_Fluj_Oper_Min           = ($GM_Vac_Fluj_Oper_Min === '') ? null : $GM_Vac_Fluj_Oper_Min;
+	$GM_Vac_Pres_Tom_Mural      = ($GM_Vac_Pres_Tom_Mural === '') ? null : $GM_Vac_Pres_Tom_Mural;
+	$GM_Vac_Fluj_Min            = ($GM_Vac_Fluj_Min === '') ? null : $GM_Vac_Fluj_Min;
+	$GM_Vac_Tipo_Conect         = ($GM_Vac_Tipo_Conect === '') ? null : $GM_Vac_Tipo_Conect;
+	$GM_Vac_Cantidad            = ($GM_Vac_Cantidad === '') ? null : $GM_Vac_Cantidad;
+	$GM_Vac_Alt_SNTP            = ($GM_Vac_Alt_SNTP === '') ? null : $GM_Vac_Alt_SNTP;
+	$GM_Vac_Ubicacion           = ($GM_Vac_Ubicacion === '') ? null : $GM_Vac_Ubicacion;
+	$GM_Vac_Observaciones       = ($GM_Vac_Observaciones === '') ? null : $GM_Vac_Observaciones;
+	
+	$Finan_Proveedor = ($Finan_Proveedor === '') ? null : $Finan_Proveedor;
+	$Finan_Inv_Esti_Unit = ($Finan_Inv_Esti_Unit === '') ? null : $Finan_Inv_Esti_Unit;
+	$Finan_Cant_A_Adquirir = ($Finan_Cant_A_Adquirir === '') ? null : $Finan_Cant_A_Adquirir;
+	$Finan_Tot_Inv_Estim = ($Finan_Tot_Inv_Estim === '') ? null : $Finan_Tot_Inv_Estim;
+
+	$proveedor = new Proveedor('sqlserver', 'activos');
+	$proveedor->connect();
+
+	// Si no hay ninguno, no insertes fila
+	if ($Identif_Simbologia === null &&
+		//$condicion === null && 
+		$proyeccion === null && 
+		$movilidad === null && 
+		$f_largo === null && 
+		$f_profundo === null && 
+		$f_alto === null && 
+		$f_peso === null && 
+		$f_observaciones === null &&
+
+		$Mob_Req_Esp === null &&
+		$Mob_Lugar_Resg_Eq === null &&
+		$Mob_Observaciones === null &&
+		
+		$Elec_Tip_Bateria === null &&
+		$Elec_Tip_Direct_Volt === null &&
+		$Elec_Tip_Direct_Amp === null &&
+		$Elec_Tip_Alt_Sis_El === null &&
+		$Elec_Tip_Alt_Volt === null &&
+		$Elec_Tip_Alt_Amp === null &&
+		$Elec_Tip_Alt_Consum === null &&
+		$Elec_Bat_Integrada === null &&
+		$Elec_Req_UPS === null &&
+		$Elec_Req_Ener_Regul === null &&
+		$Elec_Planta_Emerg === null &&
+		$Elec_Cont_Tipo === null &&
+		$Elec_Cont_Color === null &&
+		$Elec_Cont_Cant === null &&
+		$Elec_Cont_Alt_SNPT === null &&
+		$Elec_Cont_Ubicacion === null &&
+		$Elec_Observaciones === null &&
+		$Elec_Carg_Elec_QTY === null &&
+		$Elec_Carg_Elec_Total === null &&
+		$Hvac_Temp_Set_Point === null &&
+		$Hvac_Temp_Rang_Oper_Min === null &&
+		$Hvac_Temp_Rang_Oper_Max === null &&
+		$Hvac_Temp_Gradiente === null &&
+		$Hvac_Humedad_Rango_Min === null &&
+		$Hvac_Humedad_Rango_Max === null &&
+		$Hvac_Discip_Term === null &&
+		$Hvac_Recam_X_Hora === null &&
+		$Hvac_Renovaciones_Aire === null &&
+		$Hvac_Efici_Filtrado === null &&
+		$Tel_Nodred_Cantidad === null &&
+		$Tel_Nodred_Tipo === null &&
+		$Tel_Nodred_Alt_Sntp === null &&
+		$Tel_Nodred_Ubicacion === null &&
+		$Tel_Nodcom_Cantidad === null &&
+		$Tel_Nodcom_Tipo === null &&
+		$Tel_Nodcom_Alt_Sntp === null &&
+		$Tel_Nodcom_Ubicacion === null &&
+		$Tel_Nodvideo_Cantidad === null &&
+		$Tel_Nodvideo_Tipo === null &&
+		$Tel_Nodvideo_Alt_Sntp === null &&
+		$Tel_Nodvideo_Ubicacion === null &&
+		$Tel_Ec_Tipo === null &&
+		$Tel_Ec_Req_Min === null &&
+		$Tel_Observaciones === null &&
+		$Hid_Agcal_Material === null &&
+		$Hid_Agcal_Diametro === null &&
+		$Hid_Agcal_Presion === null &&
+		$Hid_Agcal_Gasto === null &&
+		$Hid_Agcal_Temp === null &&
+		$Hid_Agcal_Calidad === null &&
+		$Hid_Agcal_Cantidad === null &&
+		$Hid_Agcal_Alt_SNPT === null &&
+		$Hid_Agcal_Ubicacion === null &&
+		$Hid_Agfria_Material === null &&
+		$Hid_Agfria_Diametro === null &&
+		$Hid_Agfria_Presion === null &&
+		$Hid_Agfria_Gasto === null &&
+		$Hid_Agfria_Temp === null &&
+		$Hid_Agfria_Calidad === null &&
+		$Hid_Agfria_Cantidad === null &&
+		$Hid_Agfria_Alt_SNPT === null &&
+		$Hid_Agfria_Ubicacion === null &&
+		$Hid_Observaciones === null &&
+		$Hid_Sanit_Material === null &&
+		$Hid_Sanit_Diametro === null &&
+		$Hid_Sanit_Caudal === null &&
+		$Hid_Sanit_Cantidad === null &&
+		$Hid_Sanit_Alt_SNPT === null &&
+		$Hid_Sanit_Ubicacion === null &&
+		$Hid_Sanit_Observaciones === null &&
+		$GM_Ox_Presion_Rang_Max === null &&
+		$GM_Ox_Presion_Rang_Min === null &&
+		$GM_Ox_Fluj_Oper_Max === null &&
+		$GM_Ox_Fluj_Oper_Min === null &&
+		$GM_Ox_Pres_Tom_Mural === null &&
+		$GM_Ox_Fluj_Min === null &&
+		$GM_Ox_Tipo_Conect === null &&
+		$GM_Ox_Cantidad === null &&
+		$GM_Ox_Alt_SNTP === null &&
+		$GM_Ox_Ubicacion === null &&
+		$GM_Ox_Observaciones === null &&
+		$GM_Air_Presion_Rang_Max === null &&
+		$GM_Air_Presion_Rang_Min === null &&
+		$GM_Air_Fluj_Oper_Max === null &&
+		$GM_Air_Fluj_Oper_Min === null &&
+		$GM_Air_Pres_Tom_Mural === null &&
+		$GM_Air_Fluj_Min === null &&
+		$GM_Air_Tipo_Conect === null &&
+		$GM_Air_Cantidad === null &&
+		$GM_Air_Alt_SNTP === null &&
+		$GM_Air_Ubicacion === null &&
+		$GM_Air_Observaciones === null &&
+		$GM_N2_Presion_Rang_Max === null &&
+		$GM_N2_Presion_Rang_Min === null &&
+		$GM_N2_Fluj_Oper_Max === null &&
+		$GM_N2_Fluj_Oper_Min === null &&
+		$GM_N2_Pres_Tom_Mural === null &&
+		$GM_N2_Fluj_Min === null &&
+		$GM_N2_Tipo_Conect === null &&
+		$GM_N2_Cantidad === null &&
+		$GM_N2_Alt_SNTP === null &&
+		$GM_N2_Ubicacion === null &&
+		$GM_N2_Observaciones === null &&
+		$GM_Co2_Presion_Rang_Max === null &&
+		$GM_Co2_Presion_Rang_Min === null &&
+		$GM_Co2_Fluj_Oper_Max === null &&
+		$GM_Co2_Fluj_Oper_Min === null &&
+		$GM_Co2_Pres_Tom_Mural === null &&
+		$GM_Co2_Fluj_Min === null &&
+		$GM_Co2_Tipo_Conect === null &&
+		$GM_Co2_Cantidad === null &&
+		$GM_Co2_Alt_SNTP === null &&
+		$GM_Co2_Ubicacion === null &&
+		$GM_Co2_Observaciones === null &&
+		$GM_Vac_Presion_Rang_Max === null &&
+		$GM_Vac_Presion_Rang_Min === null &&
+		$GM_Vac_Fluj_Oper_Max === null &&
+		$GM_Vac_Fluj_Oper_Min === null &&
+		$GM_Vac_Pres_Tom_Mural === null &&
+		$GM_Vac_Fluj_Min === null &&
+		$GM_Vac_Tipo_Conect === null &&
+		$GM_Vac_Cantidad === null &&
+		$GM_Vac_Alt_SNTP === null &&
+		$GM_Vac_Ubicacion === null &&
+		$GM_Vac_Observaciones === null &&
+		
+		$Finan_Proveedor === null &&
+		$Finan_Inv_Esti_Unit === null &&
+		$Finan_Cant_A_Adquirir === null &&
+		$Finan_Tot_Inv_Estim === null
+	) {
+		// Opcional: return; o log
+		return;
+	}
+
+	// Construcción dinámica (omite columnas sin valor)
+	$cols = ['Id_Activo', 'Fech_Inser', 'Usr_Inser', 'Estatus_Reg'];
+	$vals = [$Id_Activo, 'getdate()', "'".$Usr_Inser."'", '1'];
+
+	if ($Identif_Simbologia !== null) {
+		$cols[] = 'Identif_Simbologia';
+		$vals[] = "'".addslashes($Identif_Simbologia)."'";
+	}
+
+	/* if ($condicion !== null) {
+		$cols[] = 'Com_Condicion';
+		// Si es numérico: $vals[] = (int)$condicion;
+		$vals[] = "'".addslashes($condicion)."'";
+	} */
+
+	if ($proyeccion !== null) {
+		$cols[] = 'Com_Proyeccion';
+		$vals[] = "'".addslashes($proyeccion)."'";
+	}
+
+	if ($f_largo !== null) {
+		$cols[] = 'F_L';
+		$vals[] = "'".addslashes($f_largo)."'";
+	}
+
+	if ($f_profundo !== null) {
+		$cols[] = 'F_P';
+		$vals[] = "'".addslashes($f_profundo)."'";
+	}
+
+	if ($f_alto !== null) {
+		$cols[] = 'F_H';
+		$vals[] = "'".addslashes($f_alto)."'";
+	}
+
+	if ($f_peso !== null) {
+		$cols[] = 'F_Peso';
+		$vals[] = "'".addslashes($f_peso)."'";
+	}
+
+	if ($movilidad !== null) {
+		$cols[] = 'F_Movilidad';
+		$vals[] = "'".addslashes($movilidad)."'";
+	}
+
+	if ($f_observaciones !== null) {
+		$cols[] = 'F_Observaciones';
+		$vals[] = "'".addslashes($f_observaciones)."'";
+	}
+
+	if ($Mob_Req_Esp !== null) {
+		$cols[] = 'Mob_Req_Esp';
+		$vals[] = "'".addslashes($Mob_Req_Esp)."'";
+	}
+
+	if ($Mob_Lugar_Resg_Eq !== null) {
+		$cols[] = 'Mob_Lugar_Resg_Eq';
+		$vals[] = "'".addslashes($Mob_Lugar_Resg_Eq)."'";
+	}
+
+	if ($Mob_Observaciones !== null) {
+		$cols[] = 'Mob_Observaciones';
+		$vals[] = "'".addslashes($Mob_Observaciones)."'";
+	}
+	
+	if ($Elec_Tip_Bateria !== null) {
+		$cols[] = 'Elec_Tip_Bateria';
+		$vals[] = "'".addslashes($Elec_Tip_Bateria)."'";
+	}
+	
+	if ($Elec_Tip_Direct_Volt !== null) {
+		$cols[] = 'Elec_Tip_Direct_Volt';
+		$vals[] = "'".addslashes($Elec_Tip_Direct_Volt)."'";
+	}
+	
+	if ($Elec_Tip_Direct_Amp !== null) {
+		$cols[] = 'Elec_Tip_Direct_Amp';
+		$vals[] = "'".addslashes($Elec_Tip_Direct_Amp)."'";
+	}
+	
+	if ($Elec_Tip_Alt_Sis_El !== null) {
+		$cols[] = 'Elec_Tip_Alt_Sis_El';
+		$vals[] = "'".addslashes($Elec_Tip_Alt_Sis_El)."'";
+	}
+	
+	if ($Elec_Tip_Alt_Volt !== null) {
+		$cols[] = 'Elec_Tip_Alt_Volt';
+		$vals[] = "'".addslashes($Elec_Tip_Alt_Volt)."'";
+	}
+	
+	if ($Elec_Tip_Alt_Amp !== null) {
+		$cols[] = 'Elec_Tip_Alt_Amp';
+		$vals[] = "'".addslashes($Elec_Tip_Alt_Amp)."'";
+	}
+	
+	if ($Elec_Tip_Alt_Consum !== null) {
+		$cols[] = 'Elec_Tip_Alt_Consum';
+		$vals[] = "'".addslashes($Elec_Tip_Alt_Consum)."'";
+	}
+	
+	if ($Elec_Bat_Integrada !== null) {
+		$cols[] = 'Elec_Bat_Integrada';
+		$vals[] = "'".addslashes($Elec_Bat_Integrada)."'";
+	}
+	
+	if ($Elec_Req_UPS !== null) {
+		$cols[] = 'Elec_Req_UPS';
+		$vals[] = "'".addslashes($Elec_Req_UPS)."'";
+	}
+	
+	if ($Elec_Req_Ener_Regul !== null) {
+		$cols[] = 'Elec_Req_Ener_Regul';
+		$vals[] = "'".addslashes($Elec_Req_Ener_Regul)."'";
+	}
+	
+	if ($Elec_Planta_Emerg !== null) {
+		$cols[] = 'Elec_Planta_Emerg';
+		$vals[] = "'".addslashes($Elec_Planta_Emerg)."'";
+	}
+	
+	if ($Elec_Cont_Tipo !== null) {
+		$cols[] = 'Elec_Cont_Tipo';
+		$vals[] = "'".addslashes($Elec_Cont_Tipo)."'";
+	}
+	
+	if ($Elec_Cont_Color !== null) {
+		$cols[] = 'Elec_Cont_Color';
+		$vals[] = "'".addslashes($Elec_Cont_Color)."'";
+	}
+	
+	if ($Elec_Cont_Cant !== null) {
+		$cols[] = 'Elec_Cont_Cant';
+		$vals[] = "'".addslashes($Elec_Cont_Cant)."'";
+	}
+	
+	if ($Elec_Cont_Alt_SNPT !== null) {
+		$cols[] = 'Elec_Cont_Alt_SNPT';
+		$vals[] = "'".addslashes($Elec_Cont_Alt_SNPT)."'";
+	}
+	
+	if ($Elec_Cont_Ubicacion !== null) {
+		$cols[] = 'Elec_Cont_Ubicacion';
+		$vals[] = "'".addslashes($Elec_Cont_Ubicacion)."'";
+	}
+	
+	if ($Elec_Observaciones !== null) {
+		$cols[] = 'Elec_Observaciones';
+		$vals[] = "'".addslashes($Elec_Observaciones)."'";
+	}
+	
+	if ($Elec_Carg_Elec_QTY !== null) {
+		$cols[] = 'Elec_Carg_Elec_QTY';
+		$vals[] = "'".addslashes($Elec_Carg_Elec_QTY)."'";
+	}
+	
+	if ($Elec_Carg_Elec_Total !== null) {
+		$cols[] = 'Elec_Carg_Elec_Total';
+		$vals[] = "'".addslashes($Elec_Carg_Elec_Total)."'";
+	}
+
+	if ($Hvac_Temp_Set_Point !== null) {
+		$cols[] = 'Hvac_Temp_Set_Point';
+		$vals[] = "'".addslashes($Hvac_Temp_Set_Point)."'";
+	}
+
+	if ($Hvac_Temp_Rang_Oper_Min !== null) {
+		$cols[] = 'Hvac_Temp_Rang_Oper_Min';
+		$vals[] = "'".addslashes($Hvac_Temp_Rang_Oper_Min)."'";
+	}
+
+	if ($Hvac_Temp_Rang_Oper_Max !== null) {
+		$cols[] = 'Hvac_Temp_Rang_Oper_Max';
+		$vals[] = "'".addslashes($Hvac_Temp_Rang_Oper_Max)."'";
+	}
+
+	if ($Hvac_Temp_Gradiente !== null) {
+		$cols[] = 'Hvac_Temp_Gradiente';
+		$vals[] = "'".addslashes($Hvac_Temp_Gradiente)."'";
+	}
+
+	if ($Hvac_Humedad_Rango_Min !== null) {
+		$cols[] = 'Hvac_Humedad_Rango_Min';
+		$vals[] = "'".addslashes($Hvac_Humedad_Rango_Min)."'";
+	}
+
+	if ($Hvac_Humedad_Rango_Max !== null) {
+		$cols[] = 'Hvac_Humedad_Rango_Max';
+		$vals[] = "'".addslashes($Hvac_Humedad_Rango_Max)."'";
+	}
+
+	if ($Hvac_Discip_Term !== null) {
+		$cols[] = 'Hvac_Discip_Term';
+		$vals[] = "'".addslashes($Hvac_Discip_Term)."'";
+	}
+
+	if ($Hvac_Recam_X_Hora !== null) {
+		$cols[] = 'Hvac_Recam_X_Hora';
+		$vals[] = "'".addslashes($Hvac_Recam_X_Hora)."'";
+	}
+
+	if ($Hvac_Renovaciones_Aire !== null) {
+		$cols[] = 'Hvac_Renovaciones_Aire';
+		$vals[] = "'".addslashes($Hvac_Renovaciones_Aire)."'";
+	}
+
+	if ($Hvac_Efici_Filtrado !== null) {
+		$cols[] = 'Hvac_Efici_Filtrado';
+		$vals[] = "'".addslashes($Hvac_Efici_Filtrado)."'";
+	}
+
+	if ($Tel_Nodred_Cantidad !== null) {
+		$cols[] = 'Tel_Nodred_Cantidad';
+		$vals[] = "'".addslashes($Tel_Nodred_Cantidad)."'";
+	}
+
+	if ($Tel_Nodred_Tipo !== null) {
+		$cols[] = 'Tel_Nodred_Tipo';
+		$vals[] = "'".addslashes($Tel_Nodred_Tipo)."'";
+	}
+
+	if ($Tel_Nodred_Alt_Sntp !== null) {
+		$cols[] = 'Tel_Nodred_Alt_Sntp';
+		$vals[] = "'".addslashes($Tel_Nodred_Alt_Sntp)."'";
+	}
+
+	if ($Tel_Nodred_Ubicacion !== null) {
+		$cols[] = 'Tel_Nodred_Ubicacion';
+		$vals[] = "'".addslashes($Tel_Nodred_Ubicacion)."'";
+	}
+
+	if ($Tel_Nodcom_Cantidad !== null) {
+		$cols[] = 'Tel_Nodcom_Cantidad';
+		$vals[] = "'".addslashes($Tel_Nodcom_Cantidad)."'";
+	}
+
+	if ($Tel_Nodcom_Tipo !== null) {
+		$cols[] = 'Tel_Nodcom_Tipo';
+		$vals[] = "'".addslashes($Tel_Nodcom_Tipo)."'";
+	}
+
+	if ($Tel_Nodcom_Alt_Sntp !== null) {
+		$cols[] = 'Tel_Nodcom_Alt_Sntp';
+		$vals[] = "'".addslashes($Tel_Nodcom_Alt_Sntp)."'";
+	}
+
+	if ($Tel_Nodcom_Ubicacion !== null) {
+		$cols[] = 'Tel_Nodcom_Ubicacion';
+		$vals[] = "'".addslashes($Tel_Nodcom_Ubicacion)."'";
+	}
+
+	if ($Tel_Nodvideo_Cantidad !== null) {
+		$cols[] = 'Tel_Nodvideo_Cantidad';
+		$vals[] = "'".addslashes($Tel_Nodvideo_Cantidad)."'";
+	}
+
+	if ($Tel_Nodvideo_Tipo !== null) {
+		$cols[] = 'Tel_Nodvideo_Tipo';
+		$vals[] = "'".addslashes($Tel_Nodvideo_Tipo)."'";
+	}
+
+	if ($Tel_Nodvideo_Alt_Sntp !== null) {
+		$cols[] = 'Tel_Nodvideo_Alt_Sntp';
+		$vals[] = "'".addslashes($Tel_Nodvideo_Alt_Sntp)."'";
+	}
+
+	if ($Tel_Nodvideo_Ubicacion !== null) {
+		$cols[] = 'Tel_Nodvideo_Ubicacion';
+		$vals[] = "'".addslashes($Tel_Nodvideo_Ubicacion)."'";
+	}
+
+	if ($Tel_Ec_Tipo !== null) {
+		$cols[] = 'Tel_Ec_Tipo';
+		$vals[] = "'".addslashes($Tel_Ec_Tipo)."'";
+	}
+
+	if ($Tel_Ec_Req_Min !== null) {
+		$cols[] = 'Tel_Ec_Req_Min';
+		$vals[] = "'".addslashes($Tel_Ec_Req_Min)."'";
+	}
+
+	if ($Tel_Observaciones !== null) {
+		$cols[] = 'Tel_Observaciones';
+		$vals[] = "'".addslashes($Tel_Observaciones)."'";
+	}
+
+	if ($Hid_Agcal_Material !== null) {
+		$cols[] = 'Hid_Agcal_Material';
+		$vals[] = "'".addslashes($Hid_Agcal_Material)."'";
+	}
+
+	if ($Hid_Agcal_Diametro !== null) {
+		$cols[] = 'Hid_Agcal_Diametro';
+		$vals[] = "'".addslashes($Hid_Agcal_Diametro)."'";
+	}
+
+	if ($Hid_Agcal_Presion !== null) {
+		$cols[] = 'Hid_Agcal_Presion';
+		$vals[] = "'".addslashes($Hid_Agcal_Presion)."'";
+	}
+
+	if ($Hid_Agcal_Gasto !== null) {
+		$cols[] = 'Hid_Agcal_Gasto';
+		$vals[] = "'".addslashes($Hid_Agcal_Gasto)."'";
+	}
+
+	if ($Hid_Agcal_Temp !== null) {
+		$cols[] = 'Hid_Agcal_Temp';
+		$vals[] = "'".addslashes($Hid_Agcal_Temp)."'";
+	}
+
+	if ($Hid_Agcal_Calidad !== null) {
+		$cols[] = 'Hid_Agcal_Calidad';
+		$vals[] = "'".addslashes($Hid_Agcal_Calidad)."'";
+	}
+
+	if ($Hid_Agcal_Cantidad !== null) {
+		$cols[] = 'Hid_Agcal_Cantidad';
+		$vals[] = "'".addslashes($Hid_Agcal_Cantidad)."'";
+	}
+
+	if ($Hid_Agcal_Alt_SNPT !== null) {
+		$cols[] = 'Hid_Agcal_Alt_SNPT';
+		$vals[] = "'".addslashes($Hid_Agcal_Alt_SNPT)."'";
+	}
+
+	if ($Hid_Agcal_Ubicacion !== null) {
+		$cols[] = 'Hid_Agcal_Ubicacion';
+		$vals[] = "'".addslashes($Hid_Agcal_Ubicacion)."'";
+	}
+
+	if ($Hid_Agfria_Material !== null) {
+		$cols[] = 'Hid_Agfria_Material';
+		$vals[] = "'".addslashes($Hid_Agfria_Material)."'";
+	}
+
+	if ($Hid_Agfria_Diametro !== null) {
+		$cols[] = 'Hid_Agfria_Diametro';
+		$vals[] = "'".addslashes($Hid_Agfria_Diametro)."'";
+	}
+
+	if ($Hid_Agfria_Presion !== null) {
+		$cols[] = 'Hid_Agfria_Presion';
+		$vals[] = "'".addslashes($Hid_Agfria_Presion)."'";
+	}
+
+	if ($Hid_Agfria_Gasto !== null) {
+		$cols[] = 'Hid_Agfria_Gasto';
+		$vals[] = "'".addslashes($Hid_Agfria_Gasto)."'";
+	}
+
+	if ($Hid_Agfria_Temp !== null) {
+		$cols[] = 'Hid_Agfria_Temp';
+		$vals[] = "'".addslashes($Hid_Agfria_Temp)."'";
+	}
+
+	if ($Hid_Agfria_Calidad !== null) {
+		$cols[] = 'Hid_Agfria_Calidad';
+		$vals[] = "'".addslashes($Hid_Agfria_Calidad)."'";
+	}
+
+	if ($Hid_Agfria_Cantidad !== null) {
+		$cols[] = 'Hid_Agfria_Cantidad';
+		$vals[] = "'".addslashes($Hid_Agfria_Cantidad)."'";
+	}
+
+	if ($Hid_Agfria_Alt_SNPT !== null) {
+		$cols[] = 'Hid_Agfria_Alt_SNPT';
+		$vals[] = "'".addslashes($Hid_Agfria_Alt_SNPT)."'";
+	}
+
+	if ($Hid_Agfria_Ubicacion !== null) {
+		$cols[] = 'Hid_Agfria_Ubicacion';
+		$vals[] = "'".addslashes($Hid_Agfria_Ubicacion)."'";
+	}
+
+	if ($Hid_Observaciones !== null) {
+		$cols[] = 'Hid_Observaciones';
+		$vals[] = "'".addslashes($Hid_Observaciones)."'";
+	}
+
+	if ($Hid_Sanit_Material !== null) {
+		$cols[] = 'Hid_Sanit_Material';
+		$vals[] = "'".addslashes($Hid_Sanit_Material)."'";
+	}
+
+	if ($Hid_Sanit_Diametro !== null) {
+		$cols[] = 'Hid_Sanit_Diametro';
+		$vals[] = "'".addslashes($Hid_Sanit_Diametro)."'";
+	}
+
+	if ($Hid_Sanit_Caudal !== null) {
+		$cols[] = 'Hid_Sanit_Caudal';
+		$vals[] = "'".addslashes($Hid_Sanit_Caudal)."'";
+	}
+
+	if ($Hid_Sanit_Cantidad !== null) {
+		$cols[] = 'Hid_Sanit_Cantidad';
+		$vals[] = "'".addslashes($Hid_Sanit_Cantidad)."'";
+	}
+
+	if ($Hid_Sanit_Alt_SNPT !== null) {
+		$cols[] = 'Hid_Sanit_Alt_SNPT';
+		$vals[] = "'".addslashes($Hid_Sanit_Alt_SNPT)."'";
+	}
+
+	if ($Hid_Sanit_Ubicacion !== null) {
+		$cols[] = 'Hid_Sanit_Ubicacion';
+		$vals[] = "'".addslashes($Hid_Sanit_Ubicacion)."'";
+	}
+
+	if ($Hid_Sanit_Observaciones !== null) {
+		$cols[] = 'Hid_Sanit_Observaciones';
+		$vals[] = "'".addslashes($Hid_Sanit_Observaciones)."'";
+	}
+	
+	if ($GM_Ox_Presion_Rang_Max !== null) {
+		$cols[] = 'GM_Ox_Presion_Rang_Max';
+		$vals[] = "'".addslashes($GM_Ox_Presion_Rang_Max)."'";
+	}
+	
+	if ($GM_Ox_Presion_Rang_Min !== null) {
+		$cols[] = 'GM_Ox_Presion_Rang_Min';
+		$vals[] = "'".addslashes($GM_Ox_Presion_Rang_Min)."'";
+	}
+	
+	if ($GM_Ox_Fluj_Oper_Max !== null) {
+		$cols[] = 'GM_Ox_Fluj_Oper_Max';
+		$vals[] = "'".addslashes($GM_Ox_Fluj_Oper_Max)."'";
+	}
+	
+	if ($GM_Ox_Fluj_Oper_Min !== null) {
+		$cols[] = 'GM_Ox_Fluj_Oper_Min';
+		$vals[] = "'".addslashes($GM_Ox_Fluj_Oper_Min)."'";
+	}
+	
+	if ($GM_Ox_Pres_Tom_Mural !== null) {
+		$cols[] = 'GM_Ox_Pres_Tom_Mural';
+		$vals[] = "'".addslashes($GM_Ox_Pres_Tom_Mural)."'";
+	}
+	
+	if ($GM_Ox_Fluj_Min !== null) {
+		$cols[] = 'GM_Ox_Fluj_Min';
+		$vals[] = "'".addslashes($GM_Ox_Fluj_Min)."'";
+	}
+	
+	if ($GM_Ox_Tipo_Conect !== null) {
+		$cols[] = 'GM_Ox_Tipo_Conect';
+		$vals[] = "'".addslashes($GM_Ox_Tipo_Conect)."'";
+	}
+	
+	if ($GM_Ox_Cantidad !== null) {
+		$cols[] = 'GM_Ox_Cantidad';
+		$vals[] = "'".addslashes($GM_Ox_Cantidad)."'";
+	}
+	
+	if ($GM_Ox_Alt_SNTP !== null) {
+		$cols[] = 'GM_Ox_Alt_SNTP';
+		$vals[] = "'".addslashes($GM_Ox_Alt_SNTP)."'";
+	}
+	
+	if ($GM_Ox_Ubicacion !== null) {
+		$cols[] = 'GM_Ox_Ubicacion';
+		$vals[] = "'".addslashes($GM_Ox_Ubicacion)."'";
+	}
+	
+	if ($GM_Ox_Observaciones !== null) {
+		$cols[] = 'GM_Ox_Observaciones';
+		$vals[] = "'".addslashes($GM_Ox_Observaciones)."'";
+	}
+	
+	if ($GM_Air_Presion_Rang_Max !== null) {
+		$cols[] = 'GM_Air_Presion_Rang_Max';
+		$vals[] = "'".addslashes($GM_Air_Presion_Rang_Max)."'";
+	}
+	
+	if ($GM_Air_Presion_Rang_Min !== null) {
+		$cols[] = 'GM_Air_Presion_Rang_Min';
+		$vals[] = "'".addslashes($GM_Air_Presion_Rang_Min)."'";
+	}
+	
+	if ($GM_Air_Fluj_Oper_Max !== null) {
+		$cols[] = 'GM_Air_Fluj_Oper_Max';
+		$vals[] = "'".addslashes($GM_Air_Fluj_Oper_Max)."'";
+	}
+	
+	if ($GM_Air_Fluj_Oper_Min !== null) {
+		$cols[] = 'GM_Air_Fluj_Oper_Min';
+		$vals[] = "'".addslashes($GM_Air_Fluj_Oper_Min)."'";
+	}
+	
+	if ($GM_Air_Pres_Tom_Mural !== null) {
+		$cols[] = 'GM_Air_Pres_Tom_Mural';
+		$vals[] = "'".addslashes($GM_Air_Pres_Tom_Mural)."'";
+	}
+	
+	if ($GM_Air_Fluj_Min !== null) {
+		$cols[] = 'GM_Air_Fluj_Min';
+		$vals[] = "'".addslashes($GM_Air_Fluj_Min)."'";
+	}
+	
+	if ($GM_Air_Tipo_Conect !== null) {
+		$cols[] = 'GM_Air_Tipo_Conect';
+		$vals[] = "'".addslashes($GM_Air_Tipo_Conect)."'";
+	}
+	
+	if ($GM_Air_Cantidad !== null) {
+		$cols[] = 'GM_Air_Cantidad';
+		$vals[] = "'".addslashes($GM_Air_Cantidad)."'";
+	}
+	
+	if ($GM_Air_Alt_SNTP !== null) {
+		$cols[] = 'GM_Air_Alt_SNTP';
+		$vals[] = "'".addslashes($GM_Air_Alt_SNTP)."'";
+	}
+	
+	if ($GM_Air_Ubicacion !== null) {
+		$cols[] = 'GM_Air_Ubicacion';
+		$vals[] = "'".addslashes($GM_Air_Ubicacion)."'";
+	}
+	
+	if ($GM_Air_Observaciones !== null) {
+		$cols[] = 'GM_Air_Observaciones';
+		$vals[] = "'".addslashes($GM_Air_Observaciones)."'";
+	}
+	
+	if ($GM_N2_Presion_Rang_Max !== null) {
+		$cols[] = 'GM_N2_Presion_Rang_Max';
+		$vals[] = "'".addslashes($GM_N2_Presion_Rang_Max)."'";
+	}
+	
+	if ($GM_N2_Presion_Rang_Min !== null) {
+		$cols[] = 'GM_N2_Presion_Rang_Min';
+		$vals[] = "'".addslashes($GM_N2_Presion_Rang_Min)."'";
+	}
+	
+	if ($GM_N2_Fluj_Oper_Max !== null) {
+		$cols[] = 'GM_N2_Fluj_Oper_Max';
+		$vals[] = "'".addslashes($GM_N2_Fluj_Oper_Max)."'";
+	}
+	
+	if ($GM_N2_Fluj_Oper_Min !== null) {
+		$cols[] = 'GM_N2_Fluj_Oper_Min';
+		$vals[] = "'".addslashes($GM_N2_Fluj_Oper_Min)."'";
+	}
+	
+	if ($GM_N2_Pres_Tom_Mural !== null) {
+		$cols[] = 'GM_N2_Pres_Tom_Mural';
+		$vals[] = "'".addslashes($GM_N2_Pres_Tom_Mural)."'";
+	}
+	
+	if ($GM_N2_Fluj_Min !== null) {
+		$cols[] = 'GM_N2_Fluj_Min';
+		$vals[] = "'".addslashes($GM_N2_Fluj_Min)."'";
+	}
+	
+	if ($GM_N2_Tipo_Conect !== null) {
+		$cols[] = 'GM_N2_Tipo_Conect';
+		$vals[] = "'".addslashes($GM_N2_Tipo_Conect)."'";
+	}
+	
+	if ($GM_N2_Cantidad !== null) {
+		$cols[] = 'GM_N2_Cantidad';
+		$vals[] = "'".addslashes($GM_N2_Cantidad)."'";
+	}
+	
+	if ($GM_N2_Alt_SNTP !== null) {
+		$cols[] = 'GM_N2_Alt_SNTP';
+		$vals[] = "'".addslashes($GM_N2_Alt_SNTP)."'";
+	}
+	
+	if ($GM_N2_Ubicacion !== null) {
+		$cols[] = 'GM_N2_Ubicacion';
+		$vals[] = "'".addslashes($GM_N2_Ubicacion)."'";
+	}
+	
+	if ($GM_N2_Observaciones !== null) {
+		$cols[] = 'GM_N2_Observaciones';
+		$vals[] = "'".addslashes($GM_N2_Observaciones)."'";
+	}
+	
+	if ($GM_Co2_Presion_Rang_Max !== null) {
+		$cols[] = 'GM_Co2_Presion_Rang_Max';
+		$vals[] = "'".addslashes($GM_Co2_Presion_Rang_Max)."'";
+	}
+	
+	if ($GM_Co2_Presion_Rang_Min !== null) {
+		$cols[] = 'GM_Co2_Presion_Rang_Min';
+		$vals[] = "'".addslashes($GM_Co2_Presion_Rang_Min)."'";
+	}
+	
+	if ($GM_Co2_Fluj_Oper_Max !== null) {
+		$cols[] = 'GM_Co2_Fluj_Oper_Max';
+		$vals[] = "'".addslashes($GM_Co2_Fluj_Oper_Max)."'";
+	}
+	
+	if ($GM_Co2_Fluj_Oper_Min !== null) {
+		$cols[] = 'GM_Co2_Fluj_Oper_Min';
+		$vals[] = "'".addslashes($GM_Co2_Fluj_Oper_Min)."'";
+	}
+	
+	if ($GM_Co2_Pres_Tom_Mural !== null) {
+		$cols[] = 'GM_Co2_Pres_Tom_Mural';
+		$vals[] = "'".addslashes($GM_Co2_Pres_Tom_Mural)."'";
+	}
+	
+	if ($GM_Co2_Fluj_Min !== null) {
+		$cols[] = 'GM_Co2_Fluj_Min';
+		$vals[] = "'".addslashes($GM_Co2_Fluj_Min)."'";
+	}
+	
+	if ($GM_Co2_Tipo_Conect !== null) {
+		$cols[] = 'GM_Co2_Tipo_Conect';
+		$vals[] = "'".addslashes($GM_Co2_Tipo_Conect)."'";
+	}
+	
+	if ($GM_Co2_Cantidad !== null) {
+		$cols[] = 'GM_Co2_Cantidad';
+		$vals[] = "'".addslashes($GM_Co2_Cantidad)."'";
+	}
+	
+	if ($GM_Co2_Alt_SNTP !== null) {
+		$cols[] = 'GM_Co2_Alt_SNTP';
+		$vals[] = "'".addslashes($GM_Co2_Alt_SNTP)."'";
+	}
+	
+	if ($GM_Co2_Ubicacion !== null) {
+		$cols[] = 'GM_Co2_Ubicacion';
+		$vals[] = "'".addslashes($GM_Co2_Ubicacion)."'";
+	}
+	
+	if ($GM_Co2_Observaciones !== null) {
+		$cols[] = 'GM_Co2_Observaciones';
+		$vals[] = "'".addslashes($GM_Co2_Observaciones)."'";
+	}
+	
+	if ($GM_Vac_Presion_Rang_Max !== null) {
+		$cols[] = 'GM_Vac_Presion_Rang_Max';
+		$vals[] = "'".addslashes($GM_Vac_Presion_Rang_Max)."'";
+	}
+	
+	if ($GM_Vac_Presion_Rang_Min !== null) {
+		$cols[] = 'GM_Vac_Presion_Rang_Min';
+		$vals[] = "'".addslashes($GM_Vac_Presion_Rang_Min)."'";
+	}
+	
+	if ($GM_Vac_Fluj_Oper_Max !== null) {
+		$cols[] = 'GM_Vac_Fluj_Oper_Max';
+		$vals[] = "'".addslashes($GM_Vac_Fluj_Oper_Max)."'";
+	}
+	
+	if ($GM_Vac_Fluj_Oper_Min !== null) {
+		$cols[] = 'GM_Vac_Fluj_Oper_Min';
+		$vals[] = "'".addslashes($GM_Vac_Fluj_Oper_Min)."'";
+	}
+	
+	if ($GM_Vac_Pres_Tom_Mural !== null) {
+		$cols[] = 'GM_Vac_Pres_Tom_Mural';
+		$vals[] = "'".addslashes($GM_Vac_Pres_Tom_Mural)."'";
+	}
+	
+	if ($GM_Vac_Fluj_Min !== null) {
+		$cols[] = 'GM_Vac_Fluj_Min';
+		$vals[] = "'".addslashes($GM_Vac_Fluj_Min)."'";
+	}
+	
+	if ($GM_Vac_Tipo_Conect !== null) {
+		$cols[] = 'GM_Vac_Tipo_Conect';
+		$vals[] = "'".addslashes($GM_Vac_Tipo_Conect)."'";
+	}
+	
+	if ($GM_Vac_Cantidad !== null) {
+		$cols[] = 'GM_Vac_Cantidad';
+		$vals[] = "'".addslashes($GM_Vac_Cantidad)."'";
+	}
+	
+	if ($GM_Vac_Alt_SNTP !== null) {
+		$cols[] = 'GM_Vac_Alt_SNTP';
+		$vals[] = "'".addslashes($GM_Vac_Alt_SNTP)."'";
+	}
+	
+	if ($GM_Vac_Ubicacion !== null) {
+		$cols[] = 'GM_Vac_Ubicacion';
+		$vals[] = "'".addslashes($GM_Vac_Ubicacion)."'";
+	}
+	
+	if ($GM_Vac_Observaciones !== null) {
+		$cols[] = 'GM_Vac_Observaciones';
+		$vals[] = "'".addslashes($GM_Vac_Observaciones)."'";
+	}
+
+	if ($Finan_Proveedor !== null) {
+		$cols[] = 'Finan_Proveedor';
+		$vals[] = "'".addslashes($Finan_Proveedor)."'";
+	}
+
+	if ($Finan_Inv_Esti_Unit !== null) {
+		$cols[] = 'Finan_Inv_Esti_Unit';
+		$vals[] = "'".addslashes($Finan_Inv_Esti_Unit)."'";
+	}
+
+	if ($Finan_Cant_A_Adquirir !== null) {
+		$cols[] = 'Finan_Cant_A_Adquirir';
+		$vals[] = "'".addslashes($Finan_Cant_A_Adquirir)."'";
+	}
+
+	if ($Finan_Tot_Inv_Estim !== null) {
+		$cols[] = 'Finan_Tot_Inv_Estim';
+		$vals[] = "'".addslashes($Finan_Tot_Inv_Estim)."'";
+	}
+
+	$sql = "
+		INSERT INTO siga_especificaciones_tecnicas (" . implode(', ', $cols) . ")
+		VALUES (" . implode(', ', $vals) . ")
+	";
+	//echo $sql;
+	$proveedor->execute($sql);
+	if (!$proveedor->error()){
+			
+	}else{
+		$error=true;
+	}
+	$proveedor->close();
+}
+
+public function insertSiga_activos($Siga_activosDto,$esptecnicas,$proveedor=null){
+//$Siga_activosDto=$this->validarSiga_activos($Siga_activosDto);
+$Siga_activosDao = new Siga_activosDAO();
+$Siga_activosDto = $Siga_activosDao->insertSiga_activos($Siga_activosDto,$proveedor);
+$this->workflowaltaactivos($Siga_activosDto,$proveedor);
+//Solo para biomedica
+if($Siga_activosDto[0]->getId_Area()==1){
+	$this->insertEspecificacionesTecnicas($Siga_activosDto[0]->getId_Activo(), $Siga_activosDto[0]->getUsr_Inser(),$esptecnicas, $proveedor);
+}
+return $Siga_activosDto;
+}
+
+public function updateEspecificacionesTecnicas($Id_Esp_Tec, $Usr_Mod, $esptecnicas, $proveedor=null){
+	$error=false;
+	$esptecnicasRaw = $esptecnicas ?? '';
+	$esptecnicas = [];
+	if ($esptecnicasRaw !== '') {
+		$tmp = json_decode($esptecnicasRaw, true);
+		if (json_last_error() === JSON_ERROR_NONE && is_array($tmp)) {
+			$esptecnicas = $tmp;
+		}
+	}
+	// Datos
+	$Identif_Simbologia = $esptecnicas['Identif_Simbologia'] ?? null;
+
+	//$condicion  = $esptecnicas['condicion']  ?? null;
+	$proyeccion = $esptecnicas['proyeccion'] ?? null;
+	$movilidad  = $esptecnicas['movilidad']  ?? null;
+
+	$f_largo    = $esptecnicas['f_largo']    ?? null;
+	$f_profundo = $esptecnicas['f_profundo'] ?? null;
+	$f_alto    = $esptecnicas['f_alto']    ?? null;
+	$f_peso    = $esptecnicas['f_peso']    ?? null;
+	$f_observaciones = $esptecnicas['f_observaciones'] ?? null;
+
+	$Mob_Req_Esp = $esptecnicas['Mob_Req_Esp'] ?? null;
+	$Mob_Lugar_Resg_Eq = $esptecnicas['Mob_Lugar_Resg_Eq'] ?? null;
+	$Mob_Observaciones = $esptecnicas['Mob_Observaciones'] ?? null;
+	
+	$Elec_Tip_Bateria = $esptecnicas['Elec_Tip_Bateria'] ?? null;
+	$Elec_Tip_Direct_Volt = $esptecnicas['Elec_Tip_Direct_Volt'] ?? null;
+	$Elec_Tip_Direct_Amp = $esptecnicas['Elec_Tip_Direct_Amp'] ?? null;
+	$Elec_Tip_Alt_Sis_El = $esptecnicas['Elec_Tip_Alt_Sis_El'] ?? null;
+	$Elec_Tip_Alt_Volt = $esptecnicas['Elec_Tip_Alt_Volt'] ?? null;
+	$Elec_Tip_Alt_Amp = $esptecnicas['Elec_Tip_Alt_Amp'] ?? null;
+	$Elec_Tip_Alt_Consum = $esptecnicas['Elec_Tip_Alt_Consum'] ?? null;
+	$Elec_Bat_Integrada = $esptecnicas['Elec_Bat_Integrada'] ?? null;
+	$Elec_Req_UPS = $esptecnicas['Elec_Req_UPS'] ?? null;
+	$Elec_Req_Ener_Regul = $esptecnicas['Elec_Req_Ener_Regul'] ?? null;
+	$Elec_Planta_Emerg = $esptecnicas['Elec_Planta_Emerg'] ?? null;
+	$Elec_Cont_Tipo = $esptecnicas['Elec_Cont_Tipo'] ?? null;
+	$Elec_Cont_Color = $esptecnicas['Elec_Cont_Color'] ?? null;
+	$Elec_Cont_Cant = $esptecnicas['Elec_Cont_Cant'] ?? null;
+	$Elec_Cont_Alt_SNPT = $esptecnicas['Elec_Cont_Alt_SNPT'] ?? null;
+	$Elec_Cont_Ubicacion = $esptecnicas['Elec_Cont_Ubicacion'] ?? null;
+	$Elec_Observaciones = $esptecnicas['Elec_Observaciones'] ?? null;
+	$Elec_Carg_Elec_QTY = $esptecnicas['Elec_Carg_Elec_QTY'] ?? null;
+	$Elec_Carg_Elec_Total = $esptecnicas['Elec_Carg_Elec_Total'] ?? null;
+
+	$Hvac_Temp_Set_Point = $esptecnicas['Hvac_Temp_Set_Point'] ?? null;
+	$Hvac_Temp_Rang_Oper_Min = $esptecnicas['Hvac_Temp_Rang_Oper_Min'] ?? null;
+	$Hvac_Temp_Rang_Oper_Max = $esptecnicas['Hvac_Temp_Rang_Oper_Max'] ?? null;
+	$Hvac_Temp_Gradiente = $esptecnicas['Hvac_Temp_Gradiente'] ?? null;
+	$Hvac_Humedad_Rango_Min = $esptecnicas['Hvac_Humedad_Rango_Min'] ?? null;
+	$Hvac_Humedad_Rango_Max = $esptecnicas['Hvac_Humedad_Rango_Max'] ?? null;
+	$Hvac_Discip_Term = $esptecnicas['Hvac_Discip_Term'] ?? null;
+	$Hvac_Recam_X_Hora = $esptecnicas['Hvac_Recam_X_Hora'] ?? null;
+	$Hvac_Renovaciones_Aire = $esptecnicas['Hvac_Renovaciones_Aire'] ?? null;
+	$Hvac_Efici_Filtrado = $esptecnicas['Hvac_Efici_Filtrado'] ?? null;
+
+	$Tel_Nodred_Cantidad = $esptecnicas['Tel_Nodred_Cantidad'] ?? null;
+	$Tel_Nodred_Tipo = $esptecnicas['Tel_Nodred_Tipo'] ?? null;
+	$Tel_Nodred_Alt_Sntp = $esptecnicas['Tel_Nodred_Alt_Sntp'] ?? null;
+	$Tel_Nodred_Ubicacion = $esptecnicas['Tel_Nodred_Ubicacion'] ?? null;
+	$Tel_Nodcom_Cantidad = $esptecnicas['Tel_Nodcom_Cantidad'] ?? null;
+	$Tel_Nodcom_Tipo = $esptecnicas['Tel_Nodcom_Tipo'] ?? null;
+	$Tel_Nodcom_Alt_Sntp = $esptecnicas['Tel_Nodcom_Alt_Sntp'] ?? null;
+	$Tel_Nodcom_Ubicacion = $esptecnicas['Tel_Nodcom_Ubicacion'] ?? null;
+	$Tel_Nodvideo_Cantidad = $esptecnicas['Tel_Nodvideo_Cantidad'] ?? null;
+	$Tel_Nodvideo_Tipo = $esptecnicas['Tel_Nodvideo_Tipo'] ?? null;
+	$Tel_Nodvideo_Alt_Sntp = $esptecnicas['Tel_Nodvideo_Alt_Sntp'] ?? null;
+	$Tel_Nodvideo_Ubicacion = $esptecnicas['Tel_Nodvideo_Ubicacion'] ?? null;
+	$Tel_Ec_Tipo = $esptecnicas['Tel_Ec_Tipo'] ?? null;
+	$Tel_Ec_Req_Min = $esptecnicas['Tel_Ec_Req_Min'] ?? null;
+	$Tel_Observaciones = $esptecnicas['Tel_Observaciones'] ?? null;
+
+	$Hid_Agcal_Material = $esptecnicas['Hid_Agcal_Material'] ?? null;
+	$Hid_Agcal_Diametro = $esptecnicas['Hid_Agcal_Diametro'] ?? null;
+	$Hid_Agcal_Presion = $esptecnicas['Hid_Agcal_Presion'] ?? null;
+	$Hid_Agcal_Gasto = $esptecnicas['Hid_Agcal_Gasto'] ?? null;
+	$Hid_Agcal_Temp = $esptecnicas['Hid_Agcal_Temp'] ?? null;
+	$Hid_Agcal_Calidad = $esptecnicas['Hid_Agcal_Calidad'] ?? null;
+	$Hid_Agcal_Cantidad = $esptecnicas['Hid_Agcal_Cantidad'] ?? null;
+	$Hid_Agcal_Alt_SNPT = $esptecnicas['Hid_Agcal_Alt_SNPT'] ?? null;
+	$Hid_Agcal_Ubicacion = $esptecnicas['Hid_Agcal_Ubicacion'] ?? null;
+	$Hid_Agfria_Material = $esptecnicas['Hid_Agfria_Material'] ?? null;
+	$Hid_Agfria_Diametro = $esptecnicas['Hid_Agfria_Diametro'] ?? null;
+	$Hid_Agfria_Presion = $esptecnicas['Hid_Agfria_Presion'] ?? null;
+	$Hid_Agfria_Gasto = $esptecnicas['Hid_Agfria_Gasto'] ?? null;
+	$Hid_Agfria_Temp = $esptecnicas['Hid_Agfria_Temp'] ?? null;
+	$Hid_Agfria_Calidad = $esptecnicas['Hid_Agfria_Calidad'] ?? null;
+	$Hid_Agfria_Cantidad = $esptecnicas['Hid_Agfria_Cantidad'] ?? null;
+	$Hid_Agfria_Alt_SNPT = $esptecnicas['Hid_Agfria_Alt_SNPT'] ?? null;
+	$Hid_Agfria_Ubicacion = $esptecnicas['Hid_Agfria_Ubicacion'] ?? null;
+	$Hid_Observaciones = $esptecnicas['Hid_Observaciones'] ?? null;
+	$Hid_Sanit_Material = $esptecnicas['Hid_Sanit_Material'] ?? null;
+	$Hid_Sanit_Diametro = $esptecnicas['Hid_Sanit_Diametro'] ?? null;
+	$Hid_Sanit_Caudal = $esptecnicas['Hid_Sanit_Caudal'] ?? null;
+	$Hid_Sanit_Cantidad = $esptecnicas['Hid_Sanit_Cantidad'] ?? null;
+	$Hid_Sanit_Alt_SNPT = $esptecnicas['Hid_Sanit_Alt_SNPT'] ?? null;
+	$Hid_Sanit_Ubicacion = $esptecnicas['Hid_Sanit_Ubicacion'] ?? null;
+	$Hid_Sanit_Observaciones = $esptecnicas['Hid_Sanit_Observaciones'] ?? null;
+	
+	$GM_Ox_Presion_Rang_Max = $esptecnicas['GM_Ox_Presion_Rang_Max'] ?? null;
+	$GM_Ox_Presion_Rang_Min = $esptecnicas['GM_Ox_Presion_Rang_Min'] ?? null;
+	$GM_Ox_Fluj_Oper_Max = $esptecnicas['GM_Ox_Fluj_Oper_Max'] ?? null;
+	$GM_Ox_Fluj_Oper_Min = $esptecnicas['GM_Ox_Fluj_Oper_Min'] ?? null;
+	$GM_Ox_Pres_Tom_Mural = $esptecnicas['GM_Ox_Pres_Tom_Mural'] ?? null;
+	$GM_Ox_Fluj_Min = $esptecnicas['GM_Ox_Fluj_Min'] ?? null;
+	$GM_Ox_Tipo_Conect = $esptecnicas['GM_Ox_Tipo_Conect'] ?? null;
+	$GM_Ox_Cantidad = $esptecnicas['GM_Ox_Cantidad'] ?? null;
+	$GM_Ox_Alt_SNTP = $esptecnicas['GM_Ox_Alt_SNTP'] ?? null;
+	$GM_Ox_Ubicacion = $esptecnicas['GM_Ox_Ubicacion'] ?? null;
+	$GM_Ox_Observaciones = $esptecnicas['GM_Ox_Observaciones'] ?? null;
+	$GM_Air_Presion_Rang_Max = $esptecnicas['GM_Air_Presion_Rang_Max'] ?? null;
+	$GM_Air_Presion_Rang_Min = $esptecnicas['GM_Air_Presion_Rang_Min'] ?? null;
+	$GM_Air_Fluj_Oper_Max = $esptecnicas['GM_Air_Fluj_Oper_Max'] ?? null;
+	$GM_Air_Fluj_Oper_Min = $esptecnicas['GM_Air_Fluj_Oper_Min'] ?? null;
+	$GM_Air_Pres_Tom_Mural = $esptecnicas['GM_Air_Pres_Tom_Mural'] ?? null;
+	$GM_Air_Fluj_Min = $esptecnicas['GM_Air_Fluj_Min'] ?? null;
+	$GM_Air_Tipo_Conect = $esptecnicas['GM_Air_Tipo_Conect'] ?? null;
+	$GM_Air_Cantidad = $esptecnicas['GM_Air_Cantidad'] ?? null;
+	$GM_Air_Alt_SNTP = $esptecnicas['GM_Air_Alt_SNTP'] ?? null;
+	$GM_Air_Ubicacion = $esptecnicas['GM_Air_Ubicacion'] ?? null;
+	$GM_Air_Observaciones = $esptecnicas['GM_Air_Observaciones'] ?? null;
+	$GM_N2_Presion_Rang_Max = $esptecnicas['GM_N2_Presion_Rang_Max'] ?? null;
+	$GM_N2_Presion_Rang_Min = $esptecnicas['GM_N2_Presion_Rang_Min'] ?? null;
+	$GM_N2_Fluj_Oper_Max = $esptecnicas['GM_N2_Fluj_Oper_Max'] ?? null;
+	$GM_N2_Fluj_Oper_Min = $esptecnicas['GM_N2_Fluj_Oper_Min'] ?? null;
+	$GM_N2_Pres_Tom_Mural = $esptecnicas['GM_N2_Pres_Tom_Mural'] ?? null;
+	$GM_N2_Fluj_Min = $esptecnicas['GM_N2_Fluj_Min'] ?? null;
+	$GM_N2_Tipo_Conect = $esptecnicas['GM_N2_Tipo_Conect'] ?? null;
+	$GM_N2_Cantidad = $esptecnicas['GM_N2_Cantidad'] ?? null;
+	$GM_N2_Alt_SNTP = $esptecnicas['GM_N2_Alt_SNTP'] ?? null;
+	$GM_N2_Ubicacion = $esptecnicas['GM_N2_Ubicacion'] ?? null;
+	$GM_N2_Observaciones = $esptecnicas['GM_N2_Observaciones'] ?? null;
+	$GM_Co2_Presion_Rang_Max = $esptecnicas['GM_Co2_Presion_Rang_Max'] ?? null;
+	$GM_Co2_Presion_Rang_Min = $esptecnicas['GM_Co2_Presion_Rang_Min'] ?? null;
+	$GM_Co2_Fluj_Oper_Max = $esptecnicas['GM_Co2_Fluj_Oper_Max'] ?? null;
+	$GM_Co2_Fluj_Oper_Min = $esptecnicas['GM_Co2_Fluj_Oper_Min'] ?? null;
+	$GM_Co2_Pres_Tom_Mural = $esptecnicas['GM_Co2_Pres_Tom_Mural'] ?? null;
+	$GM_Co2_Fluj_Min = $esptecnicas['GM_Co2_Fluj_Min'] ?? null;
+	$GM_Co2_Tipo_Conect = $esptecnicas['GM_Co2_Tipo_Conect'] ?? null;
+	$GM_Co2_Cantidad = $esptecnicas['GM_Co2_Cantidad'] ?? null;
+	$GM_Co2_Alt_SNTP = $esptecnicas['GM_Co2_Alt_SNTP'] ?? null;
+	$GM_Co2_Ubicacion = $esptecnicas['GM_Co2_Ubicacion'] ?? null;
+	$GM_Co2_Observaciones = $esptecnicas['GM_Co2_Observaciones'] ?? null;
+	$GM_Vac_Presion_Rang_Max = $esptecnicas['GM_Vac_Presion_Rang_Max'] ?? null;
+	$GM_Vac_Presion_Rang_Min = $esptecnicas['GM_Vac_Presion_Rang_Min'] ?? null;
+	$GM_Vac_Fluj_Oper_Max = $esptecnicas['GM_Vac_Fluj_Oper_Max'] ?? null;
+	$GM_Vac_Fluj_Oper_Min = $esptecnicas['GM_Vac_Fluj_Oper_Min'] ?? null;
+	$GM_Vac_Pres_Tom_Mural = $esptecnicas['GM_Vac_Pres_Tom_Mural'] ?? null;
+	$GM_Vac_Fluj_Min = $esptecnicas['GM_Vac_Fluj_Min'] ?? null;
+	$GM_Vac_Tipo_Conect = $esptecnicas['GM_Vac_Tipo_Conect'] ?? null;
+	$GM_Vac_Cantidad = $esptecnicas['GM_Vac_Cantidad'] ?? null;
+	$GM_Vac_Alt_SNTP = $esptecnicas['GM_Vac_Alt_SNTP'] ?? null;
+	$GM_Vac_Ubicacion = $esptecnicas['GM_Vac_Ubicacion'] ?? null;
+	$GM_Vac_Observaciones = $esptecnicas['GM_Vac_Observaciones'] ?? null;
+
+	$Finan_Proveedor = $esptecnicas['Finan_Proveedor'] ?? null;
+	$Finan_Inv_Esti_Unit = $esptecnicas['Finan_Inv_Esti_Unit'] ?? null;
+	$Finan_Cant_A_Adquirir = $esptecnicas['Finan_Cant_A_Adquirir'] ?? null;
+	$Finan_Tot_Inv_Estim = $esptecnicas['Finan_Tot_Inv_Estim'] ?? null;
+
+	// Limpia vacíos
+	$Identif_Simbologia = ($Identif_Simbologia === '') ? null : $Identif_Simbologia;
+
+	//$condicion  = ($condicion === '') ? null : $condicion;
+	$proyeccion = ($proyeccion === '') ? null : $proyeccion;
+	$movilidad  = ($movilidad === '') ? null : $movilidad;
+
+	$f_largo    = ($f_largo === '') ? null : $f_largo;
+	$f_profundo = ($f_profundo === '') ? null : $f_profundo;
+	$f_alto     = ($f_alto === '') ? null : $f_alto;
+	$f_peso     = ($f_peso === '') ? null : $f_peso;
+	$f_observaciones = ($f_observaciones === '') ? null : $f_observaciones;
+
+	$Mob_Req_Esp       = ($Mob_Req_Esp === '') ? null : $Mob_Req_Esp;
+	$Mob_Lugar_Resg_Eq = ($Mob_Lugar_Resg_Eq === '') ? null : $Mob_Lugar_Resg_Eq;
+	$Mob_Observaciones = ($Mob_Observaciones === '') ? null : $Mob_Observaciones;
+	
+	$Elec_Tip_Bateria       	= ($Elec_Tip_Bateria === '') ? null : $Elec_Tip_Bateria;
+	$Elec_Tip_Direct_Volt       = ($Elec_Tip_Direct_Volt === '') ? null : $Elec_Tip_Direct_Volt;
+	$Elec_Tip_Direct_Amp       	= ($Elec_Tip_Direct_Amp === '') ? null : $Elec_Tip_Direct_Amp;
+	$Elec_Tip_Alt_Sis_El       	= ($Elec_Tip_Alt_Sis_El === '') ? null : $Elec_Tip_Alt_Sis_El;
+	$Elec_Tip_Alt_Volt       	= ($Elec_Tip_Alt_Volt === '') ? null : $Elec_Tip_Alt_Volt;
+	$Elec_Tip_Alt_Amp       	= ($Elec_Tip_Alt_Amp === '') ? null : $Elec_Tip_Alt_Amp;
+	$Elec_Tip_Alt_Consum       	= ($Elec_Tip_Alt_Consum === '') ? null : $Elec_Tip_Alt_Consum;
+	$Elec_Bat_Integrada       	= ($Elec_Bat_Integrada === '') ? null : $Elec_Bat_Integrada;
+	$Elec_Req_UPS       		= ($Elec_Req_UPS === '') ? null : $Elec_Req_UPS;
+	$Elec_Req_Ener_Regul       	= ($Elec_Req_Ener_Regul === '') ? null : $Elec_Req_Ener_Regul;
+	$Elec_Planta_Emerg       	= ($Elec_Planta_Emerg === '') ? null : $Elec_Planta_Emerg;
+	$Elec_Cont_Tipo       		= ($Elec_Cont_Tipo === '') ? null : $Elec_Cont_Tipo;
+	$Elec_Cont_Color       		= ($Elec_Cont_Color === '') ? null : $Elec_Cont_Color;
+	$Elec_Cont_Cant       		= ($Elec_Cont_Cant === '') ? null : $Elec_Cont_Cant;
+	$Elec_Cont_Alt_SNPT       	= ($Elec_Cont_Alt_SNPT === '') ? null : $Elec_Cont_Alt_SNPT;
+	$Elec_Cont_Ubicacion       	= ($Elec_Cont_Ubicacion === '') ? null : $Elec_Cont_Ubicacion;
+	$Elec_Observaciones       	= ($Elec_Observaciones === '') ? null : $Elec_Observaciones;
+	$Elec_Carg_Elec_QTY       	= ($Elec_Carg_Elec_QTY === '') ? null : $Elec_Carg_Elec_QTY;
+	$Elec_Carg_Elec_Total       = ($Elec_Carg_Elec_Total === '') ? null : $Elec_Carg_Elec_Total;
+
+	$Hvac_Temp_Set_Point       	= ($Hvac_Temp_Set_Point === '') ? null : $Hvac_Temp_Set_Point;
+	$Hvac_Temp_Rang_Oper_Min    = ($Hvac_Temp_Rang_Oper_Min === '') ? null : $Hvac_Temp_Rang_Oper_Min;
+	$Hvac_Temp_Rang_Oper_Max    = ($Hvac_Temp_Rang_Oper_Max === '') ? null : $Hvac_Temp_Rang_Oper_Max;
+	$Hvac_Temp_Gradiente       	= ($Hvac_Temp_Gradiente === '') ? null : $Hvac_Temp_Gradiente;
+	$Hvac_Humedad_Rango_Min     = ($Hvac_Humedad_Rango_Min === '') ? null : $Hvac_Humedad_Rango_Min;
+	$Hvac_Humedad_Rango_Max     = ($Hvac_Humedad_Rango_Max === '') ? null : $Hvac_Humedad_Rango_Max;
+	$Hvac_Discip_Term       	= ($Hvac_Discip_Term === '') ? null : $Hvac_Discip_Term;
+	$Hvac_Recam_X_Hora       	= ($Hvac_Recam_X_Hora === '') ? null : $Hvac_Recam_X_Hora;
+	$Hvac_Renovaciones_Aire     = ($Hvac_Renovaciones_Aire === '') ? null : $Hvac_Renovaciones_Aire;
+	$Hvac_Efici_Filtrado       	= ($Hvac_Efici_Filtrado === '') ? null : $Hvac_Efici_Filtrado;
+
+	$Tel_Nodred_Cantidad 	= ($Tel_Nodred_Cantidad === '') ? null : $Tel_Nodred_Cantidad;
+	$Tel_Nodred_Tipo 		= ($Tel_Nodred_Tipo === '') ? null : $Tel_Nodred_Tipo;
+	$Tel_Nodred_Alt_Sntp 	= ($Tel_Nodred_Alt_Sntp === '') ? null : $Tel_Nodred_Alt_Sntp;
+	$Tel_Nodred_Ubicacion 	= ($Tel_Nodred_Ubicacion === '') ? null : $Tel_Nodred_Ubicacion;
+	$Tel_Nodcom_Cantidad 	= ($Tel_Nodcom_Cantidad === '') ? null : $Tel_Nodcom_Cantidad;
+	$Tel_Nodcom_Tipo 		= ($Tel_Nodcom_Tipo === '') ? null : $Tel_Nodcom_Tipo;
+	$Tel_Nodcom_Alt_Sntp 	= ($Tel_Nodcom_Alt_Sntp === '') ? null : $Tel_Nodcom_Alt_Sntp;
+	$Tel_Nodcom_Ubicacion 	= ($Tel_Nodcom_Ubicacion === '') ? null : $Tel_Nodcom_Ubicacion;
+	$Tel_Nodvideo_Cantidad 	= ($Tel_Nodvideo_Cantidad === '') ? null : $Tel_Nodvideo_Cantidad;
+	$Tel_Nodvideo_Tipo 		= ($Tel_Nodvideo_Tipo === '') ? null : $Tel_Nodvideo_Tipo;
+	$Tel_Nodvideo_Alt_Sntp 	= ($Tel_Nodvideo_Alt_Sntp === '') ? null : $Tel_Nodvideo_Alt_Sntp;
+	$Tel_Nodvideo_Ubicacion = ($Tel_Nodvideo_Ubicacion === '') ? null : $Tel_Nodvideo_Ubicacion;
+	$Tel_Ec_Tipo 			= ($Tel_Ec_Tipo === '') ? null : $Tel_Ec_Tipo;
+	$Tel_Ec_Req_Min 		= ($Tel_Ec_Req_Min === '') ? null : $Tel_Ec_Req_Min;
+	$Tel_Observaciones 		= ($Tel_Observaciones === '') ? null : $Tel_Observaciones;
+
+	$Hid_Agcal_Material 	= ($Hid_Agcal_Material === '') ? null : $Hid_Agcal_Material;
+	$Hid_Agcal_Diametro 	= ($Hid_Agcal_Diametro === '') ? null : $Hid_Agcal_Diametro;
+	$Hid_Agcal_Presion 		= ($Hid_Agcal_Presion === '') ? null : $Hid_Agcal_Presion;
+	$Hid_Agcal_Gasto 		= ($Hid_Agcal_Gasto === '') ? null : $Hid_Agcal_Gasto;
+	$Hid_Agcal_Temp 		= ($Hid_Agcal_Temp === '') ? null : $Hid_Agcal_Temp;
+	$Hid_Agcal_Calidad 		= ($Hid_Agcal_Calidad === '') ? null : $Hid_Agcal_Calidad;
+	$Hid_Agcal_Cantidad 	= ($Hid_Agcal_Cantidad === '') ? null : $Hid_Agcal_Cantidad;
+	$Hid_Agcal_Alt_SNPT 	= ($Hid_Agcal_Alt_SNPT === '') ? null : $Hid_Agcal_Alt_SNPT;
+	$Hid_Agcal_Ubicacion 	= ($Hid_Agcal_Ubicacion === '') ? null : $Hid_Agcal_Ubicacion;
+	$Hid_Agfria_Material 	= ($Hid_Agfria_Material === '') ? null : $Hid_Agfria_Material;
+	$Hid_Agfria_Diametro 	= ($Hid_Agfria_Diametro === '') ? null : $Hid_Agfria_Diametro;
+	$Hid_Agfria_Presion 	= ($Hid_Agfria_Presion === '') ? null : $Hid_Agfria_Presion;
+	$Hid_Agfria_Gasto 		= ($Hid_Agfria_Gasto === '') ? null : $Hid_Agfria_Gasto;
+	$Hid_Agfria_Temp 		= ($Hid_Agfria_Temp === '') ? null : $Hid_Agfria_Temp;
+	$Hid_Agfria_Calidad 	= ($Hid_Agfria_Calidad === '') ? null : $Hid_Agfria_Calidad;
+	$Hid_Agfria_Cantidad 	= ($Hid_Agfria_Cantidad === '') ? null : $Hid_Agfria_Cantidad;
+	$Hid_Agfria_Alt_SNPT 	= ($Hid_Agfria_Alt_SNPT === '') ? null : $Hid_Agfria_Alt_SNPT;
+	$Hid_Agfria_Ubicacion 	= ($Hid_Agfria_Ubicacion === '') ? null : $Hid_Agfria_Ubicacion;
+	$Hid_Observaciones 		= ($Hid_Observaciones === '') ? null : $Hid_Observaciones;
+	$Hid_Sanit_Material 	= ($Hid_Sanit_Material === '') ? null : $Hid_Sanit_Material;
+	$Hid_Sanit_Diametro 	= ($Hid_Sanit_Diametro === '') ? null : $Hid_Sanit_Diametro;
+	$Hid_Sanit_Caudal 		= ($Hid_Sanit_Caudal === '') ? null : $Hid_Sanit_Caudal;
+	$Hid_Sanit_Cantidad 	= ($Hid_Sanit_Cantidad === '') ? null : $Hid_Sanit_Cantidad;
+	$Hid_Sanit_Alt_SNPT 	= ($Hid_Sanit_Alt_SNPT === '') ? null : $Hid_Sanit_Alt_SNPT;
+	$Hid_Sanit_Ubicacion 	= ($Hid_Sanit_Ubicacion === '') ? null : $Hid_Sanit_Ubicacion;
+	$Hid_Sanit_Observaciones = ($Hid_Sanit_Observaciones === '') ? null : $Hid_Sanit_Observaciones;
+	
+	$GM_Ox_Presion_Rang_Max			= ($GM_Ox_Presion_Rang_Max === '') ? null : $GM_Ox_Presion_Rang_Max;
+	$GM_Ox_Presion_Rang_Min			= ($GM_Ox_Presion_Rang_Min === '') ? null : $GM_Ox_Presion_Rang_Min;
+	$GM_Ox_Fluj_Oper_Max            = ($GM_Ox_Fluj_Oper_Max === '') ? null : $GM_Ox_Fluj_Oper_Max;
+	$GM_Ox_Fluj_Oper_Min            = ($GM_Ox_Fluj_Oper_Min === '') ? null : $GM_Ox_Fluj_Oper_Min;
+	$GM_Ox_Pres_Tom_Mural       = ($GM_Ox_Pres_Tom_Mural === '') ? null : $GM_Ox_Pres_Tom_Mural;
+	$GM_Ox_Fluj_Min             = ($GM_Ox_Fluj_Min === '') ? null : $GM_Ox_Fluj_Min;
+	$GM_Ox_Tipo_Conect          = ($GM_Ox_Tipo_Conect === '') ? null : $GM_Ox_Tipo_Conect;
+	$GM_Ox_Cantidad             = ($GM_Ox_Cantidad === '') ? null : $GM_Ox_Cantidad;
+	$GM_Ox_Alt_SNTP             = ($GM_Ox_Alt_SNTP === '') ? null : $GM_Ox_Alt_SNTP;
+	$GM_Ox_Ubicacion            = ($GM_Ox_Ubicacion === '') ? null : $GM_Ox_Ubicacion;
+	$GM_Ox_Observaciones        = ($GM_Ox_Observaciones === '') ? null : $GM_Ox_Observaciones;
+	$GM_Air_Presion_Rang_Max        = ($GM_Air_Presion_Rang_Max === '') ? null : $GM_Air_Presion_Rang_Max;
+	$GM_Air_Presion_Rang_Min        = ($GM_Air_Presion_Rang_Min === '') ? null : $GM_Air_Presion_Rang_Min;
+	$GM_Air_Fluj_Oper_Max           = ($GM_Air_Fluj_Oper_Max === '') ? null : $GM_Air_Fluj_Oper_Max;
+	$GM_Air_Fluj_Oper_Min           = ($GM_Air_Fluj_Oper_Min === '') ? null : $GM_Air_Fluj_Oper_Min;
+	$GM_Air_Pres_Tom_Mural      = ($GM_Air_Pres_Tom_Mural === '') ? null : $GM_Air_Pres_Tom_Mural;
+	$GM_Air_Fluj_Min            = ($GM_Air_Fluj_Min === '') ? null : $GM_Air_Fluj_Min;
+	$GM_Air_Tipo_Conect         = ($GM_Air_Tipo_Conect === '') ? null : $GM_Air_Tipo_Conect;
+	$GM_Air_Cantidad            = ($GM_Air_Cantidad === '') ? null : $GM_Air_Cantidad;
+	$GM_Air_Alt_SNTP            = ($GM_Air_Alt_SNTP === '') ? null : $GM_Air_Alt_SNTP;
+	$GM_Air_Ubicacion           = ($GM_Air_Ubicacion === '') ? null : $GM_Air_Ubicacion;
+	$GM_Air_Observaciones       = ($GM_Air_Observaciones === '') ? null : $GM_Air_Observaciones;
+	$GM_N2_Presion_Rang_Max         = ($GM_N2_Presion_Rang_Max === '') ? null : $GM_N2_Presion_Rang_Max;
+	$GM_N2_Presion_Rang_Min         = ($GM_N2_Presion_Rang_Min === '') ? null : $GM_N2_Presion_Rang_Min;
+	$GM_N2_Fluj_Oper_Max            = ($GM_N2_Fluj_Oper_Max === '') ? null : $GM_N2_Fluj_Oper_Max;
+	$GM_N2_Fluj_Oper_Min            = ($GM_N2_Fluj_Oper_Min === '') ? null : $GM_N2_Fluj_Oper_Min;
+	$GM_N2_Pres_Tom_Mural       = ($GM_N2_Pres_Tom_Mural === '') ? null : $GM_N2_Pres_Tom_Mural;
+	$GM_N2_Fluj_Min             = ($GM_N2_Fluj_Min === '') ? null : $GM_N2_Fluj_Min;
+	$GM_N2_Tipo_Conect          = ($GM_N2_Tipo_Conect === '') ? null : $GM_N2_Tipo_Conect;
+	$GM_N2_Cantidad             = ($GM_N2_Cantidad === '') ? null : $GM_N2_Cantidad;
+	$GM_N2_Alt_SNTP             = ($GM_N2_Alt_SNTP === '') ? null : $GM_N2_Alt_SNTP;
+	$GM_N2_Ubicacion            = ($GM_N2_Ubicacion === '') ? null : $GM_N2_Ubicacion;
+	$GM_N2_Observaciones        = ($GM_N2_Observaciones === '') ? null : $GM_N2_Observaciones;
+	$GM_Co2_Presion_Rang_Max        = ($GM_Co2_Presion_Rang_Max === '') ? null : $GM_Co2_Presion_Rang_Max;
+	$GM_Co2_Presion_Rang_Min        = ($GM_Co2_Presion_Rang_Min === '') ? null : $GM_Co2_Presion_Rang_Min;
+	$GM_Co2_Fluj_Oper_Max           = ($GM_Co2_Fluj_Oper_Max === '') ? null : $GM_Co2_Fluj_Oper_Max;
+	$GM_Co2_Fluj_Oper_Min           = ($GM_Co2_Fluj_Oper_Min === '') ? null : $GM_Co2_Fluj_Oper_Min;
+	$GM_Co2_Pres_Tom_Mural      = ($GM_Co2_Pres_Tom_Mural === '') ? null : $GM_Co2_Pres_Tom_Mural;
+	$GM_Co2_Fluj_Min            = ($GM_Co2_Fluj_Min === '') ? null : $GM_Co2_Fluj_Min;
+	$GM_Co2_Tipo_Conect         = ($GM_Co2_Tipo_Conect === '') ? null : $GM_Co2_Tipo_Conect;
+	$GM_Co2_Cantidad            = ($GM_Co2_Cantidad === '') ? null : $GM_Co2_Cantidad;
+	$GM_Co2_Alt_SNTP            = ($GM_Co2_Alt_SNTP === '') ? null : $GM_Co2_Alt_SNTP;
+	$GM_Co2_Ubicacion           = ($GM_Co2_Ubicacion === '') ? null : $GM_Co2_Ubicacion;
+	$GM_Co2_Observaciones       = ($GM_Co2_Observaciones === '') ? null : $GM_Co2_Observaciones;
+	$GM_Vac_Presion_Rang_Max        = ($GM_Vac_Presion_Rang_Max === '') ? null : $GM_Vac_Presion_Rang_Max;
+	$GM_Vac_Presion_Rang_Min        = ($GM_Vac_Presion_Rang_Min === '') ? null : $GM_Vac_Presion_Rang_Min;
+	$GM_Vac_Fluj_Oper_Max           = ($GM_Vac_Fluj_Oper_Max === '') ? null : $GM_Vac_Fluj_Oper_Max;
+	$GM_Vac_Fluj_Oper_Min           = ($GM_Vac_Fluj_Oper_Min === '') ? null : $GM_Vac_Fluj_Oper_Min;
+	$GM_Vac_Pres_Tom_Mural      = ($GM_Vac_Pres_Tom_Mural === '') ? null : $GM_Vac_Pres_Tom_Mural;
+	$GM_Vac_Fluj_Min            = ($GM_Vac_Fluj_Min === '') ? null : $GM_Vac_Fluj_Min;
+	$GM_Vac_Tipo_Conect         = ($GM_Vac_Tipo_Conect === '') ? null : $GM_Vac_Tipo_Conect;
+	$GM_Vac_Cantidad            = ($GM_Vac_Cantidad === '') ? null : $GM_Vac_Cantidad;
+	$GM_Vac_Alt_SNTP            = ($GM_Vac_Alt_SNTP === '') ? null : $GM_Vac_Alt_SNTP;
+	$GM_Vac_Ubicacion           = ($GM_Vac_Ubicacion === '') ? null : $GM_Vac_Ubicacion;
+	$GM_Vac_Observaciones       = ($GM_Vac_Observaciones === '') ? null : $GM_Vac_Observaciones;
+	
+	$Finan_Proveedor = ($Finan_Proveedor === '') ? null : $Finan_Proveedor;
+	$Finan_Inv_Esti_Unit = ($Finan_Inv_Esti_Unit === '') ? null : $Finan_Inv_Esti_Unit;
+	$Finan_Cant_A_Adquirir = ($Finan_Cant_A_Adquirir === '') ? null : $Finan_Cant_A_Adquirir;
+	$Finan_Tot_Inv_Estim = ($Finan_Tot_Inv_Estim === '') ? null : $Finan_Tot_Inv_Estim;
+
+	$proveedor = new Proveedor('sqlserver', 'activos');
+	$proveedor->connect();
+
+	$sql = "
+		UPDATE siga_especificaciones_tecnicas SET 
+			Fech_Mod = getdate(),
+			Usr_Mod = '".$Usr_Mod."',
+			Identif_Simbologia = ".($Identif_Simbologia !== null ? "'".addslashes($Identif_Simbologia)."'" : "NULL").",
+			Com_Proyeccion = ".($proyeccion !== null ? "'".addslashes($proyeccion)."'" : "NULL").",
+			F_L = ".($f_largo !== null ? "'".addslashes($f_largo)."'" : "NULL").",
+			F_P = ".($f_profundo !== null ? "'".addslashes($f_profundo)."'" : "NULL").",
+			F_H = ".($f_alto !== null ? "'".addslashes($f_alto)."'" : "NULL").",
+			F_Peso = ".($f_peso !== null ? "'".addslashes($f_peso)."'" : "NULL").",
+			F_Movilidad = ".($movilidad !== null ? "'".addslashes($movilidad)."'" : "NULL").",
+			F_Observaciones = ".($f_observaciones !== null ? "'".addslashes($f_observaciones)."'" : "NULL").",
+			Mob_Req_Esp = ".($Mob_Req_Esp !== null ? "'".addslashes($Mob_Req_Esp)."'" : "NULL").",
+			Mob_Lugar_Resg_Eq = ".($Mob_Lugar_Resg_Eq !== null ? "'".addslashes($Mob_Lugar_Resg_Eq)."'" : "NULL").",
+			Mob_Observaciones = ".($Mob_Observaciones !== null ? "'".addslashes($Mob_Observaciones)."'" : "NULL").",
+			Elec_Tip_Bateria = ".($Elec_Tip_Bateria !== null ? "'".addslashes($Elec_Tip_Bateria)."'" : "NULL").",
+			Elec_Tip_Direct_Volt = ".($Elec_Tip_Direct_Volt !== null ? "'".addslashes($Elec_Tip_Direct_Volt)."'" : "NULL").",
+			Elec_Tip_Direct_Amp = ".($Elec_Tip_Direct_Amp !== null ? "'".addslashes($Elec_Tip_Direct_Amp)."'" : "NULL").",
+			Elec_Tip_Alt_Sis_El = ".($Elec_Tip_Alt_Sis_El !== null ? "'".addslashes($Elec_Tip_Alt_Sis_El)."'" : "NULL").",
+			Elec_Tip_Alt_Volt = ".($Elec_Tip_Alt_Volt !== null ? "'".addslashes($Elec_Tip_Alt_Volt)."'" : "NULL").",
+			Elec_Tip_Alt_Amp = ".($Elec_Tip_Alt_Amp !== null ? "'".addslashes($Elec_Tip_Alt_Amp)."'" : "NULL").",
+			Elec_Tip_Alt_Consum = ".($Elec_Tip_Alt_Consum !== null ? "'".addslashes($Elec_Tip_Alt_Consum)."'" : "NULL").",
+			Elec_Bat_Integrada = ".($Elec_Bat_Integrada !== null ? "'".addslashes($Elec_Bat_Integrada)."'" : "NULL").",
+			Elec_Req_UPS = ".($Elec_Req_UPS !== null ? "'".addslashes($Elec_Req_UPS)."'" : "NULL").",
+			Elec_Req_Ener_Regul = ".($Elec_Req_Ener_Regul !== null ? "'".addslashes($Elec_Req_Ener_Regul)."'" : "NULL").",
+			Elec_Planta_Emerg = ".($Elec_Planta_Emerg !== null ? "'".addslashes($Elec_Planta_Emerg)."'" : "NULL").",
+			Elec_Cont_Tipo = ".($Elec_Cont_Tipo !== null ? "'".addslashes($Elec_Cont_Tipo)."'" : "NULL").",
+			Elec_Cont_Color = ".($Elec_Cont_Color !== null ? "'".addslashes($Elec_Cont_Color)."'" : "NULL").",
+			Elec_Cont_Cant = ".($Elec_Cont_Cant !== null ? "'".addslashes($Elec_Cont_Cant)."'" : "NULL").",
+			Elec_Cont_Alt_SNPT = ".($Elec_Cont_Alt_SNPT !== null ? "'".addslashes($Elec_Cont_Alt_SNPT)."'" : "NULL").",
+			Elec_Cont_Ubicacion = ".($Elec_Cont_Ubicacion !== null ? "'".addslashes($Elec_Cont_Ubicacion)."'" : "NULL").",
+			Elec_Observaciones = ".($Elec_Observaciones !== null ? "'".addslashes($Elec_Observaciones)."'" : "NULL").",
+			Elec_Carg_Elec_QTY = ".($Elec_Carg_Elec_QTY !== null ? "'".addslashes($Elec_Carg_Elec_QTY)."'" : "NULL").",
+			Elec_Carg_Elec_Total = ".($Elec_Carg_Elec_Total !== null ? "'".addslashes($Elec_Carg_Elec_Total)."'" : "NULL").",
+			Hvac_Temp_Set_Point = ".($Hvac_Temp_Set_Point !== null ? "'".addslashes($Hvac_Temp_Set_Point)."'" : "NULL").",
+			Hvac_Temp_Rang_Oper_Min = ".($Hvac_Temp_Rang_Oper_Min !== null ? "'".addslashes($Hvac_Temp_Rang_Oper_Min)."'" : "NULL").",
+			Hvac_Temp_Rang_Oper_Max = ".($Hvac_Temp_Rang_Oper_Max !== null ? "'".addslashes($Hvac_Temp_Rang_Oper_Max)."'" : "NULL").",
+			Hvac_Temp_Gradiente = ".($Hvac_Temp_Gradiente !== null ? "'".addslashes($Hvac_Temp_Gradiente)."'" : "NULL").",
+			Hvac_Humedad_Rango_Min = ".($Hvac_Humedad_Rango_Min !== null ? "'".addslashes($Hvac_Humedad_Rango_Min)."'" : "NULL").",
+			Hvac_Humedad_Rango_Max = ".($Hvac_Humedad_Rango_Max !== null ? "'".addslashes($Hvac_Humedad_Rango_Max)."'" : "NULL").",
+			Hvac_Discip_Term = ".($Hvac_Discip_Term !== null ? "'".addslashes($Hvac_Discip_Term)."'" : "NULL").",
+			Hvac_Recam_X_Hora = ".($Hvac_Recam_X_Hora !== null ? "'".addslashes($Hvac_Recam_X_Hora)."'" : "NULL").",
+			Hvac_Renovaciones_Aire = ".($Hvac_Renovaciones_Aire !== null ? "'".addslashes($Hvac_Renovaciones_Aire)."'" : "NULL").",
+			Hvac_Efici_Filtrado = ".($Hvac_Efici_Filtrado !== null ? "'".addslashes($Hvac_Efici_Filtrado)."'" : "NULL").",
+			Tel_Nodred_Cantidad = ".($Tel_Nodred_Cantidad !== null ? "'".addslashes($Tel_Nodred_Cantidad)."'" : "NULL").",
+			Tel_Nodred_Tipo = ".($Tel_Nodred_Tipo !== null ? "'".addslashes($Tel_Nodred_Tipo)."'" : "NULL").",
+			Tel_Nodred_Alt_Sntp = ".($Tel_Nodred_Alt_Sntp !== null ? "'".addslashes($Tel_Nodred_Alt_Sntp)."'" : "NULL").",
+			Tel_Nodred_Ubicacion = ".($Tel_Nodred_Ubicacion !== null ? "'".addslashes($Tel_Nodred_Ubicacion)."'" : "NULL").",
+			Tel_Nodcom_Cantidad = ".($Tel_Nodcom_Cantidad !== null ? "'".addslashes($Tel_Nodcom_Cantidad)."'" : "NULL").",
+			Tel_Nodcom_Tipo = ".($Tel_Nodcom_Tipo !== null ? "'".addslashes($Tel_Nodcom_Tipo)."'" : "NULL").",
+			Tel_Nodcom_Alt_Sntp = ".($Tel_Nodcom_Alt_Sntp !== null ? "'".addslashes($Tel_Nodcom_Alt_Sntp)."'" : "NULL").",
+			Tel_Nodcom_Ubicacion = ".($Tel_Nodcom_Ubicacion !== null ? "'".addslashes($Tel_Nodcom_Ubicacion)."'" : "NULL").",
+			Tel_Nodvideo_Cantidad = ".($Tel_Nodvideo_Cantidad !== null ? "'".addslashes($Tel_Nodvideo_Cantidad)."'" : "NULL").",
+			Tel_Nodvideo_Tipo = ".($Tel_Nodvideo_Tipo !== null ? "'".addslashes($Tel_Nodvideo_Tipo)."'" : "NULL").",
+			Tel_Nodvideo_Alt_Sntp = ".($Tel_Nodvideo_Alt_Sntp !== null ? "'".addslashes($Tel_Nodvideo_Alt_Sntp)."'" : "NULL").",
+			Tel_Nodvideo_Ubicacion = ".($Tel_Nodvideo_Ubicacion !== null ? "'".addslashes($Tel_Nodvideo_Ubicacion)."'" : "NULL").",
+			Tel_Ec_Tipo = ".($Tel_Ec_Tipo !== null ? "'".addslashes($Tel_Ec_Tipo)."'" : "NULL").",
+			Tel_Ec_Req_Min = ".($Tel_Ec_Req_Min !== null ? "'".addslashes($Tel_Ec_Req_Min)."'" : "NULL").",
+			Tel_Observaciones = ".($Tel_Observaciones !== null ? "'".addslashes($Tel_Observaciones)."'" : "NULL").",
+			Hid_Agcal_Material = ".($Hid_Agcal_Material !== null ? "'".addslashes($Hid_Agcal_Material)."'" : "NULL").",
+			Hid_Agcal_Diametro = ".($Hid_Agcal_Diametro !== null ? "'".addslashes($Hid_Agcal_Diametro)."'" : "NULL").",
+			Hid_Agcal_Presion = ".($Hid_Agcal_Presion !== null ? "'".addslashes($Hid_Agcal_Presion)."'" : "NULL").",
+			Hid_Agcal_Gasto = ".($Hid_Agcal_Gasto !== null ? "'".addslashes($Hid_Agcal_Gasto)."'" : "NULL").",
+			Hid_Agcal_Temp = ".($Hid_Agcal_Temp !== null ? "'".addslashes($Hid_Agcal_Temp)."'" : "NULL").",
+			Hid_Agcal_Calidad = ".($Hid_Agcal_Calidad !== null ? "'".addslashes($Hid_Agcal_Calidad)."'" : "NULL").",
+			Hid_Agcal_Cantidad = ".($Hid_Agcal_Cantidad !== null ? "'".addslashes($Hid_Agcal_Cantidad)."'" : "NULL").",
+			Hid_Agcal_Alt_SNPT = ".($Hid_Agcal_Alt_SNPT !== null ? "'".addslashes($Hid_Agcal_Alt_SNPT)."'" : "NULL").",
+			Hid_Agcal_Ubicacion = ".($Hid_Agcal_Ubicacion !== null ? "'".addslashes($Hid_Agcal_Ubicacion)."'" : "NULL").",
+			Hid_Agfria_Material = ".($Hid_Agfria_Material !== null ? "'".addslashes($Hid_Agfria_Material)."'" : "NULL").",
+			Hid_Agfria_Diametro = ".($Hid_Agfria_Diametro !== null ? "'".addslashes($Hid_Agfria_Diametro)."'" : "NULL").",
+			Hid_Agfria_Presion = ".($Hid_Agfria_Presion !== null ? "'".addslashes($Hid_Agfria_Presion)."'" : "NULL").",
+			Hid_Agfria_Gasto = ".($Hid_Agfria_Gasto !== null ? "'".addslashes($Hid_Agfria_Gasto)."'" : "NULL").",
+			Hid_Agfria_Temp = ".($Hid_Agfria_Temp !== null ? "'".addslashes($Hid_Agfria_Temp)."'" : "NULL").",
+			Hid_Agfria_Calidad = ".($Hid_Agfria_Calidad !== null ? "'".addslashes($Hid_Agfria_Calidad)."'" : "NULL").",
+			Hid_Agfria_Cantidad = ".($Hid_Agfria_Cantidad !== null ? "'".addslashes($Hid_Agfria_Cantidad)."'" : "NULL").",
+			Hid_Agfria_Alt_SNPT = ".($Hid_Agfria_Alt_SNPT !== null ? "'".addslashes($Hid_Agfria_Alt_SNPT)."'" : "NULL").",
+			Hid_Agfria_Ubicacion = ".($Hid_Agfria_Ubicacion !== null ? "'".addslashes($Hid_Agfria_Ubicacion)."'" : "NULL").",
+			Hid_Observaciones = ".($Hid_Observaciones !== null ? "'".addslashes($Hid_Observaciones)."'" : "NULL").",
+			Hid_Sanit_Material = ".($Hid_Sanit_Material !== null ? "'".addslashes($Hid_Sanit_Material)."'" : "NULL").",
+			Hid_Sanit_Diametro = ".($Hid_Sanit_Diametro !== null ? "'".addslashes($Hid_Sanit_Diametro)."'" : "NULL").",
+			Hid_Sanit_Caudal = ".($Hid_Sanit_Caudal !== null ? "'".addslashes($Hid_Sanit_Caudal)."'" : "NULL").",
+			Hid_Sanit_Cantidad = ".($Hid_Sanit_Cantidad !== null ? "'".addslashes($Hid_Sanit_Cantidad)."'" : "NULL").",
+			Hid_Sanit_Alt_SNPT = ".($Hid_Sanit_Alt_SNPT !== null ? "'".addslashes($Hid_Sanit_Alt_SNPT)."'" : "NULL").",
+			Hid_Sanit_Ubicacion = ".($Hid_Sanit_Ubicacion !== null ? "'".addslashes($Hid_Sanit_Ubicacion)."'" : "NULL").",
+			Hid_Sanit_Observaciones = ".($Hid_Sanit_Observaciones !== null ? "'".addslashes($Hid_Sanit_Observaciones)."'" : "NULL").",
+			GM_Ox_Presion_Rang_Max = ".($GM_Ox_Presion_Rang_Max !== null ? "'".addslashes($GM_Ox_Presion_Rang_Max)."'" : "NULL").",
+			GM_Ox_Presion_Rang_Min = ".($GM_Ox_Presion_Rang_Min !== null ? "'".addslashes($GM_Ox_Presion_Rang_Min)."'" : "NULL").",
+			GM_Ox_Fluj_Oper_Max = ".($GM_Ox_Fluj_Oper_Max !== null ? "'".addslashes($GM_Ox_Fluj_Oper_Max)."'" : "NULL").",
+			GM_Ox_Fluj_Oper_Min = ".($GM_Ox_Fluj_Oper_Min !== null ? "'".addslashes($GM_Ox_Fluj_Oper_Min)."'" : "NULL").",
+			GM_Ox_Pres_Tom_Mural = ".($GM_Ox_Pres_Tom_Mural !== null ? "'".addslashes($GM_Ox_Pres_Tom_Mural)."'" : "NULL").",
+			GM_Ox_Fluj_Min = ".($GM_Ox_Fluj_Min !== null ? "'".addslashes($GM_Ox_Fluj_Min)."'" : "NULL").",
+			GM_Ox_Tipo_Conect = ".($GM_Ox_Tipo_Conect !== null ? "'".addslashes($GM_Ox_Tipo_Conect)."'" : "NULL").",
+			GM_Ox_Cantidad = ".($GM_Ox_Cantidad !== null ? "'".addslashes($GM_Ox_Cantidad)."'" : "NULL").",
+			GM_Ox_Alt_SNTP = ".($GM_Ox_Alt_SNTP !== null ? "'".addslashes($GM_Ox_Alt_SNTP)."'" : "NULL").",
+			GM_Ox_Ubicacion = ".($GM_Ox_Ubicacion !== null ? "'".addslashes($GM_Ox_Ubicacion)."'" : "NULL").",
+			GM_Ox_Observaciones = ".($GM_Ox_Observaciones !== null ? "'".addslashes($GM_Ox_Observaciones)."'" : "NULL").",
+			GM_Air_Presion_Rang_Max = ".($GM_Air_Presion_Rang_Max !== null ? "'".addslashes($GM_Air_Presion_Rang_Max)."'" : "NULL").",
+			GM_Air_Presion_Rang_Min = ".($GM_Air_Presion_Rang_Min !== null ? "'".addslashes($GM_Air_Presion_Rang_Min)."'" : "NULL").",
+			GM_Air_Fluj_Oper_Max = ".($GM_Air_Fluj_Oper_Max !== null ? "'".addslashes($GM_Air_Fluj_Oper_Max)."'" : "NULL").",
+			GM_Air_Fluj_Oper_Min = ".($GM_Air_Fluj_Oper_Min !== null ? "'".addslashes($GM_Air_Fluj_Oper_Min)."'" : "NULL").",
+			GM_Air_Pres_Tom_Mural = ".($GM_Air_Pres_Tom_Mural !== null ? "'".addslashes($GM_Air_Pres_Tom_Mural)."'" : "NULL").",
+			GM_Air_Fluj_Min = ".($GM_Air_Fluj_Min !== null ? "'".addslashes($GM_Air_Fluj_Min)."'" : "NULL").",
+			GM_Air_Tipo_Conect = ".($GM_Air_Tipo_Conect !== null ? "'".addslashes($GM_Air_Tipo_Conect)."'" : "NULL").",
+			GM_Air_Cantidad = ".($GM_Air_Cantidad !== null ? "'".addslashes($GM_Air_Cantidad)."'" : "NULL").",
+			GM_Air_Alt_SNTP = ".($GM_Air_Alt_SNTP !== null ? "'".addslashes($GM_Air_Alt_SNTP)."'" : "NULL").",
+			GM_Air_Ubicacion = ".($GM_Air_Ubicacion !== null ? "'".addslashes($GM_Air_Ubicacion)."'" : "NULL").",
+			GM_Air_Observaciones = ".($GM_Air_Observaciones !== null ? "'".addslashes($GM_Air_Observaciones)."'" : "NULL").",
+			GM_N2_Presion_Rang_Max = ".($GM_N2_Presion_Rang_Max !== null ? "'".addslashes($GM_N2_Presion_Rang_Max)."'" : "NULL").",
+			GM_N2_Presion_Rang_Min = ".($GM_N2_Presion_Rang_Min !== null ? "'".addslashes($GM_N2_Presion_Rang_Min)."'" : "NULL").",
+			GM_N2_Fluj_Oper_Max = ".($GM_N2_Fluj_Oper_Max !== null ? "'".addslashes($GM_N2_Fluj_Oper_Max)."'" : "NULL").",
+			GM_N2_Fluj_Oper_Min = ".($GM_N2_Fluj_Oper_Min !== null ? "'".addslashes($GM_N2_Fluj_Oper_Min)."'" : "NULL").",
+			GM_N2_Pres_Tom_Mural = ".($GM_N2_Pres_Tom_Mural !== null ? "'".addslashes($GM_N2_Pres_Tom_Mural)."'" : "NULL").",
+			GM_N2_Fluj_Min = ".($GM_N2_Fluj_Min !== null ? "'".addslashes($GM_N2_Fluj_Min)."'" : "NULL").",
+			GM_N2_Tipo_Conect = ".($GM_N2_Tipo_Conect !== null ? "'".addslashes($GM_N2_Tipo_Conect)."'" : "NULL").",
+			GM_N2_Cantidad = ".($GM_N2_Cantidad !== null ? "'".addslashes($GM_N2_Cantidad)."'" : "NULL").",
+			GM_N2_Alt_SNTP = ".($GM_N2_Alt_SNTP !== null ? "'".addslashes($GM_N2_Alt_SNTP)."'" : "NULL").",
+			GM_N2_Ubicacion = ".($GM_N2_Ubicacion !== null ? "'".addslashes($GM_N2_Ubicacion)."'" : "NULL").",
+			GM_N2_Observaciones = ".($GM_N2_Observaciones !== null ? "'".addslashes($GM_N2_Observaciones)."'" : "NULL").",
+			GM_Co2_Presion_Rang_Max = ".($GM_Co2_Presion_Rang_Max !== null ? "'".addslashes($GM_Co2_Presion_Rang_Max)."'" : "NULL").",
+			GM_Co2_Presion_Rang_Min = ".($GM_Co2_Presion_Rang_Min !== null ? "'".addslashes($GM_Co2_Presion_Rang_Min)."'" : "NULL").",
+			GM_Co2_Fluj_Oper_Max = ".($GM_Co2_Fluj_Oper_Max !== null ? "'".addslashes($GM_Co2_Fluj_Oper_Max)."'" : "NULL").",
+			GM_Co2_Fluj_Oper_Min = ".($GM_Co2_Fluj_Oper_Min !== null ? "'".addslashes($GM_Co2_Fluj_Oper_Min)."'" : "NULL").",
+			GM_Co2_Pres_Tom_Mural = ".($GM_Co2_Pres_Tom_Mural !== null ? "'".addslashes($GM_Co2_Pres_Tom_Mural)."'" : "NULL").",
+			GM_Co2_Fluj_Min = ".($GM_Co2_Fluj_Min !== null ? "'".addslashes($GM_Co2_Fluj_Min)."'" : "NULL").",
+			GM_Co2_Tipo_Conect = ".($GM_Co2_Tipo_Conect !== null ? "'".addslashes($GM_Co2_Tipo_Conect)."'" : "NULL").",
+			GM_Co2_Cantidad = ".($GM_Co2_Cantidad !== null ? "'".addslashes($GM_Co2_Cantidad)."'" : "NULL").",
+			GM_Co2_Alt_SNTP = ".($GM_Co2_Alt_SNTP !== null ? "'".addslashes($GM_Co2_Alt_SNTP)."'" : "NULL").",
+			GM_Co2_Ubicacion = ".($GM_Co2_Ubicacion !== null ? "'".addslashes($GM_Co2_Ubicacion)."'" : "NULL").",
+			GM_Co2_Observaciones = ".($GM_Co2_Observaciones !== null ? "'".addslashes($GM_Co2_Observaciones)."'" : "NULL").",
+			GM_Vac_Presion_Rang_Max = ".($GM_Vac_Presion_Rang_Max !== null ? "'".addslashes($GM_Vac_Presion_Rang_Max)."'" : "NULL").",
+			GM_Vac_Presion_Rang_Min = ".($GM_Vac_Presion_Rang_Min !== null ? "'".addslashes($GM_Vac_Presion_Rang_Min)."'" : "NULL").",
+			GM_Vac_Fluj_Oper_Max = ".($GM_Vac_Fluj_Oper_Max !== null ? "'".addslashes($GM_Vac_Fluj_Oper_Max)."'" : "NULL").",
+			GM_Vac_Fluj_Oper_Min = ".($GM_Vac_Fluj_Oper_Min !== null ? "'".addslashes($GM_Vac_Fluj_Oper_Min)."'" : "NULL").",
+			GM_Vac_Pres_Tom_Mural = ".($GM_Vac_Pres_Tom_Mural !== null ? "'".addslashes($GM_Vac_Pres_Tom_Mural)."'" : "NULL").",
+			GM_Vac_Fluj_Min = ".($GM_Vac_Fluj_Min !== null ? "'".addslashes($GM_Vac_Fluj_Min)."'" : "NULL").",
+			GM_Vac_Tipo_Conect = ".($GM_Vac_Tipo_Conect !== null ? "'".addslashes($GM_Vac_Tipo_Conect)."'" : "NULL").",
+			GM_Vac_Cantidad = ".($GM_Vac_Cantidad !== null ? "'".addslashes($GM_Vac_Cantidad)."'" : "NULL").",
+			GM_Vac_Alt_SNTP = ".($GM_Vac_Alt_SNTP !== null ? "'".addslashes($GM_Vac_Alt_SNTP)."'" : "NULL").",
+			GM_Vac_Ubicacion = ".($GM_Vac_Ubicacion !== null ? "'".addslashes($GM_Vac_Ubicacion)."'" : "NULL").",
+			GM_Vac_Observaciones = ".($GM_Vac_Observaciones !== null ? "'".addslashes($GM_Vac_Observaciones)."'" : "NULL").",
+			Finan_Proveedor = ".($Finan_Proveedor !== null ? "'".addslashes($Finan_Proveedor)."'" : "NULL").",
+			Finan_Inv_Esti_Unit = ".($Finan_Inv_Esti_Unit !== null ? "'".addslashes($Finan_Inv_Esti_Unit)."'" : "NULL").",
+			Finan_Cant_A_Adquirir = ".($Finan_Cant_A_Adquirir !== null ? "'".addslashes($Finan_Cant_A_Adquirir)."'" : "NULL").",
+			Finan_Tot_Inv_Estim = ".($Finan_Tot_Inv_Estim !== null ? "'".addslashes($Finan_Tot_Inv_Estim)."'" : "NULL")."
+		WHERE Id_Esp_Tec = ".$Id_Esp_Tec.
+	"";
+	///echo $sql;
+	$proveedor->execute($sql);
+	if (!$proveedor->error()){
+			
+	}else{
+		$error=true;
+	}
+	$proveedor->close();
+}
+
+public function getespecificacionestecnicas($Id_Activo, $proveedor=null){
+	$respuesta = array();	
+	$Data = array();
+	$Data_Envia = array();
+	$error=false;
+
+	$proveedor = new Proveedor('sqlserver', 'activos');
+	$proveedor->connect();
+	$sql=" 
+	select 
+		Id_Esp_Tec,
+		Id_Activo,
+		Identif_Simbologia,
+		Com_Proyeccion,
+		F_L,
+		F_P,
+		F_H,
+		F_Peso,
+		F_Movilidad,
+		F_Observaciones,
+		Mob_Req_Esp,
+		Mob_Lugar_Resg_Eq,
+		Mob_Observaciones,
+		Elec_Tip_Bateria,
+		Elec_Tip_Direct_Volt,
+		Elec_Tip_Direct_Amp,
+		Elec_Tip_Alt_Sis_El,
+		Elec_Tip_Alt_Volt,
+		Elec_Tip_Alt_Amp,
+		Elec_Tip_Alt_Consum,
+		Elec_Bat_Integrada,
+		Elec_Req_UPS,
+		Elec_Req_Ener_Regul,
+		Elec_Planta_Emerg,
+		Elec_Cont_Tipo,
+		Elec_Cont_Color,
+		Elec_Cont_Cant,
+		Elec_Cont_Alt_SNPT,
+		Elec_Cont_Ubicacion,
+		Elec_Observaciones,
+		Elec_Carg_Elec_QTY,
+		Elec_Carg_Elec_Total,
+		Hvac_Temp_Set_Point,
+		Hvac_Temp_Rang_Oper_Min,
+		Hvac_Temp_Rang_Oper_Max,
+		Hvac_Temp_Gradiente,
+		Hvac_Humedad_Rango_Min,
+		Hvac_Humedad_Rango_Max,
+		Hvac_Discip_Term,
+		Hvac_Recam_X_Hora,
+		Hvac_Renovaciones_Aire,
+		Hvac_Efici_Filtrado,
+		Tel_Nodred_Cantidad,
+		Tel_Nodred_Tipo,
+		Tel_Nodred_Alt_Sntp,
+		Tel_Nodred_Ubicacion,
+		Tel_Nodcom_Cantidad,
+		Tel_Nodcom_Tipo,
+		Tel_Nodcom_Alt_Sntp,
+		Tel_Nodcom_Ubicacion,
+		Tel_Nodvideo_Cantidad,
+		Tel_Nodvideo_Tipo,
+		Tel_Nodvideo_Alt_Sntp,
+		Tel_Nodvideo_Ubicacion,
+		Tel_Ec_Tipo,
+		Tel_Ec_Req_Min,
+		Tel_Observaciones,
+		Hid_Agcal_Material,
+		Hid_Agcal_Diametro,
+		Hid_Agcal_Presion,
+		Hid_Agcal_Gasto,
+		Hid_Agcal_Temp,
+		Hid_Agcal_Calidad,
+		Hid_Agcal_Cantidad,
+		Hid_Agcal_Alt_SNPT,
+		Hid_Agcal_Ubicacion,
+		Hid_Agfria_Material,
+		Hid_Agfria_Diametro,
+		Hid_Agfria_Presion,
+		Hid_Agfria_Gasto,
+		Hid_Agfria_Temp,
+		Hid_Agfria_Calidad,
+		Hid_Agfria_Cantidad,
+		Hid_Agfria_Alt_SNPT,
+		Hid_Agfria_Ubicacion,
+		Hid_Observaciones,
+		Hid_Sanit_Material,
+		Hid_Sanit_Diametro,
+		Hid_Sanit_Caudal,
+		Hid_Sanit_Cantidad,
+		Hid_Sanit_Alt_SNPT,	
+		Hid_Sanit_Ubicacion,
+		Hid_Sanit_Observaciones,
+		GM_Ox_Presion_Rang_Max,
+		GM_Ox_Presion_Rang_Min,
+		GM_Ox_Fluj_Oper_Max,
+		GM_Ox_Fluj_Oper_Min,
+		GM_Ox_Pres_Tom_Mural,
+		GM_Ox_Fluj_Min,
+		GM_Ox_Tipo_Conect,
+		GM_Ox_Cantidad,
+		GM_Ox_Alt_SNTP,
+		GM_Ox_Ubicacion,
+		GM_Ox_Observaciones,
+		GM_Air_Presion_Rang_Max,
+		GM_Air_Presion_Rang_Min,
+		GM_Air_Fluj_Oper_Max,
+		GM_Air_Fluj_Oper_Min,
+		GM_Air_Pres_Tom_Mural,
+		GM_Air_Fluj_Min,
+		GM_Air_Tipo_Conect,
+		GM_Air_Cantidad,
+		GM_Air_Alt_SNTP,
+		GM_Air_Ubicacion,
+		GM_Air_Observaciones,
+		GM_N2_Presion_Rang_Max,
+		GM_N2_Presion_Rang_Min,
+		GM_N2_Fluj_Oper_Max,
+		GM_N2_Fluj_Oper_Min,
+		GM_N2_Pres_Tom_Mural,
+		GM_N2_Fluj_Min,
+		GM_N2_Tipo_Conect,
+		GM_N2_Cantidad,
+		GM_N2_Alt_SNTP,
+		GM_N2_Ubicacion,	
+		GM_N2_Observaciones,
+		GM_Co2_Presion_Rang_Max,
+		GM_Co2_Presion_Rang_Min,
+		GM_Co2_Fluj_Oper_Max,
+		GM_Co2_Fluj_Oper_Min,
+		GM_Co2_Pres_Tom_Mural,
+		GM_Co2_Fluj_Min,
+		GM_Co2_Tipo_Conect,
+		GM_Co2_Cantidad,
+		GM_Co2_Alt_SNTP,
+		GM_Co2_Ubicacion,
+		GM_Co2_Observaciones,
+		GM_Vac_Presion_Rang_Max,
+		GM_Vac_Presion_Rang_Min,
+		GM_Vac_Fluj_Oper_Max,
+		GM_Vac_Fluj_Oper_Min,
+		GM_Vac_Pres_Tom_Mural,
+		GM_Vac_Fluj_Min,
+		GM_Vac_Tipo_Conect,
+		GM_Vac_Cantidad,
+		GM_Vac_Alt_SNTP,
+		GM_Vac_Ubicacion,
+		GM_Vac_Observaciones,
+		Finan_Proveedor,
+		Finan_Inv_Esti_Unit,
+		Finan_Cant_A_Adquirir,
+		Finan_Tot_Inv_Estim,
+		Fech_Inser,
+		Usr_Inser,
+		Fech_Mod,
+		Usr_Mod,
+		Estatus_Reg
+	from siga_especificaciones_tecnicas where Id_Activo=".$Id_Activo." and Estatus_Reg<>3 ";
+
+	
+	
+	
+	//echo $sql;
+	$proveedor->execute($sql);
+	if (!$proveedor->error()) {
+		if ($proveedor->rows($proveedor->stmt) > 0) {
+			while ($row = $proveedor->fetch_array($proveedor->stmt, 0)) {
+				$Data= array(		
+					"Id_Esp_Tec"=>$row["Id_Esp_Tec"],
+					"Id_Activo" => $row["Id_Activo"],
+					"Identif_Simbologia" => $row["Identif_Simbologia"],
+					//"Com_Condicion" => $row["Com_Condicion"],
+					"Com_Proyeccion" => $row["Com_Proyeccion"],
+					"F_L" => $row["F_L"],
+					"F_P" => $row["F_P"],
+					"F_H" => $row["F_H"],
+					"F_Peso" => $row["F_Peso"],
+					"F_Movilidad" => $row["F_Movilidad"],
+					"F_Observaciones" => $row["F_Observaciones"],
+					"Mob_Req_Esp" => $row["Mob_Req_Esp"],
+					"Mob_Lugar_Resg_Eq" => $row["Mob_Lugar_Resg_Eq"],
+					"Mob_Observaciones" => $row["Mob_Observaciones"],
+					"Elec_Tip_Bateria" => $row["Elec_Tip_Bateria"],
+					"Elec_Tip_Direct_Volt" => $row["Elec_Tip_Direct_Volt"],
+					"Elec_Tip_Direct_Amp" => $row["Elec_Tip_Direct_Amp"],
+					"Elec_Tip_Alt_Sis_El" => $row["Elec_Tip_Alt_Sis_El"],
+					"Elec_Tip_Alt_Volt" => $row["Elec_Tip_Alt_Volt"],
+					"Elec_Tip_Alt_Amp" => $row["Elec_Tip_Alt_Amp"],
+					"Elec_Tip_Alt_Consum" => $row["Elec_Tip_Alt_Consum"],
+					"Elec_Bat_Integrada" => $row["Elec_Bat_Integrada"],
+					"Elec_Req_UPS" => $row["Elec_Req_UPS"],
+					"Elec_Req_Ener_Regul" => $row["Elec_Req_Ener_Regul"],
+					"Elec_Planta_Emerg" => $row["Elec_Planta_Emerg"],
+					"Elec_Cont_Tipo" => $row["Elec_Cont_Tipo"],
+					"Elec_Cont_Color" => $row["Elec_Cont_Color"],
+					"Elec_Cont_Cant" => $row["Elec_Cont_Cant"],
+					"Elec_Cont_Alt_SNPT" => $row["Elec_Cont_Alt_SNPT"],
+					"Elec_Cont_Ubicacion" => $row["Elec_Cont_Ubicacion"],
+					"Elec_Observaciones" => $row["Elec_Observaciones"],
+					"Elec_Carg_Elec_QTY" => $row["Elec_Carg_Elec_QTY"],
+					"Elec_Carg_Elec_Total" => $row["Elec_Carg_Elec_Total"],
+					"Hvac_Temp_Set_Point" => $row["Hvac_Temp_Set_Point"],
+					"Hvac_Temp_Rang_Oper_Min" => $row["Hvac_Temp_Rang_Oper_Min"],
+					"Hvac_Temp_Rang_Oper_Max" => $row["Hvac_Temp_Rang_Oper_Max"],
+					"Hvac_Temp_Gradiente" => $row["Hvac_Temp_Gradiente"],
+					"Hvac_Humedad_Rango_Min" => $row["Hvac_Humedad_Rango_Min"],
+					"Hvac_Humedad_Rango_Max" => $row["Hvac_Humedad_Rango_Max"],
+					"Hvac_Discip_Term" => $row["Hvac_Discip_Term"],
+					"Hvac_Recam_X_Hora" => $row["Hvac_Recam_X_Hora"],
+					"Hvac_Renovaciones_Aire" => $row["Hvac_Renovaciones_Aire"],
+					"Hvac_Efici_Filtrado" => $row["Hvac_Efici_Filtrado"],
+					"Tel_Nodred_Cantidad" => $row["Tel_Nodred_Cantidad"],
+					"Tel_Nodred_Tipo" => $row["Tel_Nodred_Tipo"],
+					"Tel_Nodred_Alt_Sntp" => $row["Tel_Nodred_Alt_Sntp"],
+					"Tel_Nodred_Ubicacion" => $row["Tel_Nodred_Ubicacion"],
+					"Tel_Nodcom_Cantidad" => $row["Tel_Nodcom_Cantidad"],
+					"Tel_Nodcom_Tipo" => $row["Tel_Nodcom_Tipo"],
+					"Tel_Nodcom_Alt_Sntp" => $row["Tel_Nodcom_Alt_Sntp"],
+					"Tel_Nodcom_Ubicacion" => $row["Tel_Nodcom_Ubicacion"],
+					"Tel_Nodvideo_Cantidad" => $row["Tel_Nodvideo_Cantidad"],
+					"Tel_Nodvideo_Tipo" => $row["Tel_Nodvideo_Tipo"],
+					"Tel_Nodvideo_Alt_Sntp" => $row["Tel_Nodvideo_Alt_Sntp"],
+					"Tel_Nodvideo_Ubicacion" => $row["Tel_Nodvideo_Ubicacion"],
+					"Tel_Ec_Tipo" => $row["Tel_Ec_Tipo"],
+					"Tel_Ec_Req_Min" => $row["Tel_Ec_Req_Min"],
+					"Tel_Observaciones" => $row["Tel_Observaciones"],
+					"Hid_Agcal_Material" => $row["Hid_Agcal_Material"],
+					"Hid_Agcal_Diametro" => $row["Hid_Agcal_Diametro"],
+					"Hid_Agcal_Presion" => $row["Hid_Agcal_Presion"],
+					"Hid_Agcal_Gasto" => $row["Hid_Agcal_Gasto"],
+					"Hid_Agcal_Temp" => $row["Hid_Agcal_Temp"],
+					"Hid_Agcal_Calidad" => $row["Hid_Agcal_Calidad"],
+					"Hid_Agcal_Cantidad" => $row["Hid_Agcal_Cantidad"],
+					"Hid_Agcal_Alt_SNPT" => $row["Hid_Agcal_Alt_SNPT"],
+					"Hid_Agcal_Ubicacion" => $row["Hid_Agcal_Ubicacion"],
+					"Hid_Agfria_Material" => $row["Hid_Agfria_Material"],
+					"Hid_Agfria_Diametro" => $row["Hid_Agfria_Diametro"],
+					"Hid_Agfria_Presion" => $row["Hid_Agfria_Presion"],
+					"Hid_Agfria_Gasto" => $row["Hid_Agfria_Gasto"],
+					"Hid_Agfria_Temp" => $row["Hid_Agfria_Temp"],
+					"Hid_Agfria_Calidad" => $row["Hid_Agfria_Calidad"],
+					"Hid_Agfria_Cantidad" => $row["Hid_Agfria_Cantidad"],
+					"Hid_Agfria_Alt_SNPT" => $row["Hid_Agfria_Alt_SNPT"],
+					"Hid_Agfria_Ubicacion" => $row["Hid_Agfria_Ubicacion"],
+					"Hid_Observaciones" => $row["Hid_Observaciones"],
+					"Hid_Sanit_Material" => $row["Hid_Sanit_Material"],
+					"Hid_Sanit_Diametro" => $row["Hid_Sanit_Diametro"],
+					"Hid_Sanit_Caudal" => $row["Hid_Sanit_Caudal"],
+					"Hid_Sanit_Cantidad" => $row["Hid_Sanit_Cantidad"],
+					"Hid_Sanit_Alt_SNPT" => $row["Hid_Sanit_Alt_SNPT"],
+					"Hid_Sanit_Ubicacion" => $row["Hid_Sanit_Ubicacion"],
+					"Hid_Sanit_Observaciones" => $row["Hid_Sanit_Observaciones"],
+					"GM_Ox_Presion_Rang_Max" => $row["GM_Ox_Presion_Rang_Max"],
+					"GM_Ox_Presion_Rang_Min" => $row["GM_Ox_Presion_Rang_Min"],
+					"GM_Ox_Fluj_Oper_Max" => $row["GM_Ox_Fluj_Oper_Max"],
+					"GM_Ox_Fluj_Oper_Min" => $row["GM_Ox_Fluj_Oper_Min"],
+					"GM_Ox_Pres_Tom_Mural" => $row["GM_Ox_Pres_Tom_Mural"],
+					"GM_Ox_Fluj_Min" => $row["GM_Ox_Fluj_Min"],
+					"GM_Ox_Tipo_Conect" => $row["GM_Ox_Tipo_Conect"],
+					"GM_Ox_Cantidad" => $row["GM_Ox_Cantidad"],
+					"GM_Ox_Alt_SNTP" => $row["GM_Ox_Alt_SNTP"],
+					"GM_Ox_Ubicacion" => $row["GM_Ox_Ubicacion"],
+					"GM_Ox_Observaciones" => $row["GM_Ox_Observaciones"],
+					"GM_Air_Presion_Rang_Max" => $row["GM_Air_Presion_Rang_Max"],
+					"GM_Air_Presion_Rang_Min" => $row["GM_Air_Presion_Rang_Min"],
+					"GM_Air_Fluj_Oper_Max" => $row["GM_Air_Fluj_Oper_Max"],
+					"GM_Air_Fluj_Oper_Min" => $row["GM_Air_Fluj_Oper_Min"],
+					"GM_Air_Pres_Tom_Mural" => $row["GM_Air_Pres_Tom_Mural"],
+					"GM_Air_Fluj_Min" => $row["GM_Air_Fluj_Min"],
+					"GM_Air_Tipo_Conect" => $row["GM_Air_Tipo_Conect"],
+					"GM_Air_Cantidad" => $row["GM_Air_Cantidad"],
+					"GM_Air_Alt_SNTP" => $row["GM_Air_Alt_SNTP"],
+					"GM_Air_Ubicacion" => $row["GM_Air_Ubicacion"],
+					"GM_Air_Observaciones" => $row["GM_Air_Observaciones"],
+					"GM_N2_Presion_Rang_Max" => $row["GM_N2_Presion_Rang_Max"],
+					"GM_N2_Presion_Rang_Min" => $row["GM_N2_Presion_Rang_Min"],
+					"GM_N2_Fluj_Oper_Max" => $row["GM_N2_Fluj_Oper_Max"],
+					"GM_N2_Fluj_Oper_Min" => $row["GM_N2_Fluj_Oper_Min"],
+					"GM_N2_Pres_Tom_Mural" => $row["GM_N2_Pres_Tom_Mural"],
+					"GM_N2_Fluj_Min" => $row["GM_N2_Fluj_Min"],
+					"GM_N2_Tipo_Conect" => $row["GM_N2_Tipo_Conect"],
+					"GM_N2_Cantidad" => $row["GM_N2_Cantidad"],
+					"GM_N2_Alt_SNTP" => $row["GM_N2_Alt_SNTP"],
+					"GM_N2_Ubicacion" => $row["GM_N2_Ubicacion"],
+					"GM_N2_Observaciones" => $row["GM_N2_Observaciones"],
+					"GM_Co2_Presion_Rang_Max" => $row["GM_Co2_Presion_Rang_Max"],
+					"GM_Co2_Presion_Rang_Min" => $row["GM_Co2_Presion_Rang_Min"],
+					"GM_Co2_Fluj_Oper_Max" => $row["GM_Co2_Fluj_Oper_Max"],
+					"GM_Co2_Fluj_Oper_Min" => $row["GM_Co2_Fluj_Oper_Min"],
+					"GM_Co2_Pres_Tom_Mural" => $row["GM_Co2_Pres_Tom_Mural"],
+					"GM_Co2_Fluj_Min" => $row["GM_Co2_Fluj_Min"],
+					"GM_Co2_Tipo_Conect" => $row["GM_Co2_Tipo_Conect"],
+					"GM_Co2_Cantidad" => $row["GM_Co2_Cantidad"],
+					"GM_Co2_Alt_SNTP" => $row["GM_Co2_Alt_SNTP"],
+					"GM_Co2_Ubicacion" => $row["GM_Co2_Ubicacion"],
+					"GM_Co2_Observaciones" => $row["GM_Co2_Observaciones"],
+					"GM_Vac_Presion_Rang_Max" => $row["GM_Vac_Presion_Rang_Max"],
+					"GM_Vac_Presion_Rang_Min" => $row["GM_Vac_Presion_Rang_Min"],
+					"GM_Vac_Fluj_Oper_Max" => $row["GM_Vac_Fluj_Oper_Max"],
+					"GM_Vac_Fluj_Oper_Min" => $row["GM_Vac_Fluj_Oper_Min"],
+					"GM_Vac_Pres_Tom_Mural" => $row["GM_Vac_Pres_Tom_Mural"],
+					"GM_Vac_Fluj_Min" => $row["GM_Vac_Fluj_Min"],
+					"GM_Vac_Tipo_Conect" => $row["GM_Vac_Tipo_Conect"],
+					"GM_Vac_Cantidad" => $row["GM_Vac_Cantidad"],
+					"GM_Vac_Alt_SNTP" => $row["GM_Vac_Alt_SNTP"],
+					"GM_Vac_Ubicacion" => $row["GM_Vac_Ubicacion"],
+					"GM_Vac_Observaciones" => $row["GM_Vac_Observaciones"],
+					"Finan_Proveedor" => $row["Finan_Proveedor"],
+					"Finan_Inv_Esti_Unit" => $row["Finan_Inv_Esti_Unit"],
+					"Finan_Cant_A_Adquirir" => $row["Finan_Cant_A_Adquirir"],
+					"Finan_Tot_Inv_Estim" => $row["Finan_Tot_Inv_Estim"],
+					"Fech_Inser" => $row["Fech_Inser"],
+					"Usr_Inser" => $row["Usr_Inser"],
+					"Fech_Mod" => $row["Fech_Mod"],
+					"Usr_Mod" => $row["Usr_Mod"],
+					"Estatus_Reg" => $row["Estatus_Reg"]
+				);
+				
+				array_push($Data_Envia, $Data);
+            }
+		}
+	}else{
+		$error=true;
+	}
+	
+	$proveedor->close();
+	
+	//Fin 
+	if($error==false){
+		$respuesta = array("totalCount" => count($Data_Envia), "data" => $Data_Envia, "estatus" => "ok", "mensaje" => "Registros Encontrados");   	
+	}else{
+		$respuesta = array("totalCount" => "0", "data" => "", "estatus" => "error", "mensaje" => "Ocurrio un Error al Buscar");   	
+	}
+	return $respuesta;
+}
+
+public function reporteEspecificacionesTecnicas($Id_Activo, $proveedor=null){
+	$respuesta = array();	
+	$Data = array();
+	$Data_Envia = array();
+	$error=false;
+
+	$proveedor = new Proveedor('sqlserver', 'activos');
+	$proveedor->connect();
+
+	$sql="
+		SELECT				
+			S.Id_Activo,
+			S.AF_BC,
+			S.Nombre_Activo,
+			S.Marca,
+			S.Modelo,
+			S.NumSerie,
+			S.DescLarga,
+
+			(select Desc_Ubic_Prim from siga_cat_ubic_prim T where T.Id_Ubic_Prim=S.Id_Ubic_Prim) as Ubic_Prim,
+			(select Desc_Ubic_Sec from siga_cat_ubic_sec T where T.Id_Ubic_Sec=S.Id_Ubic_Sec) as Ubic_Sec,
+			S.Especifica AS UbicacionEspecifica,
+			E.Identif_Simbologia,
+
+			(select P.Desc_Propiedad from siga_cat_propiedad P where P.Id_Propiedad=S.Id_Propiedad) as Propiedad,
+			(select Con.siga_condicion_de_recepcion_descripcion from siga_cat_condicion_de_recepcion Con where Con.siga_condicion_de_recepcion_id=S.siga_activos_condicion_recepcion) as Condicion,
+			(select Descripcion from Siga_cat_proyeccion Pro where Pro.Id_Proyeccion=E.Com_Proyeccion) as Proyeccion,
+
+			F_L,
+			F_P,
+			F_H,
+			F_Peso,
+			F_Movilidad,
+			F_Observaciones,
+
+			Mob_Req_Esp,
+			Mob_Lugar_Resg_Eq,
+			Mob_Observaciones,
+
+			Elec_Tip_Bateria,
+			Elec_Tip_Direct_Volt,
+			Elec_Tip_Direct_Amp,
+			Elec_Tip_Alt_Sis_El,
+			Elec_Tip_Alt_Volt,
+			Elec_Tip_Alt_Amp,
+			Elec_Tip_Alt_Consum,
+			Elec_Bat_Integrada,
+			Elec_Req_UPS,
+			Elec_Req_Ener_Regul,
+			Elec_Planta_Emerg,
+			Elec_Cont_Tipo,
+			Elec_Cont_Color,
+			Elec_Cont_Cant,
+			Elec_Cont_Alt_SNPT,
+			Elec_Cont_Ubicacion,
+			Elec_Observaciones,
+			Elec_Carg_Elec_QTY,
+			Elec_Carg_Elec_Total,
+
+			Hvac_Temp_Set_Point,
+			Hvac_Temp_Rang_Oper_Min,
+			Hvac_Temp_Rang_Oper_Max,
+			Hvac_Temp_Gradiente,
+			Hvac_Humedad_Rango_Min,
+			Hvac_Humedad_Rango_Max,
+			Hvac_Discip_Term,
+			Hvac_Recam_X_Hora,
+			Hvac_Renovaciones_Aire,
+			Hvac_Efici_Filtrado,
+			
+			Tel_Nodred_Cantidad,
+			Tel_Nodred_Tipo,
+			Tel_Nodred_Alt_Sntp,
+			Tel_Nodred_Ubicacion,
+			Tel_Nodcom_Cantidad,
+			Tel_Nodcom_Tipo,
+			Tel_Nodcom_Alt_Sntp,
+			Tel_Nodcom_Ubicacion,
+			Tel_Nodvideo_Cantidad,
+			Tel_Nodvideo_Tipo,
+			Tel_Nodvideo_Alt_Sntp,
+			Tel_Nodvideo_Ubicacion,
+			Tel_Ec_Tipo,
+			Tel_Ec_Req_Min,
+			Tel_Observaciones,
+
+			Hid_Agcal_Material,
+			Hid_Agcal_Diametro,
+			Hid_Agcal_Presion,
+			Hid_Agcal_Gasto,
+			Hid_Agcal_Temp,
+			Hid_Agcal_Calidad,
+			Hid_Agcal_Cantidad,
+			Hid_Agcal_Alt_SNPT,
+			Hid_Agcal_Ubicacion,
+			Hid_Agfria_Material,
+			Hid_Agfria_Diametro,
+			Hid_Agfria_Presion,
+			Hid_Agfria_Gasto,
+			Hid_Agfria_Temp,
+			Hid_Agfria_Calidad,
+			Hid_Agfria_Cantidad,
+			Hid_Agfria_Alt_SNPT,
+			Hid_Agfria_Ubicacion,
+			Hid_Observaciones,
+			Hid_Sanit_Material,
+			Hid_Sanit_Diametro,
+			Hid_Sanit_Caudal,
+			Hid_Sanit_Cantidad,
+			Hid_Sanit_Alt_SNPT,	
+			Hid_Sanit_Ubicacion,
+			Hid_Sanit_Observaciones,
+			
+			GM_Ox_Presion_Rang_Max,
+			GM_Ox_Presion_Rang_Min,
+			GM_Ox_Fluj_Oper_Max,
+			GM_Ox_Fluj_Oper_Min,
+			GM_Ox_Pres_Tom_Mural,
+			GM_Ox_Fluj_Min,
+			GM_Ox_Tipo_Conect,
+			GM_Ox_Cantidad,
+			GM_Ox_Alt_SNTP,
+			GM_Ox_Ubicacion,
+			GM_Ox_Observaciones,
+			GM_Air_Presion_Rang_Max,
+			GM_Air_Presion_Rang_Min,
+			GM_Air_Fluj_Oper_Max,
+			GM_Air_Fluj_Oper_Min,
+			GM_Air_Pres_Tom_Mural,
+			GM_Air_Fluj_Min,
+			GM_Air_Tipo_Conect,
+			GM_Air_Cantidad,
+			GM_Air_Alt_SNTP,
+			GM_Air_Ubicacion,
+			GM_Air_Observaciones,
+			GM_N2_Presion_Rang_Max,
+			GM_N2_Presion_Rang_Min,
+			GM_N2_Fluj_Oper_Max,
+			GM_N2_Fluj_Oper_Min,
+			GM_N2_Pres_Tom_Mural,
+			GM_N2_Fluj_Min,
+			GM_N2_Tipo_Conect,
+			GM_N2_Cantidad,
+			GM_N2_Alt_SNTP,
+			GM_N2_Ubicacion,	
+			GM_N2_Observaciones,
+			GM_Co2_Presion_Rang_Max,
+			GM_Co2_Presion_Rang_Min,
+			GM_Co2_Fluj_Oper_Max,
+			GM_Co2_Fluj_Oper_Min,
+			GM_Co2_Pres_Tom_Mural,
+			GM_Co2_Fluj_Min,
+			GM_Co2_Tipo_Conect,
+			GM_Co2_Cantidad,
+			GM_Co2_Alt_SNTP,
+			GM_Co2_Ubicacion,
+			GM_Co2_Observaciones,
+			GM_Vac_Presion_Rang_Max,
+			GM_Vac_Presion_Rang_Min,
+			GM_Vac_Fluj_Oper_Max,
+			GM_Vac_Fluj_Oper_Min,
+			GM_Vac_Pres_Tom_Mural,
+			GM_Vac_Fluj_Min,
+			GM_Vac_Tipo_Conect,
+			GM_Vac_Cantidad,
+			GM_Vac_Alt_SNTP,
+			GM_Vac_Ubicacion,
+			GM_Vac_Observaciones,
+			Finan_Proveedor,
+			Finan_Inv_Esti_Unit,
+			Finan_Cant_A_Adquirir,
+			Finan_Tot_Inv_Estim
+
+		FROM siga_activos S
+			LEFT JOIN siga_activo_proveedor P ON P.Id_Activo = S.Id_Activo
+			LEFT JOIN (SELECT * FROM siga_activos_contabilidad WHERE Fech_Inser IS NOT NULL) C ON S.Id_Activo = C.Id_Activo
+			LEFT JOIN siga_especificaciones_tecnicas E on S.Id_Activo=E.Id_Activo
+		WHERE 
+			0=0  AND S.Estatus_Reg <> 3  and S.Id_Area=1 
+			AND (
+				S.Id_Activo not in (select Id_Activo from siga_baja_activo)
+				OR
+				S.Id_Activo IN (
+					SELECT B_1.Id_Activo
+					FROM siga_baja_activo B_1
+					INNER JOIN 
+					(
+						SELECT TOP 1 WITH TIES
+							Id_Activo, Fecha_Baja AS UltimoRegistro, Id_baja AS UltimoMovimiento
+						FROM siga_baja_activo
+						ORDER BY
+							ROW_NUMBER() OVER(PARTITION BY Id_Activo ORDER BY Fecha_Baja DESC, Id_baja DESC)
+					) B_2
+					ON B_1.Fecha_Baja = B_2.UltimoRegistro
+					AND B_1.Id_Activo = B_2.Id_Activo
+					AND B_1.Id_Baja = B_2.UltimoMovimiento
+					WHERE
+					/*-- Cancelados y que siguen en operación --*/
+					B_1.Estatus_Cancelacion = 1 AND B_1.EstatusBaja = 0
+				)
+			)
+	";
+	if($Id_Activo!=""){
+		$sql.=" AND S.Id_Activo=".$Id_Activo." ";	
+	}
+
+	$proveedor->execute($sql);
+	if (!$proveedor->error()) {
+		if ($proveedor->rows($proveedor->stmt) > 0) {
+			while ($row = $proveedor->fetch_array($proveedor->stmt, 0)) {
+				$Data= array(		
+					"Id_Activo"=>$row["Id_Activo"],
+					"AF_BC" => $row["AF_BC"],
+					"Nombre_Activo" => $row["Nombre_Activo"],
+					"Marca" => $row["Marca"],
+					"Modelo" => $row["Modelo"],
+					"NumSerie" => $row["NumSerie"],
+					"DescLarga" => $row["DescLarga"],
+					"Ubic_Prim" => $row["Ubic_Prim"],
+					"Ubic_Sec" => $row["Ubic_Sec"],
+					"UbicacionEspecifica" => $row["UbicacionEspecifica"],
+					"Identif_Simbologia" => $row["Identif_Simbologia"],
+					"Propiedad" => $row["Propiedad"],
+					"Condicion" => $row["Condicion"],
+					"Proyeccion" => $row["Proyeccion"],
+					"F_L" => $row["F_L"],
+					"F_P" => $row["F_P"],
+					"F_H" => $row["F_H"],
+					"F_Peso" => $row["F_Peso"],
+					"F_Movilidad" => $row["F_Movilidad"],
+					"F_Observaciones" => $row["F_Observaciones"],
+
+					"Mob_Req_Esp" => $row["Mob_Req_Esp"],
+					"Mob_Lugar_Resg_Eq" => $row["Mob_Lugar_Resg_Eq"],
+					"Mob_Observaciones" => $row["Mob_Observaciones"],
+
+					"Elec_Tip_Bateria" => $row["Elec_Tip_Bateria"],
+					"Elec_Tip_Direct_Volt" => $row["Elec_Tip_Direct_Volt"],
+					"Elec_Tip_Direct_Amp" => $row["Elec_Tip_Direct_Amp"],
+					"Elec_Tip_Alt_Sis_El" => $row["Elec_Tip_Alt_Sis_El"],
+					"Elec_Tip_Alt_Volt" => $row["Elec_Tip_Alt_Volt"],
+					"Elec_Tip_Alt_Amp" => $row["Elec_Tip_Alt_Amp"],
+					"Elec_Tip_Alt_Consum" => $row["Elec_Tip_Alt_Consum"],
+					"Elec_Bat_Integrada" => $row["Elec_Bat_Integrada"],
+					"Elec_Req_UPS" => $row["Elec_Req_UPS"],
+					"Elec_Req_Ener_Regul" => $row["Elec_Req_Ener_Regul"],
+					"Elec_Planta_Emerg" => $row["Elec_Planta_Emerg"],
+					"Elec_Cont_Tipo" => $row["Elec_Cont_Tipo"],
+					"Elec_Cont_Color" => $row["Elec_Cont_Color"],
+					"Elec_Cont_Cant" => $row["Elec_Cont_Cant"],
+					"Elec_Cont_Alt_SNPT" => $row["Elec_Cont_Alt_SNPT"],
+					"Elec_Cont_Ubicacion" => $row["Elec_Cont_Ubicacion"],
+					"Elec_Observaciones" => $row["Elec_Observaciones"],
+					"Elec_Carg_Elec_QTY" => $row["Elec_Carg_Elec_QTY"],
+					"Elec_Carg_Elec_Total" => $row["Elec_Carg_Elec_Total"],
+
+					"Hvac_Temp_Set_Point" => $row["Hvac_Temp_Set_Point"],
+					"Hvac_Temp_Rang_Oper_Min" => $row["Hvac_Temp_Rang_Oper_Min"],
+					"Hvac_Temp_Rang_Oper_Max" => $row["Hvac_Temp_Rang_Oper_Max"],
+					"Hvac_Temp_Gradiente" => $row["Hvac_Temp_Gradiente"],
+					"Hvac_Humedad_Rango_Min" => $row["Hvac_Humedad_Rango_Min"],
+					"Hvac_Humedad_Rango_Max" => $row["Hvac_Humedad_Rango_Max"],
+					"Hvac_Discip_Term" => $row["Hvac_Discip_Term"],
+					"Hvac_Recam_X_Hora" => $row["Hvac_Recam_X_Hora"],
+					"Hvac_Renovaciones_Aire" => $row["Hvac_Renovaciones_Aire"],
+					"Hvac_Efici_Filtrado" => $row["Hvac_Efici_Filtrado"],
+
+					"Tel_Nodred_Cantidad" => $row["Tel_Nodred_Cantidad"],
+					"Tel_Nodred_Tipo" => $row["Tel_Nodred_Tipo"],
+					"Tel_Nodred_Alt_Sntp" => $row["Tel_Nodred_Alt_Sntp"],
+					"Tel_Nodred_Ubicacion" => $row["Tel_Nodred_Ubicacion"],
+					"Tel_Nodcom_Cantidad" => $row["Tel_Nodcom_Cantidad"],
+					"Tel_Nodcom_Tipo" => $row["Tel_Nodcom_Tipo"],
+					"Tel_Nodcom_Alt_Sntp" => $row["Tel_Nodcom_Alt_Sntp"],
+					"Tel_Nodcom_Ubicacion" => $row["Tel_Nodcom_Ubicacion"],
+					"Tel_Nodvideo_Cantidad" => $row["Tel_Nodvideo_Cantidad"],
+					"Tel_Nodvideo_Tipo" => $row["Tel_Nodvideo_Tipo"],
+					"Tel_Nodvideo_Alt_Sntp" => $row["Tel_Nodvideo_Alt_Sntp"],
+					"Tel_Nodvideo_Ubicacion" => $row["Tel_Nodvideo_Ubicacion"],
+					"Tel_Ec_Tipo" => $row["Tel_Ec_Tipo"],
+					"Tel_Ec_Req_Min" => $row["Tel_Ec_Req_Min"],
+					"Tel_Observaciones" => $row["Tel_Observaciones"],
+					"Hid_Agcal_Material" => $row["Hid_Agcal_Material"],
+					"Hid_Agcal_Diametro" => $row["Hid_Agcal_Diametro"],
+					"Hid_Agcal_Presion" => $row["Hid_Agcal_Presion"],
+					"Hid_Agcal_Gasto" => $row["Hid_Agcal_Gasto"],
+					"Hid_Agcal_Temp" => $row["Hid_Agcal_Temp"],
+					"Hid_Agcal_Calidad" => $row["Hid_Agcal_Calidad"],
+					"Hid_Agcal_Cantidad" => $row["Hid_Agcal_Cantidad"],
+					"Hid_Agcal_Alt_SNPT" => $row["Hid_Agcal_Alt_SNPT"],
+					"Hid_Agcal_Ubicacion" => $row["Hid_Agcal_Ubicacion"],
+					"Hid_Agfria_Material" => $row["Hid_Agfria_Material"],
+					"Hid_Agfria_Diametro" => $row["Hid_Agfria_Diametro"],
+					"Hid_Agfria_Presion" => $row["Hid_Agfria_Presion"],
+					"Hid_Agfria_Gasto" => $row["Hid_Agfria_Gasto"],
+					"Hid_Agfria_Temp" => $row["Hid_Agfria_Temp"],
+					"Hid_Agfria_Calidad" => $row["Hid_Agfria_Calidad"],
+					"Hid_Agfria_Cantidad" => $row["Hid_Agfria_Cantidad"],
+					"Hid_Agfria_Alt_SNPT" => $row["Hid_Agfria_Alt_SNPT"],
+					"Hid_Agfria_Ubicacion" => $row["Hid_Agfria_Ubicacion"],
+					"Hid_Observaciones" => $row["Hid_Observaciones"],
+					"Hid_Sanit_Material" => $row["Hid_Sanit_Material"],
+					"Hid_Sanit_Diametro" => $row["Hid_Sanit_Diametro"],
+					"Hid_Sanit_Caudal" => $row["Hid_Sanit_Caudal"],
+					"Hid_Sanit_Cantidad" => $row["Hid_Sanit_Cantidad"],
+					"Hid_Sanit_Alt_SNPT" => $row["Hid_Sanit_Alt_SNPT"],
+					"Hid_Sanit_Ubicacion" => $row["Hid_Sanit_Ubicacion"],
+					"Hid_Sanit_Observaciones" => $row["Hid_Sanit_Observaciones"],
+					"GM_Ox_Presion_Rang_Max" => $row["GM_Ox_Presion_Rang_Max"],
+					"GM_Ox_Presion_Rang_Min" => $row["GM_Ox_Presion_Rang_Min"],
+					"GM_Ox_Fluj_Oper_Max" => $row["GM_Ox_Fluj_Oper_Max"],
+					"GM_Ox_Fluj_Oper_Min" => $row["GM_Ox_Fluj_Oper_Min"],
+					"GM_Ox_Pres_Tom_Mural" => $row["GM_Ox_Pres_Tom_Mural"],
+					"GM_Ox_Fluj_Min" => $row["GM_Ox_Fluj_Min"],
+					"GM_Ox_Tipo_Conect" => $row["GM_Ox_Tipo_Conect"],
+					"GM_Ox_Cantidad" => $row["GM_Ox_Cantidad"],
+					"GM_Ox_Alt_SNTP" => $row["GM_Ox_Alt_SNTP"],
+					"GM_Ox_Ubicacion" => $row["GM_Ox_Ubicacion"],
+					"GM_Ox_Observaciones" => $row["GM_Ox_Observaciones"],
+					"GM_Air_Presion_Rang_Max" => $row["GM_Air_Presion_Rang_Max"],
+					"GM_Air_Presion_Rang_Min" => $row["GM_Air_Presion_Rang_Min"],
+					"GM_Air_Fluj_Oper_Max" => $row["GM_Air_Fluj_Oper_Max"],
+					"GM_Air_Fluj_Oper_Min" => $row["GM_Air_Fluj_Oper_Min"],
+					"GM_Air_Pres_Tom_Mural" => $row["GM_Air_Pres_Tom_Mural"],
+					"GM_Air_Fluj_Min" => $row["GM_Air_Fluj_Min"],
+					"GM_Air_Tipo_Conect" => $row["GM_Air_Tipo_Conect"],
+					"GM_Air_Cantidad" => $row["GM_Air_Cantidad"],
+					"GM_Air_Alt_SNTP" => $row["GM_Air_Alt_SNTP"],
+					"GM_Air_Ubicacion" => $row["GM_Air_Ubicacion"],
+					"GM_Air_Observaciones" => $row["GM_Air_Observaciones"],
+					"GM_N2_Presion_Rang_Max" => $row["GM_N2_Presion_Rang_Max"],
+					"GM_N2_Presion_Rang_Min" => $row["GM_N2_Presion_Rang_Min"],
+					"GM_N2_Fluj_Oper_Max" => $row["GM_N2_Fluj_Oper_Max"],
+					"GM_N2_Fluj_Oper_Min" => $row["GM_N2_Fluj_Oper_Min"],
+					"GM_N2_Pres_Tom_Mural" => $row["GM_N2_Pres_Tom_Mural"],
+					"GM_N2_Fluj_Min" => $row["GM_N2_Fluj_Min"],
+					"GM_N2_Tipo_Conect" => $row["GM_N2_Tipo_Conect"],
+					"GM_N2_Cantidad" => $row["GM_N2_Cantidad"],
+					"GM_N2_Alt_SNTP" => $row["GM_N2_Alt_SNTP"],
+					"GM_N2_Ubicacion" => $row["GM_N2_Ubicacion"],
+					"GM_N2_Observaciones" => $row["GM_N2_Observaciones"],
+					"GM_Co2_Presion_Rang_Max" => $row["GM_Co2_Presion_Rang_Max"],
+					"GM_Co2_Presion_Rang_Min" => $row["GM_Co2_Presion_Rang_Min"],
+					"GM_Co2_Fluj_Oper_Max" => $row["GM_Co2_Fluj_Oper_Max"],
+					"GM_Co2_Fluj_Oper_Min" => $row["GM_Co2_Fluj_Oper_Min"],
+					"GM_Co2_Pres_Tom_Mural" => $row["GM_Co2_Pres_Tom_Mural"],
+					"GM_Co2_Fluj_Min" => $row["GM_Co2_Fluj_Min"],
+					"GM_Co2_Tipo_Conect" => $row["GM_Co2_Tipo_Conect"],
+					"GM_Co2_Cantidad" => $row["GM_Co2_Cantidad"],
+					"GM_Co2_Alt_SNTP" => $row["GM_Co2_Alt_SNTP"],
+					"GM_Co2_Ubicacion" => $row["GM_Co2_Ubicacion"],
+					"GM_Co2_Observaciones" => $row["GM_Co2_Observaciones"],
+					"GM_Vac_Presion_Rang_Max" => $row["GM_Vac_Presion_Rang_Max"],
+					"GM_Vac_Presion_Rang_Min" => $row["GM_Vac_Presion_Rang_Min"],
+					"GM_Vac_Fluj_Oper_Max" => $row["GM_Vac_Fluj_Oper_Max"],
+					"GM_Vac_Fluj_Oper_Min" => $row["GM_Vac_Fluj_Oper_Min"],
+					"GM_Vac_Pres_Tom_Mural" => $row["GM_Vac_Pres_Tom_Mural"],
+					"GM_Vac_Fluj_Min" => $row["GM_Vac_Fluj_Min"],
+					"GM_Vac_Tipo_Conect" => $row["GM_Vac_Tipo_Conect"],
+					"GM_Vac_Cantidad" => $row["GM_Vac_Cantidad"],
+					"GM_Vac_Alt_SNTP" => $row["GM_Vac_Alt_SNTP"],
+					"GM_Vac_Ubicacion" => $row["GM_Vac_Ubicacion"],
+					"GM_Vac_Observaciones" => $row["GM_Vac_Observaciones"],
+					"Finan_Proveedor" => $row["Finan_Proveedor"],
+					"Finan_Inv_Esti_Unit" => $row["Finan_Inv_Esti_Unit"],
+					"Finan_Cant_A_Adquirir" => $row["Finan_Cant_A_Adquirir"],
+					"Finan_Tot_Inv_Estim" => $row["Finan_Tot_Inv_Estim"],
+				);
+				array_push($Data_Envia, $Data);
+            }
+		}
+	}else{
+		$error=true;
+	}
+	
+	$proveedor->close();
+	
+	//Fin 
+	if($error==false){
+		$respuesta = array("totalCount" => count($Data_Envia), "data" => $Data_Envia, "estatus" => "ok", "mensaje" => "Registros Encontrados");   	
+	}else{
+		$respuesta = array("totalCount" => "0", "data" => "", "estatus" => "error", "mensaje" => "Ocurrio un Error al Buscar");   	
+	}
+	return $respuesta;
 }
 
 public function emailEmpleados($numEmpleadoSolicitante){
@@ -3329,16 +5732,76 @@ public function workflow_alta($Aceptado, $Id_Alta_Activo, $Paso){
 	return true;
 }
 
-public function updateSiga_activos($Siga_activosDto,$proveedor=null){
+
+
+public function getcatalogo($tabla, $id_campo, $campo, $proveedor=null){
+
+	$respuesta = array();	
+	$Data = array();
+	$Data_Envia = array();
+	$error=false;
+
+	$proveedor = new Proveedor('sqlserver', 'activos');
+	$proveedor->connect();
+	$sql="select * from ".$tabla." where Estatus_Reg<>3 order by ".$campo;
+	
+	//echo $sql;
+	$proveedor->execute($sql);
+	if (!$proveedor->error()) {
+		if ($proveedor->rows($proveedor->stmt) > 0) {
+			while ($row = $proveedor->fetch_array($proveedor->stmt, 0)) {
+				$Data= array(
+					"".$id_campo.""=>$row["".$id_campo.""],
+					"".$campo.""=>$row["".$campo.""]
+					
+				);
+				
+				array_push($Data_Envia, $Data);
+            }
+		}
+	}else{
+		$error=true;
+	}
+	
+	$proveedor->close();
+	
+	//Fin 
+	if($error==false){
+		$respuesta = array("totalCount" => count($Data_Envia), "data" => $Data_Envia, "estatus" => "ok", "mensaje" => "Registros Encontrados");   	
+	}else{
+		$respuesta = array("totalCount" => "0", "data" => "", "estatus" => "error", "mensaje" => "Ocurrio un Error al Buscar");   	
+	}
+	
+	
+	return $respuesta;
+}
+
+public function updateSiga_activos($Siga_activosDto, $esptecnicas, $Id_Esp_Tec, $proveedor=null){
 //$Siga_activosDto=$this->validarSiga_activos($Siga_activosDto);
 $Siga_activosDao = new Siga_activosDAO();
 //$tmpDto = new Siga_activosDTO();
 //$tmpDto = $Siga_activosDao->selectSiga_activos($Siga_activosDto,$proveedor);
 //if($tmpDto!=""){//$Siga_activosDto->setFechaRegistro($tmpDto[0]->getFechaRegistro());
 $Siga_activosDto = $Siga_activosDao->updateSiga_activos($Siga_activosDto,$proveedor);
+if($Siga_activosDto[0]->getId_Area()==1){
+	if($Id_Esp_Tec==""){
+		$this->insertEspecificacionesTecnicas($Siga_activosDto[0]->getId_Activo(), $Siga_activosDto[0]->getUsr_Mod(),$esptecnicas, $proveedor);
+	}else{
+		$this->updateEspecificacionesTecnicas($Id_Esp_Tec, $Siga_activosDto[0]->getUsr_Mod(),$esptecnicas, $proveedor);
+	}
+}
 return $Siga_activosDto;
 //}
 //return "";
+}
+
+public function guardarEspTecFinan($Id_Esp_Tec, $Id_Activo, $esptecnicas, $Usr_Mod, $proveedor=null){
+	if($Id_Esp_Tec==""){
+		$this->insertEspecificacionesTecnicas($Id_Activo, $Usr_Mod,$esptecnicas, $proveedor);
+	}else{
+		$this->updateEspecificacionesTecnicas($Id_Esp_Tec, $Usr_Mod,$esptecnicas, $proveedor);
+	}
+	return "";
 }
 
 public function deleteSiga_activos($Siga_activosDto,$proveedor=null){

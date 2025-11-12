@@ -26,7 +26,7 @@ $sheet->setTitle('Póliza '.$fechainicio_titulo.' a '.$fechafin_titulo);
 // Encabezados
 $headers = [
     "Área Gestora", "Unidad", "Unidad (Establecimiento)", "Ubicación Primaria", "Ubicación Secundaria", "Propiedad", "No. Inventario", "Descripción Equipo",  "Marca",
-    "Modelo", "No. Serie",  "Fecha Alta", "Importe", "Estatus/Actualización"
+    "Modelo", "No. Serie",  "Fecha Alta/Baja", "Importe", "Estatus/Actualización"
 ];
 $col = 0;
 foreach ($headers as $header) {
@@ -63,7 +63,11 @@ foreach ($datos as $item) {
         ->setFormatCode('"$"#,##0.00;[Red]\-"$"#,##0.00');
     $col++;
     
-    $estatus = trim(($item['Baja_Activo'] ?? '') . ' ' . ($item['Alta_Activo'] ?? ''));
+    if (!empty($item['Proceso_Baja'])) {
+        $estatus = trim($item['Proceso_Baja']);
+    } else {
+        $estatus = trim(($item['Baja_Activo'] ?? '') . ' ' . ($item['Alta_Activo'] ?? ''));
+    }
     $sheet->setCellValueExplicitByColumnAndRow($col++, $row, $estatus, PHPExcel_Cell_DataType::TYPE_STRING);
     // Si es Baja, pinta la fila de rojo claro
     if (isset($item['Baja_Activo']) && strtolower(trim($item['Baja_Activo'])) == 'baja') {
@@ -86,6 +90,18 @@ foreach ($datos as $item) {
                 'fill' => [
                     'type' => PHPExcel_Style_Fill::FILL_SOLID,
                     'color' => ['rgb' => 'CCFFCC'] // Verde claro
+                ]
+            ]);
+        }
+    }
+
+    if (isset($item['Proceso_Baja']) && strtolower(trim($item['Proceso_Baja'])) == 'proceso de baja') {
+        // De la columna 0 a la última (11)
+        for ($c = 0; $c <= 13; $c++) {
+            $sheet->getStyleByColumnAndRow($c, $row)->applyFromArray([
+                'fill' => [
+                    'type' => PHPExcel_Style_Fill::FILL_SOLID,
+                    'color' => ['rgb' => 'FF9999'] // Rojo claro
                 ]
             ]);
         }

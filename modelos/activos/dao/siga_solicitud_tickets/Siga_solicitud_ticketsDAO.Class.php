@@ -1595,7 +1595,7 @@ public function llenarDataTable($draw,$columns,$order,$start,$length,$search,$Id
         return '{"draw":' . $draw . ',"recordsTotal":' . $recordsTotal . ',"recordsFiltered":' . $recordsTotal . ',"data":' . json_encode($data).'}';
     }
 		
-		public function DataTableTickets($Id_Estatus_Proceso,$siga_solicitud_ticketsDto,$Gestor_Solicitante, $Id_Seccion, $Tipo_Gestor, $Medio_de_Envio, $EsApp, $Todos_Tickets, $Tickets_SLA_Vencidos, $proveedor = null) {
+	public function DataTableTickets($Id_Estatus_Proceso,$siga_solicitud_ticketsDto,$Gestor_Solicitante, $Id_Seccion, $Tipo_Gestor, $Medio_de_Envio, $EsApp, $Todos_Tickets, $Tickets_SLA_Vencidos, $proveedor = null) {
         $recordsTotal = 0;
         $data = array();
         if ($proveedor == null) {
@@ -1675,21 +1675,21 @@ public function llenarDataTable($draw,$columns,$order,$start,$length,$search,$Id
 		
 			$Fechas_Ticket="
 				--CONVERT(VARCHAR(10),ST.Fech_Solicitud,103) +' '+SUBSTRING(CONVERT(VARCHAR(20), ST.Fech_Solicitud, 9), 13, 5)+' '+SUBSTRING(CONVERT(VARCHAR(30), ST.Fech_Solicitud, 9), 25, 2) as Fecha_Solicitud, 
-				FORMAT(ST.Fech_Seguimiento,'dd/MM/yyyy hh:mm:ss') as Fecha_Seguimiento,
-				FORMAT(ST.Fech_Espera_Cierre,'dd/MM/yyyy hh:mm:ss') as Fecha_Esp_Cierre,
-				FORMAT(ST.Fech_Cierre,'dd/MM/yyyy hh:mm:ss') as Fech_Solicitud,
+				FORMAT(ST.Fech_Seguimiento,'yyyy/MM/dd HH:mm:ss') as Fecha_Seguimiento,
+				FORMAT(ST.Fech_Espera_Cierre,'yyyy/MM/dd HH:mm:ss') as Fecha_Esp_Cierre,
+				FORMAT(ST.Fech_Cierre,'yyyy/MM/dd HH:mm:ss') as Fech_Solicitud,
 			";
 		}else{		
 				
 			$Fechas_Ticket="
-				CONVERT(BIGINT, FORMAT(ST.Fech_Inser, 'yyyyMMddHHmmss')) as Fecha_Num,
+				FORMAT(ST.Fech_Inser, 'yyyy/MM/dd HH:mm:ss') as Fecha_Num,
 				CONVERT(VARCHAR(10),ST.Fech_Solicitud,103) +' '+SUBSTRING(CONVERT(VARCHAR(20), ST.Fech_Solicitud, 9), 13, 5)+' '+SUBSTRING(CONVERT(VARCHAR(30), ST.Fech_Solicitud, 9), 25, 2) as Fecha_Solicitud, 
 				CONVERT(BIGINT, FORMAT(ST.Fech_Solicitud, 'yyyyMMddHHmmss')) as Fecha_Solicitud_Num,
-				FORMAT(ST.Fech_Seguimiento,'dd/MM/yyyy hh:mm:ss') as Fecha_Seguimiento,
+				FORMAT(ST.Fech_Seguimiento,'yyyy/MM/dd HH:mm:ss') as Fecha_Seguimiento,
 				CONVERT(BIGINT, FORMAT(ST.Fech_Seguimiento, 'yyyyMMddHHmmss')) as Fecha_Seguimiento_Num,
-				FORMAT(ST.Fech_Espera_Cierre,'dd/MM/yyyy hh:mm:ss') as Fecha_Esp_Cierre,
+				FORMAT(ST.Fech_Espera_Cierre,'yyyy/MM/dd HH:mm:ss') as Fecha_Esp_Cierre,
 				CONVERT(BIGINT, FORMAT(ST.Fech_Espera_Cierre, 'yyyyMMddHHmmss')) as Fecha_Esp_Cierre_Num,
-				FORMAT(ST.Fech_Cierre,'dd/MM/yyyy hh:mm:ss') as Fecha_Cierre,
+				FORMAT(ST.Fech_Cierre,'yyyy/MM/dd HH:mm:ss') as Fecha_Cierre,
 				CONVERT(BIGINT, FORMAT(ST.Fech_Cierre, 'yyyyMMddHHmmss')) as Fecha_Cierre_Num,
 			";
 		}
@@ -1740,13 +1740,13 @@ public function llenarDataTable($draw,$columns,$order,$start,$length,$search,$Id
             while ($row = $this->_proveedor->fetch_array($this->_proveedor->stmt, 0)) {
 				$Datos_Activo="";
 				if($row["Nombre_Act_Ext"]!=""){
-					$Datos_Activo="AF/BC: ".$row["AF_BC_Ext"]."<br>";
-					$Datos_Activo.="Nombre: ".$row["Nombre_Act_Ext"]."<br>";
-					$Datos_Activo.="Marca: ".$row["Marca_Act_Ext"]."<br>";
-					$Datos_Activo.="Modelo: ".$row["Modelo_Act_Ext"]."<br>";
-					$Datos_Activo.="Num. Serie: ".$row["No_Serie_Act_Ext"]."<br>";
-					$Datos_Activo.="Ubic. Prim: ".$row["Desc_Ubic_Prim"]."<br>";
-					$Datos_Activo.="Ubic. Sec: ".$row["Desc_Ubic_Sec"];
+					$Datos_Activo="<div>AF/BC: ".$row["AF_BC_Ext"]."</div>";
+					$Datos_Activo.="<div> Nombre: ".$row["Nombre_Act_Ext"]."</div>";
+					$Datos_Activo.="<div> Marca: ".$row["Marca_Act_Ext"]."</div>";
+					$Datos_Activo.="<div> Modelo: ".$row["Modelo_Act_Ext"]."</div>";
+					$Datos_Activo.="<div> Num. Serie: ".$row["No_Serie_Act_Ext"]."</div>";
+					$Datos_Activo.="<div> Ubic. Prim: ".$row["Desc_Ubic_Prim"]."</div>";
+					$Datos_Activo.="<div> Ubic. Sec: ".$row["Desc_Ubic_Sec"]."</div>";
 				}
 				
 				$Not_Sla=$row["SLAs_Enviados_Nuevo_Ticket"];

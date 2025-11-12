@@ -149,7 +149,196 @@ include_once(dirname(__FILE__) . "/../modelos/simple_mvc/ActivoFijoInventarioRep
 			<div role="tabpanel" class="tab-pane active" id="inventario">
 				<div class="col-md-12">
 					<div class="barrasLateralesDataTableIzquierdo"></div>
+					    <?php include_once("include_view_especifi_tecnicas.php"); ?>
+						<div align="left">
+							<button class="btn chs export" id="btn_reporte_especificacionestecnicas" tabindex="0" type="button" style="color: #fff;background-color: #27754a; border-color: #27754a; text-align: center; display:none" onclick="reporteEspecificacionesTecnicas(1,'')"><span><i class="fa fa-file-excel-o"></i> Especificaciones Técnicas Excel</span></button>
+							<table style="text-align: center; border: 1px solid #ddd; display:none" id="tabla_xlsxespectecnicas">
+								<thead>
+									<tr>
+										<th colspan="5" style="text-align: center; background-color: #9DC3E6;">Datos del Equipo</th>
+										<th colspan="4" style="text-align: center; background-color: #CCFF99;">Identificaci&oacute;n</th>
+										<th colspan="3" style="text-align: center; background-color: #fdc05f;">Comercial</th>
+										<th colspan="6" style="text-align: center; background-color: #ff0000;">F&iacute;sicas</th>
+										<th colspan="3" style="text-align: center; background-color: #c38337;">Mobiliario Adicional</th>
+										<th colspan="19" style="text-align: center; background-color: #ffc427;">El&eacute;ctrico</th>
+										<th colspan="10" style="text-align: center; background-color: #ff9e94;">HVAC</th>
+										<th colspan="15" style="text-align: center; background-color: #50cb33;">Telecomunicaciones</th>
+										<th colspan="26" style="text-align: center; background-color: #39a2d8;">Hidrosanitaria</th>
+										<th colspan="55" style="text-align: center; background-color: #7e20ff;">Gases Medicinales</th>
+										<th colspan="4" style="text-align: center; background-color: #2ba093;">Financiero</th>
+									</tr>
+									<tr>
+										<!--Datos del Equipo-->
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #9DC3E6;">No. Activo Asignado</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #9DC3E6;">Marca</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #9DC3E6;">Modelo</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #9DC3E6;">No. Serie</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #9DC3E6;">Descripción</th>
+										<!--Identificación-->
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #CCFF99;">Ubicaci&oacute;n Primaria</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #CCFF99;">Ubicaci&oacute;n Secundaria</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #CCFF99;">Ubicaci&oacute;n Espec&iacute;fica</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #CCFF99;">Simbolog&iacute;a</th>
+										<!--Comercial-->
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #fdc05f;">Propiedad</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #fdc05f;">Condición</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #fdc05f;">Proyección</th>
+										<!----Físicas-->
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #ff0000;">Dimensiones m&aacute;ximas [cm] L</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #ff0000;">Dimensiones m&aacute;ximas [cm] P</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #ff0000;">Dimensiones m&aacute;ximas [cm] H</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #ff0000;">Peso [kg]</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #ff0000;">Movilidad</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #ff0000;">Observaciones</th>
+										<!----Mobiliario Adicional-->
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #c38337;">Requerimientos especiales</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #c38337;">¿Lugar para resguardar equipo?</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #c38337;">Observaciones</th>
+										<!--Eléctrico-->
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #ffc427;">Tipo de Alimentación / Tipo</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #ffc427;">Tipo de Alimentación / Directa / Voltaje (V)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #ffc427;">Tipo de Alimentación / Directa / Amperaje (A)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #ffc427;">Tipo de Alimentación / Alterna / Sistema Eléctrico</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #ffc427;">Tipo de Alimentación / Alterna / Voltaje Nominal (V)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #ffc427;">Tipo de Alimentación / Alterna / Amperaje (A)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #ffc427;">Tipo de Alimentación / Alterna / Consumo Unitario (V*A)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #ffc427;">¿Batería Integrada?</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #ffc427;">¿Requiere UPS?</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #ffc427;">Requiere Energía Regulada</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #ffc427;">¿Planta de Emergencia?</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #ffc427;">Contacto / Tipo</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #ffc427;">Contacto / Color</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #ffc427;">Contacto / Cantidad</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #ffc427;">Contacto / Altura SNPT (CM)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #ffc427;">Contacto / Ubicación</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #ffc427;">Observaciones</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #ffc427;">QTY</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #ffc427;">Carga Eléctrica total (VA)</th>
+										<!--HVAC-->
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #ff9e94;">Temperatura Set Point (°C)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #ff9e94;">Temperatura Rango Operación (°C) Min</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #ff9e94;">Temperatura Rango Operación (°C) Max</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #ff9e94;">Temeperatura Gradiente Variación (°C)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #ff9e94;">Humedad Rango Operación (%) Min</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #ff9e94;">Humedad Rango Operación (%) Max</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #ff9e94;">Discipación Térmica (BTU/Hora)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #ff9e94;">Recambios por Hora</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #ff9e94;">Renovaciones Aire</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #ff9e94;">Eficiencia Filtrado</th>
+										<!--Telecomunicaciones-->
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #50cb33;">Nodos Red / Cantidad</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #50cb33;">Nodos Red / Tipo</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #50cb33;">Nodos Red / Altura SNPT (cm)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #50cb33;">Nodos Red / Ubicación</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #50cb33;">Nodos Com / Cantidad</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #50cb33;">Nodos Com / Tipo</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #50cb33;">Nodos Com / Altura SNPT (cm)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #50cb33;">Nodos Com / Ubicación</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #50cb33;">Nodos Video / Cantidad</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #50cb33;">Nodos Video / Tipo</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #50cb33;">Nodos Video / Altura SNPT (cm)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #50cb33;">Nodos Video / Ubicación</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #50cb33;">Equipo Computo / Tipo</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #50cb33;">Equipo Computo / Requerimientos Mínimos</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #50cb33;">Observaciones</th>
+										<!--Hidrosanitaria-->
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #39a2d8;">Hidráulico Agua Caliente / Material</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #39a2d8;">Hidráulico Agua Caliente / Diámetro (in)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #39a2d8;">Hidráulico Agua Caliente / Presión (psi)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #39a2d8;">Hidráulico Agua Caliente / Gasto (lpm)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #39a2d8;">Hidráulico Agua Caliente / Temperatura (°C)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #39a2d8;">Hidráulico Agua Caliente / Calidad (µS)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #39a2d8;">Hidráulico Agua Caliente / Cantidad</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #39a2d8;">Hidráulico Agua Caliente / Altura SNPT (cm)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #39a2d8;">Hidráulico Agua Caliente / Ubicación</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #39a2d8;">Hidráulico Agua Fría / Material</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #39a2d8;">Hidráulico Agua Fría / Diámetro (in)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #39a2d8;">Hidráulico Agua Fría / Presión (psi)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #39a2d8;">Hidráulico Agua Fría / Gasto (lpm)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #39a2d8;">Hidráulico Agua Fría / Temperatura (°C)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #39a2d8;">Hidráulico Agua Fría / Calidad (µS)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #39a2d8;">Hidráulico Agua Fría / Cantidad</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #39a2d8;">Hidráulico Agua Fría / Altura SNPT (cm)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #39a2d8;">Hidráulico Agua Fría / Ubicación</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #39a2d8;">Observaciones</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #39a2d8;">Sanitario (Drenaje) / Material</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #39a2d8;">Sanitario (Drenaje) / Diámetro (in)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #39a2d8;">Sanitario (Drenaje) / Caudal (lpm)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #39a2d8;">Sanitario (Drenaje) / Cantidad</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #39a2d8;">Sanitario (Drenaje) / Altura SNPT (cm)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #39a2d8;">Sanitario (Drenaje) / Ubicación</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #39a2d8;">Sanitario (Drenaje) / Observaciones</th>
+										<!--Gases Medicinales-->
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">Oxígeno / Especificaciones Equipo /  Presión Operación (Rango) [psi] Max</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">Oxígeno / Especificaciones Equipo /  Presión Operación (Rango) [psi] Min</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">Oxígeno / Especificaciones Equipo /  Flujo Operación (Rango) [lpm] Max</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">Oxígeno / Especificaciones Equipo /  Flujo Operación (Rango) [lpm] Min</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">Oxígeno / Toma Mural / Presión Toma Mural (psi)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">Oxígeno / Toma Mural / Flujo Mínimo Toma Mural (lpm)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">Oxígeno / Toma Mural / Tipo Conector</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">Oxígeno / Toma Mural / Cantidad</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">Oxígeno / Toma Mural / Altura SNPT (cm)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">Oxígeno / Toma Mural / Ubicación</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">Oxígeno / Observaciones</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">Aire / Especificaciones Equipo /  Presión Operación (Rango) [psi] Max</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">Aire / Especificaciones Equipo /  Presión Operación (Rango) [psi] Min</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">Aire / Especificaciones Equipo /  Flujo Operación (Rango) [lpm] Max</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">Aire / Especificaciones Equipo /  Flujo Operación (Rango) [lpm] Min</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">Aire / Toma Mural / Presión Toma Mural (psi)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">Aire / Toma Mural / Flujo Mínimo Toma Mural (lpm)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">Aire / Toma Mural / Tipo Conector</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">Aire / Toma Mural / Cantidad</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">Aire / Toma Mural / Altura SNPT (cm)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">Aire / Toma Mural / Ubicación</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">Aire / Observaciones</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">N2 / Especificaciones Equipo /  Presión Operación (Rango) [psi] Max</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">N2 / Especificaciones Equipo /  Presión Operación (Rango) [psi] Min</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">N2 / Especificaciones Equipo /  Flujo Operación (Rango) [lpm] Max</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">N2 / Especificaciones Equipo /  Flujo Operación (Rango) [lpm] Min</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">N2 / Toma Mural / Presión Toma Mural (psi)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">N2 / Toma Mural / Flujo Mínimo Toma Mural (lpm)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">N2 / Toma Mural / Tipo Conector</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">N2 / Toma Mural / Cantidad</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">N2 / Toma Mural / Altura SNPT (cm)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">N2 / Toma Mural / Ubicación</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">N2 / Observaciones</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">CO2 / Especificaciones Equipo /  Presión Operación (Rango) [psi] Max</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">CO2 / Especificaciones Equipo /  Presión Operación (Rango) [psi] Min</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">CO2 / Especificaciones Equipo /  Flujo Operación (Rango) [lpm] Max</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">CO2 / Especificaciones Equipo /  Flujo Operación (Rango) [lpm] Min</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">CO2 / Toma Mural / Presión Toma Mural (psi)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">CO2 / Toma Mural / Flujo Mínimo Toma Mural (lpm)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">CO2 / Toma Mural / Tipo Conector</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">CO2 / Toma Mural / Cantidad</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">CO2 / Toma Mural / Altura SNPT (cm)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">CO2 / Toma Mural / Ubicación</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">CO2 / Observaciones</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">Vacío / Especificaciones Equipo /  Presión Operación (Rango) [psi] Max</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">Vacío / Especificaciones Equipo /  Presión Operación (Rango) [psi] Min</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">Vacío / Especificaciones Equipo /  Flujo Operación (Rango) [lpm] Max</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">Vacío / Especificaciones Equipo /  Flujo Operación (Rango) [lpm] Min</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">Vacío / Toma Mural / Presión Toma Mural (psi)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">Vacío / Toma Mural / Flujo Mínimo Toma Mural (lpm)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">Vacío / Toma Mural / Tipo Conector</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">Vacío / Toma Mural / Cantidad</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">Vacío / Toma Mural / Altura SNPT (cm)</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">Vacío / Toma Mural / Ubicación</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #7e20ff;">Vacío / Observaciones</th>
+										<!--Financiero-->
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #2ba093;">Proveedor Sugerido</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #2ba093;">Inversión Estimada Unitaria</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #2ba093;">Cantidad a Adquirir</th>
+										<th style="text-align: center; border: 1px solid #ddd; background-color: #2ba093;">Total Inversión Estimada</th>
 
+										
+									</tr>
+								</thead>
+								<tbody id="tbody_especificaciones_tecnicas" style="border: 1px solid #ddd;">
+								</tbody>
+							</table>	
+						
+						
+						</div>
 						<div class="box">
 							<div class="box-body">
 									<!-- ==== Tabla de Activos ==== -->
@@ -305,6 +494,12 @@ include_once(dirname(__FILE__) . "/../modelos/simple_mvc/ActivoFijoInventarioRep
 					<script type="text/javascript" src="../js/validator.js"></script>
 
 					<script type="text/javascript">
+						btn_reporte_especificacionestecnicas
+						var Id_Areareporte = $("#idareasesion").val();
+						if(Id_Areareporte==1){
+							$("#btn_reporte_especificacionestecnicas").show();
+						}
+
 						// ==== FUNCIONES PARA REASIGNACIÓN DE ACTIVOS ====
 						// Función que restablece los filtros
 						function restablecerFiltros() {
@@ -1066,6 +1261,17 @@ include_once(dirname(__FILE__) . "/../modelos/simple_mvc/ActivoFijoInventarioRep
 			$("#MontoFactura_s_iva").inputmask({
 				'alias': 'numeric',
 				'groupSeparator': ',',
+				'autoGroup': true,
+				'digits': 2,
+				'radixPoint': ".",
+				'digitsOptional': false,
+				'allowMinus': false
+				//'placeholder': '0.00'
+			});
+
+			$("#Finan_Inv_Esti_Unit").inputmask({
+				'alias': 'numeric',
+				'groupSeparator': '',
 				'autoGroup': true,
 				'digits': 2,
 				'radixPoint': ".",
@@ -2149,7 +2355,157 @@ include_once(dirname(__FILE__) . "/../modelos/simple_mvc/ActivoFijoInventarioRep
 		let siga_activo_alta_fch_recepcion 	= $('#siga_activo_alta_fch_recepcion').val();
 		let siga_cmb_condicion_recepcion 		= $('#siga_cmb_condicion_recepcion').val();
 
-
+		//Identificación
+		let Identif_Simbologia = $('#Identif_Simbologia').val();
+		//Comercial
+		//let condicion = $('#cmbcondicion').val();
+		let proyeccion = $('#cmbproyeccion').val();
+		let movilidad = $('#F_Movilidad').val();
+		//Físicas
+		let F_L = $('#f_largo').val();
+		let F_P = $('#f_profundo').val();
+		let F_H = $('#f_alto').val();
+		let F_Peso = $('#f_peso').val();
+		let F_Observaciones = $('#f_observaciones').val();
+		//Mobiliario Adicional
+		let Mob_Req_Esp = $('#Mob_Req_Esp').val();
+		let Mob_Lugar_Resg_Eq = $('#Mob_Lugar_Resg_Eq').val();
+		let Mob_Observaciones = $('#Mob_Observaciones').val();
+		//Electrico
+		let Elec_Tip_Bateria = $('#Elec_Tip_Bateria').val();
+		let Elec_Tip_Direct_Volt = $('#Elec_Tip_Direct_Volt').val();
+		let Elec_Tip_Direct_Amp = $('#Elec_Tip_Direct_Amp').val();
+		let Elec_Tip_Alt_Sis_El = $('#Elec_Tip_Alt_Sis_El').val();
+		let Elec_Tip_Alt_Volt = $('#Elec_Tip_Alt_Volt').val();
+		let Elec_Tip_Alt_Amp = $('#Elec_Tip_Alt_Amp').val();
+		let Elec_Tip_Alt_Consum = $('#Elec_Tip_Alt_Consum').val();
+		let Elec_Bat_Integrada = $('#Elec_Bat_Integrada').val();
+		let Elec_Req_UPS = $('#Elec_Req_UPS').val();
+		let Elec_Req_Ener_Regul = $('#Elec_Req_Ener_Regul').val();
+		let Elec_Planta_Emerg = $('#Elec_Planta_Emerg').val();
+		let Elec_Cont_Tipo = $('#Elec_Cont_Tipo').val();
+		let Elec_Cont_Color = $('#Elec_Cont_Color').val();
+		let Elec_Cont_Cant = $('#Elec_Cont_Cant').val();
+		let Elec_Cont_Alt_SNPT = $('#Elec_Cont_Alt_SNPT').val();
+		let Elec_Cont_Ubicacion = $('#Elec_Cont_Ubicacion').val();
+		let Elec_Observaciones = $('#Elec_Observaciones').val();
+		let Elec_Carg_Elec_QTY = $('#Elec_Carg_Elec_QTY').val();
+		let Elec_Carg_Elec_Total = $('#Elec_Carg_Elec_Total').val();
+		//HVAC
+		let Hvac_Temp_Set_Point = $('#Hvac_Temp_Set_Point').val();
+		let Hvac_Temp_Rang_Oper_Min = $('#Hvac_Temp_Rang_Oper_Min').val();
+		let Hvac_Temp_Rang_Oper_Max = $('#Hvac_Temp_Rang_Oper_Max').val();
+		let Hvac_Temp_Gradiente = $('#Hvac_Temp_Gradiente').val();
+		let Hvac_Humedad_Rango_Min = $('#Hvac_Humedad_Rango_Min').val();
+		let Hvac_Humedad_Rango_Max = $('#Hvac_Humedad_Rango_Max').val();
+		let Hvac_Discip_Term = $('#Hvac_Discip_Term').val();
+		let Hvac_Recam_X_Hora = $('#Hvac_Recam_X_Hora').val();
+		let Hvac_Renovaciones_Aire = $('#Hvac_Renovaciones_Aire').val();
+		let Hvac_Efici_Filtrado = $('#Hvac_Efici_Filtrado').val();
+		//Telecomuncaciones
+		let Tel_Nodred_Cantidad = $('#Tel_Nodred_Cantidad').val();
+		let Tel_Nodred_Tipo = $('#Tel_Nodred_Tipo').val();
+		let Tel_Nodred_Alt_Sntp = $('#Tel_Nodred_Alt_Sntp').val();
+		let Tel_Nodred_Ubicacion = $('#Tel_Nodred_Ubicacion').val();
+		let Tel_Nodcom_Cantidad = $('#Tel_Nodcom_Cantidad').val();
+		let Tel_Nodcom_Tipo = $('#Tel_Nodcom_Tipo').val();
+		let Tel_Nodcom_Alt_Sntp = $('#Tel_Nodcom_Alt_Sntp').val();
+		let Tel_Nodcom_Ubicacion = $('#Tel_Nodcom_Ubicacion').val();
+		let Tel_Nodvideo_Cantidad = $('#Tel_Nodvideo_Cantidad').val();
+		let Tel_Nodvideo_Tipo = $('#Tel_Nodvideo_Tipo').val();
+		let Tel_Nodvideo_Alt_Sntp = $('#Tel_Nodvideo_Alt_Sntp').val();
+		let Tel_Nodvideo_Ubicacion = $('#Tel_Nodvideo_Ubicacion').val();
+		let Tel_Ec_Tipo = $('#Tel_Ec_Tipo').val();
+		let Tel_Ec_Req_Min = $('#Tel_Ec_Req_Min').val();
+		let Tel_Observaciones = $('#Tel_Observaciones').val();
+		//Hidrosanitario
+		let Hid_Agcal_Material = $('#Hid_Agcal_Material').val();
+		let Hid_Agcal_Diametro = $('#Hid_Agcal_Diametro').val();
+		let Hid_Agcal_Presion = $('#Hid_Agcal_Presion').val();
+		let Hid_Agcal_Gasto = $('#Hid_Agcal_Gasto').val();
+		let Hid_Agcal_Temp = $('#Hid_Agcal_Temp').val();
+		let Hid_Agcal_Calidad = $('#Hid_Agcal_Calidad').val();
+		let Hid_Agcal_Cantidad = $('#Hid_Agcal_Cantidad').val();
+		let Hid_Agcal_Alt_SNPT = $('#Hid_Agcal_Alt_SNPT').val();
+		let Hid_Agcal_Ubicacion = $('#Hid_Agcal_Ubicacion').val();
+		let Hid_Agfria_Material = $('#Hid_Agfria_Material').val();
+		let Hid_Agfria_Diametro = $('#Hid_Agfria_Diametro').val();
+		let Hid_Agfria_Presion = $('#Hid_Agfria_Presion').val();
+		let Hid_Agfria_Gasto = $('#Hid_Agfria_Gasto').val();
+		let Hid_Agfria_Temp = $('#Hid_Agfria_Temp').val();
+		let Hid_Agfria_Calidad = $('#Hid_Agfria_Calidad').val();
+		let Hid_Agfria_Cantidad = $('#Hid_Agfria_Cantidad').val();
+		let Hid_Agfria_Alt_SNPT = $('#Hid_Agfria_Alt_SNPT').val();
+		let Hid_Agfria_Ubicacion = $('#Hid_Agfria_Ubicacion').val();
+		let Hid_Observaciones = $('#Hid_Observaciones').val();
+		let Hid_Sanit_Material = $('#Hid_Sanit_Material').val();
+		let Hid_Sanit_Diametro = $('#Hid_Sanit_Diametro').val();
+		let Hid_Sanit_Caudal = $('#Hid_Sanit_Caudal').val();
+		let Hid_Sanit_Cantidad = $('#Hid_Sanit_Cantidad').val();
+		let Hid_Sanit_Alt_SNPT = $('#Hid_Sanit_Alt_SNPT').val();
+		let Hid_Sanit_Ubicacion = $('#Hid_Sanit_Ubicacion').val();
+		let Hid_Sanit_Observaciones = $('#Hid_Sanit_Observaciones').val();
+		//Gases Medicinales
+		let GM_Ox_Presion_Rang_Max = $('#GM_Ox_Presion_Rang_Max').val();
+		let GM_Ox_Presion_Rang_Min = $('#GM_Ox_Presion_Rang_Min').val();
+		let GM_Ox_Fluj_Oper_Max = $('#GM_Ox_Fluj_Oper_Max').val();
+		let GM_Ox_Fluj_Oper_Min = $('#GM_Ox_Fluj_Oper_Min').val();
+		let GM_Ox_Pres_Tom_Mural = $('#GM_Ox_Pres_Tom_Mural').val();
+		let GM_Ox_Fluj_Min = $('#GM_Ox_Fluj_Min').val();
+		let GM_Ox_Tipo_Conect = $('#GM_Ox_Tipo_Conect').val();
+		let GM_Ox_Cantidad = $('#GM_Ox_Cantidad').val();
+		let GM_Ox_Alt_SNTP = $('#GM_Ox_Alt_SNTP').val();
+		let GM_Ox_Ubicacion = $('#GM_Ox_Ubicacion').val();
+		let GM_Ox_Observaciones = $('#GM_Ox_Observaciones').val();
+		let GM_Air_Presion_Rang_Max = $('#GM_Air_Presion_Rang_Max').val();
+		let GM_Air_Presion_Rang_Min = $('#GM_Air_Presion_Rang_Min').val();
+		let GM_Air_Fluj_Oper_Max = $('#GM_Air_Fluj_Oper_Max').val();
+		let GM_Air_Fluj_Oper_Min = $('#GM_Air_Fluj_Oper_Min').val();
+		let GM_Air_Pres_Tom_Mural = $('#GM_Air_Pres_Tom_Mural').val();
+		let GM_Air_Fluj_Min = $('#GM_Air_Fluj_Min').val();
+		let GM_Air_Tipo_Conect = $('#GM_Air_Tipo_Conect').val();
+		let GM_Air_Cantidad = $('#GM_Air_Cantidad').val();
+		let GM_Air_Alt_SNTP = $('#GM_Air_Alt_SNTP').val();
+		let GM_Air_Ubicacion = $('#GM_Air_Ubicacion').val();
+		let GM_Air_Observaciones = $('#GM_Air_Observaciones').val();
+		let GM_N2_Presion_Rang_Max = $('#GM_N2_Presion_Rang_Max').val();
+		let GM_N2_Presion_Rang_Min = $('#GM_N2_Presion_Rang_Min').val();
+		let GM_N2_Fluj_Oper_Max = $('#GM_N2_Fluj_Oper_Max').val();
+		let GM_N2_Fluj_Oper_Min = $('#GM_N2_Fluj_Oper_Min').val();
+		let GM_N2_Pres_Tom_Mural = $('#GM_N2_Pres_Tom_Mural').val();
+		let GM_N2_Fluj_Min = $('#GM_N2_Fluj_Min').val();
+		let GM_N2_Tipo_Conect = $('#GM_N2_Tipo_Conect').val();
+		let GM_N2_Cantidad = $('#GM_N2_Cantidad').val();
+		let GM_N2_Alt_SNTP = $('#GM_N2_Alt_SNTP').val();
+		let GM_N2_Ubicacion = $('#GM_N2_Ubicacion').val();
+		let GM_N2_Observaciones = $('#GM_N2_Observaciones').val();
+		let GM_Co2_Presion_Rang_Max = $('#GM_Co2_Presion_Rang_Max').val();
+		let GM_Co2_Presion_Rang_Min = $('#GM_Co2_Presion_Rang_Min').val();
+		let GM_Co2_Fluj_Oper_Max = $('#GM_Co2_Fluj_Oper_Max').val();
+		let GM_Co2_Fluj_Oper_Min = $('#GM_Co2_Fluj_Oper_Min').val();
+		let GM_Co2_Pres_Tom_Mural = $('#GM_Co2_Pres_Tom_Mural').val();
+		let GM_Co2_Fluj_Min = $('#GM_Co2_Fluj_Min').val();
+		let GM_Co2_Tipo_Conect = $('#GM_Co2_Tipo_Conect').val();
+		let GM_Co2_Cantidad = $('#GM_Co2_Cantidad').val();
+		let GM_Co2_Alt_SNTP = $('#GM_Co2_Alt_SNTP').val();
+		let GM_Co2_Ubicacion = $('#GM_Co2_Ubicacion').val();
+		let GM_Co2_Observaciones = $('#GM_Co2_Observaciones').val();
+		let GM_Vac_Presion_Rang_Max = $('#GM_Vac_Presion_Rang_Max').val();
+		let GM_Vac_Presion_Rang_Min = $('#GM_Vac_Presion_Rang_Min').val();
+		let GM_Vac_Fluj_Oper_Max = $('#GM_Vac_Fluj_Oper_Max').val();
+		let GM_Vac_Fluj_Oper_Min = $('#GM_Vac_Fluj_Oper_Min').val();
+		let GM_Vac_Pres_Tom_Mural = $('#GM_Vac_Pres_Tom_Mural').val();
+		let GM_Vac_Fluj_Min = $('#GM_Vac_Fluj_Min').val();
+		let GM_Vac_Tipo_Conect = $('#GM_Vac_Tipo_Conect').val();
+		let GM_Vac_Cantidad = $('#GM_Vac_Cantidad').val();
+		let GM_Vac_Alt_SNTP = $('#GM_Vac_Alt_SNTP').val();
+		let GM_Vac_Ubicacion = $('#GM_Vac_Ubicacion').val();
+		let GM_Vac_Observaciones = $('#GM_Vac_Observaciones').val();
+		//Financiero
+		let Finan_Proveedor = $('#Finan_Proveedor').val();
+		let Finan_Inv_Esti_Unit = $('#Finan_Inv_Esti_Unit').val();
+		let Finan_Cant_A_Adquirir = $('#Finan_Cant_A_Adquirir').val();
+		let Finan_Tot_Inv_Estim = $('#Finan_Tot_Inv_Estim').val();
 		//alert(Area+'/'+Id_Tipo_Vale_Resg);
 
 		if(Id_Tipo_Vale_Resg==2 && Area==2){
@@ -2370,7 +2726,241 @@ include_once(dirname(__FILE__) . "/../modelos/simple_mvc/ActivoFijoInventarioRep
 
 	// Función que guarda la información del nuevo Activo
 	function guardaDatosGenerales() {
+		const get  = sel => $.trim($(sel).val());
+		const num  = v => (v || "").replace(/,/g, "");
+		const idActivo = get("#Id_Activo");
+		const idEspTec = get("#Id_Esp_Tec");
+		const usuario  = get("#usuariosesion");
 
+		// Especificaciones técnicas (solo válidas)
+		const esptecnicasRaw = {
+			Identif_Simbologia: get("#Identif_Simbologia"),
+			//condicion: get("#cmbcondicion"),
+			proyeccion: get("#cmbproyeccion"),
+			movilidad: get("#F_Movilidad"),
+			f_largo: num(get("#f_largo")),
+			f_profundo: num(get("#f_profundo")),
+			f_alto: num(get("#f_alto")),
+			f_peso: num(get("#f_peso")),
+			f_observaciones: num(get("#f_observaciones")),
+			Mob_Req_Esp: get("#Mob_Req_Esp"),
+			Mob_Lugar_Resg_Eq: get("#Mob_Lugar_Resg_Eq"),
+			Mob_Observaciones: get("#Mob_Observaciones"),
+			Elec_Tip_Bateria: get("#Elec_Tip_Bateria"),
+			Elec_Tip_Direct_Volt: get("#Elec_Tip_Direct_Volt"),
+			Elec_Tip_Direct_Amp: get("#Elec_Tip_Direct_Amp"),
+			Elec_Tip_Alt_Sis_El: get("#Elec_Tip_Alt_Sis_El"),
+			Elec_Tip_Alt_Volt: get("#Elec_Tip_Alt_Volt"),
+			Elec_Tip_Alt_Amp: get("#Elec_Tip_Alt_Amp"),
+			Elec_Tip_Alt_Consum: get("#Elec_Tip_Alt_Consum"),
+			Elec_Bat_Integrada: get("#Elec_Bat_Integrada"),
+			Elec_Req_UPS: get("#Elec_Req_UPS"),
+			Elec_Req_Ener_Regul: get("#Elec_Req_Ener_Regul"),
+			Elec_Planta_Emerg: get("#Elec_Planta_Emerg"),
+			Elec_Cont_Tipo: get("#Elec_Cont_Tipo"),
+			Elec_Cont_Color: get("#Elec_Cont_Color"),
+			Elec_Cont_Cant: get("#Elec_Cont_Cant"),
+			Elec_Cont_Alt_SNPT: get("#Elec_Cont_Alt_SNPT"),
+			Elec_Cont_Ubicacion: get("#Elec_Cont_Ubicacion"),
+			Elec_Observaciones: get("#Elec_Observaciones"),
+			Elec_Carg_Elec_QTY: get("#Elec_Carg_Elec_QTY"),
+			Elec_Carg_Elec_Total: get("#Elec_Carg_Elec_Total"),
+			Hvac_Temp_Set_Point: get("#Hvac_Temp_Set_Point"),
+			Hvac_Temp_Rang_Oper_Min: get("#Hvac_Temp_Rang_Oper_Min"),
+			Hvac_Temp_Rang_Oper_Max: get("#Hvac_Temp_Rang_Oper_Max"),
+			Hvac_Temp_Gradiente: get("#Hvac_Temp_Gradiente"),
+			Hvac_Humedad_Rango_Min: get("#Hvac_Humedad_Rango_Min"),
+			Hvac_Humedad_Rango_Max: get("#Hvac_Humedad_Rango_Max"),
+			Hvac_Discip_Term: get("#Hvac_Discip_Term"),
+			Hvac_Recam_X_Hora: get("#Hvac_Recam_X_Hora"),
+			Hvac_Renovaciones_Aire: get("#Hvac_Renovaciones_Aire"),
+			Hvac_Efici_Filtrado: get("#Hvac_Efici_Filtrado"),
+			Tel_Nodred_Cantidad: get("#Tel_Nodred_Cantidad"),
+			Tel_Nodred_Tipo: get("#Tel_Nodred_Tipo"),
+			Tel_Nodred_Alt_Sntp: get("#Tel_Nodred_Alt_Sntp"),
+			Tel_Nodred_Ubicacion: get("#Tel_Nodred_Ubicacion"),
+			Tel_Nodcom_Cantidad: get("#Tel_Nodcom_Cantidad"),
+			Tel_Nodcom_Tipo: get("#Tel_Nodcom_Tipo"),
+			Tel_Nodcom_Alt_Sntp: get("#Tel_Nodcom_Alt_Sntp"),
+			Tel_Nodcom_Ubicacion: get("#Tel_Nodcom_Ubicacion"),
+			Tel_Nodvideo_Cantidad: get("#Tel_Nodvideo_Cantidad"),
+			Tel_Nodvideo_Tipo: get("#Tel_Nodvideo_Tipo"),
+			Tel_Nodvideo_Alt_Sntp: get("#Tel_Nodvideo_Alt_Sntp"),
+			Tel_Nodvideo_Ubicacion: get("#Tel_Nodvideo_Ubicacion"),
+			Tel_Ec_Tipo: get("#Tel_Ec_Tipo"),
+			Tel_Ec_Req_Min: get("#Tel_Ec_Req_Min"),
+			Tel_Observaciones: get("#Tel_Observaciones"),
+			Hid_Agcal_Material: get("#Hid_Agcal_Material"),
+			Hid_Agcal_Diametro: get("#Hid_Agcal_Diametro"),
+			Hid_Agcal_Presion: get("#Hid_Agcal_Presion"),
+			Hid_Agcal_Gasto: get("#Hid_Agcal_Gasto"),
+			Hid_Agcal_Temp: get("#Hid_Agcal_Temp"),
+			Hid_Agcal_Calidad: get("#Hid_Agcal_Calidad"),
+			Hid_Agcal_Cantidad: get("#Hid_Agcal_Cantidad"),
+			Hid_Agcal_Alt_SNPT: get("#Hid_Agcal_Alt_SNPT"),
+			Hid_Agcal_Ubicacion: get("#Hid_Agcal_Ubicacion"),
+			Hid_Agfria_Material: get("#Hid_Agfria_Material"),
+			Hid_Agfria_Diametro: get("#Hid_Agfria_Diametro"),
+			Hid_Agfria_Presion: get("#Hid_Agfria_Presion"),
+			Hid_Agfria_Gasto: get("#Hid_Agfria_Gasto"),
+			Hid_Agfria_Temp: get("#Hid_Agfria_Temp"),
+			Hid_Agfria_Calidad: get("#Hid_Agfria_Calidad"),
+			Hid_Agfria_Cantidad: get("#Hid_Agfria_Cantidad"),
+			Hid_Agfria_Alt_SNPT: get("#Hid_Agfria_Alt_SNPT"),
+			Hid_Agfria_Ubicacion: get("#Hid_Agfria_Ubicacion"),
+			Hid_Observaciones: get("#Hid_Observaciones"),
+			Hid_Sanit_Material: get("#Hid_Sanit_Material"),
+			Hid_Sanit_Diametro: get("#Hid_Sanit_Diametro"),
+			Hid_Sanit_Caudal: get("#Hid_Sanit_Caudal"),
+			Hid_Sanit_Cantidad: get("#Hid_Sanit_Cantidad"),
+			Hid_Sanit_Alt_SNPT: get("#Hid_Sanit_Alt_SNPT"),
+			Hid_Sanit_Ubicacion: get("#Hid_Sanit_Ubicacion"),
+			Hid_Sanit_Observaciones: get("#Hid_Sanit_Observaciones"),
+			GM_Ox_Presion_Rang_Max: get("#GM_Ox_Presion_Rang_Max"),
+			GM_Ox_Presion_Rang_Min: get("#GM_Ox_Presion_Rang_Min"),
+			GM_Ox_Fluj_Oper_Max: get("#GM_Ox_Fluj_Oper_Max"),
+			GM_Ox_Fluj_Oper_Min: get("#GM_Ox_Fluj_Oper_Min"),
+			GM_Ox_Pres_Tom_Mural: get("#GM_Ox_Pres_Tom_Mural"),
+			GM_Ox_Fluj_Min: get("#GM_Ox_Fluj_Min"),
+			GM_Ox_Tipo_Conect: get("#GM_Ox_Tipo_Conect"),
+			GM_Ox_Cantidad: get("#GM_Ox_Cantidad"),
+			GM_Ox_Alt_SNTP: get("#GM_Ox_Alt_SNTP"),
+			GM_Ox_Ubicacion: get("#GM_Ox_Ubicacion"),
+			GM_Ox_Observaciones: get("#GM_Ox_Observaciones"),
+			GM_Air_Presion_Rang_Max: get("#GM_Air_Presion_Rang_Max"),
+			GM_Air_Presion_Rang_Min: get("#GM_Air_Presion_Rang_Min"),
+			GM_Air_Fluj_Oper_Max: get("#GM_Air_Fluj_Oper_Max"),
+			GM_Air_Fluj_Oper_Min: get("#GM_Air_Fluj_Oper_Min"),
+			GM_Air_Pres_Tom_Mural: get("#GM_Air_Pres_Tom_Mural"),
+			GM_Air_Fluj_Min: get("#GM_Air_Fluj_Min"),
+			GM_Air_Tipo_Conect: get("#GM_Air_Tipo_Conect"),
+			GM_Air_Cantidad: get("#GM_Air_Cantidad"),
+			GM_Air_Alt_SNTP: get("#GM_Air_Alt_SNTP"),
+			GM_Air_Ubicacion: get("#GM_Air_Ubicacion"),
+			GM_Air_Observaciones: get("#GM_Air_Observaciones"),
+			GM_N2_Presion_Rang_Max: get("#GM_N2_Presion_Rang_Max"),
+			GM_N2_Presion_Rang_Min: get("#GM_N2_Presion_Rang_Min"),
+			GM_N2_Fluj_Oper_Max: get("#GM_N2_Fluj_Oper_Max"),
+			GM_N2_Fluj_Oper_Min: get("#GM_N2_Fluj_Oper_Min"),
+			GM_N2_Pres_Tom_Mural: get("#GM_N2_Pres_Tom_Mural"),
+			GM_N2_Fluj_Min: get("#GM_N2_Fluj_Min"),
+			GM_N2_Tipo_Conect: get("#GM_N2_Tipo_Conect"),
+			GM_N2_Cantidad: get("#GM_N2_Cantidad"),
+			GM_N2_Alt_SNTP: get("#GM_N2_Alt_SNTP"),
+			GM_N2_Ubicacion: get("#GM_N2_Ubicacion"),
+			GM_N2_Observaciones: get("#GM_N2_Observaciones"),
+			GM_Co2_Presion_Rang_Max: get("#GM_Co2_Presion_Rang_Max"),
+			GM_Co2_Presion_Rang_Min: get("#GM_Co2_Presion_Rang_Min"),
+			GM_Co2_Fluj_Oper_Max: get("#GM_Co2_Fluj_Oper_Max"),
+			GM_Co2_Fluj_Oper_Min: get("#GM_Co2_Fluj_Oper_Min"),
+			GM_Co2_Pres_Tom_Mural: get("#GM_Co2_Pres_Tom_Mural"),
+			GM_Co2_Fluj_Min: get("#GM_Co2_Fluj_Min"),
+			GM_Co2_Tipo_Conect: get("#GM_Co2_Tipo_Conect"),
+			GM_Co2_Cantidad: get("#GM_Co2_Cantidad"),
+			GM_Co2_Alt_SNTP: get("#GM_Co2_Alt_SNTP"),
+			GM_Co2_Ubicacion: get("#GM_Co2_Ubicacion"),
+			GM_Co2_Observaciones: get("#GM_Co2_Observaciones"),
+			GM_Vac_Presion_Rang_Max: get("#GM_Vac_Presion_Rang_Max"),
+			GM_Vac_Presion_Rang_Min: get("#GM_Vac_Presion_Rang_Min"),
+			GM_Vac_Fluj_Oper_Max: get("#GM_Vac_Fluj_Oper_Max"),
+			GM_Vac_Fluj_Oper_Min: get("#GM_Vac_Fluj_Oper_Min"),
+			GM_Vac_Pres_Tom_Mural: get("#GM_Vac_Pres_Tom_Mural"),
+			GM_Vac_Fluj_Min: get("#GM_Vac_Fluj_Min"),
+			GM_Vac_Tipo_Conect: get("#GM_Vac_Tipo_Conect"),
+			GM_Vac_Cantidad: get("#GM_Vac_Cantidad"),
+			GM_Vac_Alt_SNTP: get("#GM_Vac_Alt_SNTP"),
+			GM_Vac_Ubicacion: get("#GM_Vac_Ubicacion"),
+			GM_Vac_Observaciones: get("#GM_Vac_Observaciones"),
+			Finan_Proveedor: get("#Finan_Proveedor"),
+			Finan_Inv_Esti_Unit: get("#Finan_Inv_Esti_Unit"),
+			Finan_Cant_A_Adquirir: get("#Finan_Cant_A_Adquirir"),
+			Finan_Tot_Inv_Estim: get("#Finan_Tot_Inv_Estim")
+		};
+		Object.keys(esptecnicasRaw).forEach(k => {
+			const v = esptecnicasRaw[k];
+			if (v === "" || v === "-1" || v == null) delete esptecnicasRaw[k];
+		});
+
+		const payload = {
+			AF_BC: get("#AF_BC"),
+			Nombre_Activo: get("#Nombre"),
+			DescCorta: get("#DescCorta"),
+			Id_Ubic_Prim: get("#cmbubicacionprim"),
+			Id_Ubic_Sec: get("#cmbubicacionsec"),
+			Id_Situacion_Activo: get("#cmbestatus"),
+			Estatus_Reg: idActivo ? 2 : 1,
+			Id_Area: get("#cmbareas"),
+			Id_Clase: get("#cmbclase"),
+			Id_Clasificacion: get("#cmbclasificacion"),
+			Id_Propiedad: get("#cmbpropiedad"),
+			Id_Motivo_Alta: get("#cmbmotivo"),
+			Id_Familia: get("#cmbfamilia"),
+			Id_Tipo_Activo: get("#cmbtipoactivo"),
+			DescLarga: get("#DescLarga"),
+			Foto: get("#Url_Foto_Activo"),
+			Mant_Prevent: get("#cmb_mant_prevent"),
+			siga_activo_alta_fch_operacion: get("#siga_activo_alta_fch_operacion"),
+			siga_activo_alta_fch_recepcion: get("#siga_activo_alta_fch_recepcion"),
+			siga_cmb_condicion_recepcion: get("#siga_cmb_condicion_recepcion"),
+			Id_Subfamilia: get("#cmbsubfamilia"),
+			ParticipaPre: get("#cmbPRE"),
+			ParticipaSeguros: get("#cmbseguros"),
+			ParticipaCertificacion: get("#cmbcertificacion"),
+			Id_Tipo_Vale_Resg: get("#cmbtipovaleresguardo"),
+			Marca: get("#Marca"),
+			Modelo: get("#modelo"),
+			NumSerie: get("#numserie"),
+			NumActivoAnterior: get("#numactivoanterior"),
+			ImporteSeguros: num(get("#importeseguros")),
+			Num_Empleado: get("#numempleadoresguardo"),
+			Num_Empleado_Solicitante: get("#numempleadosolicitante"),
+			Nombre_Completo: get("#nombreempleadoresguardo"),
+			Especifica: get("#especifica"),
+			Id_ActivoPadre: get("#activopadre"),
+			Id_Esp_Tec: idEspTec,
+			esptecnicas: JSON.stringify(esptecnicasRaw),
+			accion: "guardar"
+		};
+
+		if (!idActivo) {
+			payload.Usr_Inser = usuario;
+		} else {
+			payload.Id_Activo = idActivo;
+			payload.Usr_Mod = usuario;
+		}
+
+		// Limpia vacíos/-1 pero conserva 0
+		Object.keys(payload).forEach(k => {
+			const v = payload[k];
+			if (v === "" || v === "-1" || v == null) delete payload[k];
+		});
+
+		$.ajax({
+			type: "POST",
+			url: "../fachadas/activos/siga_activos/Siga_activosFacade.Class.php",
+			async: false,
+			data: $.param(payload),
+			success: resp => {
+			let data;
+			try { data = typeof resp === "string" ? JSON.parse(resp) : resp; } catch {}
+			if (!idActivo) {
+				$("#Id_Activo").val(data?.data?.[0]?.Id_Activo || "");
+				mensajesalerta("&Eacute;xito","Datos Generales guardados correctamente.","success","dark");
+				enviaCorreoAlta(data?.data?.[0]?.Id_Activo, usuario);
+				generarWorkflow("tablaactivos");
+			} else {
+				mensajesalerta("&Eacute;xito","Actualizado correctamente.","success","dark");
+			}
+			$("#altaEquipo").modal("hide");
+			$("#tablaactivos").DataTable().ajax.reload();
+			},
+			error: () => mensajesalerta("Oh No!","Ocurrió un error al guardar.","error","dark")
+		});
+	}
+
+
+	/*Funcion Old se comenta el día 17/09/2025
+	function guardaDatosGenerales() {
 		var usuariosesion = $("#usuariosesion").val();
 		//
 		var Agregar = true;
@@ -2405,10 +2995,18 @@ include_once(dirname(__FILE__) . "/../modelos/simple_mvc/ActivoFijoInventarioRep
 		let siga_activo_alta_fch_recepcion 	= $('#siga_activo_alta_fch_recepcion').val();
 		let siga_cmb_condicion_recepcion 		= $('#siga_cmb_condicion_recepcion').val();
 
+		//Comercial
+		let condicion = $('#cmbcondicion').val();
+		let proyeccion = $('#cmbproyeccion').val();
+
 		var strDatos="";
+		var strDatos2={
+			"condicion": condicion,
+			"proyeccion": proyeccion
+		}
 
 		ImporteSeguros=ImporteSeguros.replace(/\,/g,'');
-		    /* Obligatorios */
+		    //Obligatorios
 			strDatos = "AF_BC="+AFBC;
 			strDatos += "&Nombre_Activo="+Nombre;
 			strDatos += "&DescCorta="+DescCorta;
@@ -2429,7 +3027,7 @@ include_once(dirname(__FILE__) . "/../modelos/simple_mvc/ActivoFijoInventarioRep
 			strDatos += "&siga_activo_alta_fch_operacion="+siga_activo_alta_fch_operacion;
 			strDatos += "&siga_activo_alta_fch_recepcion="+siga_activo_alta_fch_recepcion;
 			strDatos += "&siga_cmb_condicion_recepcion="+siga_cmb_condicion_recepcion;
-			/* Opcionales */
+			//Opcionales
 			// Combos
 			var Id_Tipo_Vale_Resg=$.trim($("#cmbtipovaleresguardo").val());
 			if (Id_Tipo_Vale_Resg != -1)
@@ -2548,8 +3146,8 @@ include_once(dirname(__FILE__) . "/../modelos/simple_mvc/ActivoFijoInventarioRep
 				}
 			});
 
-	}
-
+	}*/
+	
 
 
 	//enviaCorreoAlta(23245,5);
@@ -2827,10 +3425,14 @@ include_once(dirname(__FILE__) . "/../modelos/simple_mvc/ActivoFijoInventarioRep
 				dataType: "html",
 				beforeSend: function (xhr) { },
 				success: function (datos) {
-
+					const IdArea=$.trim($("#cmbareas").val());
 					var json;
 					json = eval("(" + datos + ")"); //Parsear JSON
 					if(json.totalCount > 0) {
+						if(Id_activo_proveedor.length > 0 && IdArea==1) {
+							guardaFinancieroEspecificacionesTecnicas(Id_Activo);
+						}
+
 						// Actualiza la información de los Consumibles y Accesorios que están ligados al Activo
 						var parametrosJson = { listaAccesorios: listaAccesorios, listaConsumibles: listaConsumibles, Id_Activo: Id_Activo, Id_Usuario: $("#usuariosesion").val() , accion: "AccesorioConsumibleAddEdit" };
 
@@ -3010,6 +3612,48 @@ include_once(dirname(__FILE__) . "/../modelos/simple_mvc/ActivoFijoInventarioRep
 		}
 	});
 
+	function guardaFinancieroEspecificacionesTecnicas(idActivo) {
+		const get  = sel => $.trim($(sel).val());
+		const num  = v => (v || "").replace(/,/g, "");
+		const idEspTec = get("#Id_Esp_Tec");
+		const usuario  = get("#usuariosesion");
+		// Especificaciones técnicas (solo válidas)
+		const esptecnicasRaw = {
+			Finan_Proveedor: get("#Finan_Proveedor"),
+			Finan_Inv_Esti_Unit: get("#Finan_Inv_Esti_Unit"),
+			Finan_Cant_A_Adquirir: get("#Finan_Cant_A_Adquirir"),
+			Finan_Tot_Inv_Estim: get("#Finan_Tot_Inv_Estim")
+		};
+		Object.keys(esptecnicasRaw).forEach(k => {
+			const v = esptecnicasRaw[k];
+			if (v === "" || v === "-1" || v == null) delete esptecnicasRaw[k];
+		});
+
+		const payload = {
+			Id_Activo: idActivo,
+			Id_Esp_Tec: idEspTec,
+			Usr_Mod: usuario,
+			esptecnicas: JSON.stringify(esptecnicasRaw),
+			accion: "guardarEspTecFinan"
+		};
+
+		// Limpia vacíos/-1 pero conserva 0
+		Object.keys(payload).forEach(k => {
+			const v = payload[k];
+			if (v === "" || v === "-1" || v == null) delete payload[k];
+		});
+
+		$.ajax({
+			type: "POST",
+			url: "../fachadas/activos/siga_activos/Siga_activosFacade.Class.php",
+			async: false,
+			data: $.param(payload),
+			success: resp => {
+				
+			},
+			error: () => mensajesalerta("Oh No!","Ocurrió un error al guardar.","error","dark")
+		});
+	}
 
 
 	$("#guardar3").click(function () {
@@ -3156,6 +3800,9 @@ include_once(dirname(__FILE__) . "/../modelos/simple_mvc/ActivoFijoInventarioRep
 		}
 	});
 
+
+//==============================================================================================================================================================================================================
+//==============================================================================================================================================================================================================
 
 	//Autocomplete activos BAJA
 	autocomplete_baja();
@@ -3344,7 +3991,10 @@ include_once(dirname(__FILE__) . "/../modelos/simple_mvc/ActivoFijoInventarioRep
   return str.length < max ? pad("0"+str, max) : str;
 }
 
-	$("#AF_BC_baja").change(function() {
+//======================================================================================================================================================================================================
+//======================================================================================================================================================================================================
+
+	$("#AF_BC_baja").change(function() { 
 		$("#Id_Activo_Baja_Form").val("");
 		$("#Serie_baja").val("");
 		$("#marca_baja").val("");
@@ -3357,7 +4007,6 @@ include_once(dirname(__FILE__) . "/../modelos/simple_mvc/ActivoFijoInventarioRep
 		$("#jefearea_baja").val("");
 
 		var valida = true;
-		
 
 		if ($("#Id_baja_activo").val() == "")
 		{
@@ -3433,7 +4082,6 @@ include_once(dirname(__FILE__) . "/../modelos/simple_mvc/ActivoFijoInventarioRep
 				}
 			}
 
-
 		if (valida)
 			if(this.value!=""){
 				$.ajax({
@@ -3455,8 +4103,8 @@ include_once(dirname(__FILE__) . "/../modelos/simple_mvc/ActivoFijoInventarioRep
 								$("#Id_Activo_Baja_Form").val(data.data[0].Id_Activo);
 								$("#Serie_baja").val(data.data[0].NumSerie);
 								$("#marca_baja").val(data.data[0].Marca);
-								$("#modelo_baja").val(data.data[0].Modelo);
-								$("#cmbestatus_baja").val(data.data[0].Estatus_Reg);
+								$("#modelo_baja").val(data.data[0].Modelo);								
+								$("#cmbestatus_baja").val(data.data[0].Estatus_Reg);								
 								$("#cmbarea_baja").val(data.data[0].Id_Area);
 								$("#cmbubicacionprimaria_baja").val(data.data[0].Id_Ubic_Prim);
 								$("#cmbubicacionsecundaria_baja").val(data.data[0].Id_Ubic_Sec);
@@ -3727,7 +4375,7 @@ include_once(dirname(__FILE__) . "/../modelos/simple_mvc/ActivoFijoInventarioRep
 							$("#responsable_procedencia").val(data.data[0].Nombre_Completo);
 							$("#Id_UsuarioResponsableProcedencia").val(data.data[0].Num_Empleado);
 							$("#ubic_especifica_procedencia").val(data.data[0].Especifica);
-
+							//alert('3729');
 						}else {
 							mensajesalerta("", "No se encontraron resultados", "error", "dark");
 						}
@@ -3827,7 +4475,7 @@ include_once(dirname(__FILE__) . "/../modelos/simple_mvc/ActivoFijoInventarioRep
 
 	// Acción para guardar la baja del activo
 	$("#generarbaja").click(function () {
-
+		
 		$("#generarbaja").hide();
 		var Agregar = true;
 		var mensaje_error = "";
@@ -4865,7 +5513,7 @@ $('#fechaDelR').datepicker({
 		$("#cmbseguros").val(-1);
 		$("#cmbcertificacion").val(-1);
 		$("#importeseguros").val("");
-
+		limpiarcamposespecificacionestecnicas();
 		var Num_Empleado=$.trim($("#numempleadoresguardo").val());
 		if(Num_Empleado!=""){
 			if(Num_Empleado.length > 0){
@@ -4938,6 +5586,240 @@ $('#fechaDelR').datepicker({
 
 
 	}
+	limpiarcamposespecificacionestecnicas=function(){
+		$("#Id_Esp_Tec").val("");
+		//Identificacion
+		$("#Identif_Simbologia").val("");
+		//Comercial
+		//$("#cmbcondicion").val("");
+		$("#cmbproyeccion").val("");
+		$("#F_Movilidad").val("");
+		//Fisicas
+		$("#f_largo").val("");
+		$("#f_profundo").val("");
+		$("#f_alto").val("");
+		$("#f_peso").val("");
+		$("#f_observaciones").val("");
+		//Mobiliario Adicional
+		$("#Mob_Req_Esp").val("");
+		$("#Mob_Lugar_Resg_Eq").val("");
+		$("#Mob_Observaciones").val("");
+		//Electrico
+		$("#Elec_Tip_Bateria").val("");
+		$("#Elec_Tip_Direct_Volt").val("");
+		$("#Elec_Tip_Direct_Amp").val("");
+		$("#Elec_Tip_Alt_Sis_El").val("");
+		$("#Elec_Tip_Alt_Volt").val("");
+		$("#Elec_Tip_Alt_Amp").val("");
+		$("#Elec_Tip_Alt_Consum").val("");
+		$("#Elec_Bat_Integrada").val("");
+		$("#Elec_Req_UPS").val("");
+		$("#Elec_Req_Ener_Regul").val("");
+		$("#Elec_Planta_Emerg").val("");
+		$("#Elec_Cont_Tipo").val("");
+		$("#Elec_Cont_Color").val("");
+		$("#Elec_Cont_Cant").val("");
+		$("#Elec_Cont_Alt_SNPT").val("");
+		$("#Elec_Cont_Ubicacion").val("");
+		$("#Elec_Observaciones").val("");
+		$("#Elec_Carg_Elec_QTY").val("");
+		//HVAC
+		$("#Elec_Carg_Elec_Total").val("");
+		$("#Hvac_Temp_Set_Point").val("");
+		$("#Hvac_Temp_Rang_Oper_Min").val("");
+		$("#Hvac_Temp_Rang_Oper_Max").val("");
+		$("#Hvac_Temp_Gradiente").val("");
+		$("#Hvac_Humedad_Rango_Min").val("");
+		$("#Hvac_Humedad_Rango_Max").val("");
+		$("#Hvac_Discip_Term").val("");
+		$("#Hvac_Recam_X_Hora").val("");
+		$("#Hvac_Renovaciones_Aire").val("");
+		$("#Hvac_Efici_Filtrado").val("");
+		//Telecomunicaciones
+		$("#Tel_Nodred_Cantidad").val("");
+		$("#Tel_Nodred_Tipo").val("");
+		$("#Tel_Nodred_Alt_Sntp").val("");
+		$("#Tel_Nodred_Ubicacion").val("");
+		$("#Tel_Nodcom_Cantidad").val("");
+		$("#Tel_Nodcom_Tipo").val("");
+		$("#Tel_Nodcom_Alt_Sntp").val("");
+		$("#Tel_Nodcom_Ubicacion").val("");
+		$("#Tel_Nodvideo_Cantidad").val("");
+		$("#Tel_Nodvideo_Tipo").val("");
+		$("#Tel_Nodvideo_Alt_Sntp").val("");
+		$("#Tel_Nodvideo_Ubicacion").val("");
+		$("#Tel_Ec_Tipo").val("");
+		$("#Tel_Ec_Req_Min").val("");
+		$("#Tel_Observaciones").val("");
+		//Hidrosanitario
+		$("#Hid_Agcal_Material").val("");
+		$("#Hid_Agcal_Diametro").val("");
+		$("#Hid_Agcal_Presion").val("");
+		$("#Hid_Agcal_Gasto").val("");
+		$("#Hid_Agcal_Temp").val("");
+		$("#Hid_Agcal_Calidad").val("");
+		$("#Hid_Agcal_Cantidad").val("");
+		$("#Hid_Agcal_Alt_SNPT").val("");
+		$("#Hid_Agcal_Ubicacion").val("");
+		$("#Hid_Agfria_Material").val("");
+		$("#Hid_Agfria_Diametro").val("");
+		$("#Hid_Agfria_Presion").val("");
+		$("#Hid_Agfria_Gasto").val("");
+		$("#Hid_Agfria_Temp").val("");
+		$("#Hid_Agfria_Calidad").val("");
+		$("#Hid_Agfria_Cantidad").val("");
+		$("#Hid_Agfria_Alt_SNPT").val("");
+		$("#Hid_Agfria_Ubicacion").val("");
+		$("#Hid_Observaciones").val("");
+		$("#Hid_Sanit_Material").val("");
+		$("#Hid_Sanit_Diametro").val("");
+		$("#Hid_Sanit_Caudal").val("");
+		$("#Hid_Sanit_Cantidad").val("");
+		$("#Hid_Sanit_Alt_SNPT").val("");
+		$("#Hid_Sanit_Ubicacion").val("");
+		$("#Hid_Sanit_Observaciones").val("");
+		//Gases Medicinales
+		$("#GM_Ox_Presion_Rang_Max").val("");
+		$("#GM_Ox_Presion_Rang_Min").val("");
+		$("#GM_Ox_Fluj_Oper_Max").val("");
+		$("#GM_Ox_Fluj_Oper_Min").val("");
+		$("#GM_Ox_Pres_Tom_Mural").val("");
+		$("#GM_Ox_Fluj_Min").val("");
+		$("#GM_Ox_Tipo_Conect").val("");
+		$("#GM_Ox_Cantidad").val("");
+		$("#GM_Ox_Alt_SNTP").val("");
+		$("#GM_Ox_Ubicacion").val("");
+		$("#GM_Ox_Observaciones").val("");
+		$("#GM_Air_Presion_Rang_Max").val("");
+		$("#GM_Air_Presion_Rang_Min").val("");
+		$("#GM_Air_Fluj_Oper_Max").val("");
+		$("#GM_Air_Fluj_Oper_Min").val("");
+		$("#GM_Air_Pres_Tom_Mural").val("");
+		$("#GM_Air_Fluj_Min").val("");
+		$("#GM_Air_Tipo_Conect").val("");
+		$("#GM_Air_Cantidad").val("");
+		$("#GM_Air_Alt_SNTP").val("");
+		$("#GM_Air_Ubicacion").val("");
+		$("#GM_Air_Observaciones").val("");
+		$("#GM_N2_Presion_Rang_Max").val("");
+		$("#GM_N2_Presion_Rang_Min").val("");
+		$("#GM_N2_Fluj_Oper_Max").val("");
+		$("#GM_N2_Fluj_Oper_Min").val("");
+		$("#GM_N2_Pres_Tom_Mural").val("");
+		$("#GM_N2_Fluj_Min").val("");
+		$("#GM_N2_Tipo_Conect").val("");
+		$("#GM_N2_Cantidad").val("");
+		$("#GM_N2_Alt_SNTP").val("");
+		$("#GM_N2_Ubicacion").val("");
+		$("#GM_N2_Observaciones").val("");
+		$("#GM_Co2_Presion_Rang_Max").val("");
+		$("#GM_Co2_Presion_Rang_Min").val("");
+		$("#GM_Co2_Fluj_Oper_Max").val("");
+		$("#GM_Co2_Fluj_Oper_Min").val("");
+		$("#GM_Co2_Pres_Tom_Mural").val("");
+		$("#GM_Co2_Fluj_Min").val("");
+		$("#GM_Co2_Tipo_Conect").val("");
+		$("#GM_Co2_Cantidad").val("");
+		$("#GM_Co2_Alt_SNTP").val("");
+		$("#GM_Co2_Ubicacion").val("");
+		$("#GM_Co2_Observaciones").val("");
+		$("#GM_Vac_Presion_Rang_Max").val("");
+		$("#GM_Vac_Presion_Rang_Min").val("");
+		$("#GM_Vac_Fluj_Oper_Max").val("");
+		$("#GM_Vac_Fluj_Oper_Min").val("");
+		$("#GM_Vac_Pres_Tom_Mural").val("");
+		$("#GM_Vac_Fluj_Min").val("");
+		$("#GM_Vac_Tipo_Conect").val("");
+		$("#GM_Vac_Cantidad").val("");
+		$("#GM_Vac_Alt_SNTP").val("");
+		$("#GM_Vac_Ubicacion").val("");
+		$("#GM_Vac_Observaciones").val("");
+		//Financiera
+		$("#Finan_Proveedor").val("");
+		$("#Finan_Inv_Esti_Unit").val("");
+		$("#Finan_Cant_A_Adquirir").val("");
+		$("#Finan_Tot_Inv_Estim").val("");
+	}
+	
+	//Calcular el valor en financiero
+	function calcularTotal() {
+		// Obtener los valores de los inputs
+		var valorUnitario = parseFloat($("#Finan_Inv_Esti_Unit").val()) || 0;
+		var cantidad = parseFloat($("#Finan_Cant_A_Adquirir").val()) || 0;
+
+		// Calcular el total
+		var total = valorUnitario * cantidad;
+
+		// Mostrar el resultado en el campo de total
+		$("#Finan_Tot_Inv_Estim").val("$" + total.toFixed(2)); // opcional: redondea a 2 decimales
+	}
+
+	// Ejecutar la función al escribir en cualquiera de los dos campos
+	$("#Finan_Inv_Esti_Unit, #Finan_Cant_A_Adquirir").on("input", calcularTotal);
+	
+	//Caulcular el consumo
+	function calcularConsumo() {
+		const DF8 = $("#Elec_Tip_Alt_Sis_El").val();   // Tipo de sistema (MONOFÁSICO o TRIFÁSICO)
+		const DG8 = parseFloat($("#Elec_Tip_Alt_Volt").val()) || 0; // Voltaje
+		const DH8 = parseFloat($("#Elec_Tip_Alt_Amp").val()) || 0;  // Amperaje
+
+		let consumo = 0;
+
+		if (DF8 === "") {
+			consumo = 0;
+		} else if (DF8.toUpperCase() === "MONOFÁSICO") {
+			consumo = DG8 * DH8;
+		} else {
+			consumo = DG8 * DH8 * Math.sqrt(3);
+		}
+
+		$("#Elec_Tip_Alt_Consum").val(consumo.toFixed(2)); // Redondea a 2 decimales
+
+		//Llamar automáticamente al cálculo del total
+		calcularTotalConsumo();
+	}
+
+	// Recalcular cuando cualquiera de los campos cambie
+	$("#Elec_Tip_Alt_Sis_El, #Elec_Tip_Alt_Volt, #Elec_Tip_Alt_Amp").on("input change", calcularConsumo);
+
+	// Calcular el total del consumo
+	function calcularTotalConsumo() {
+		const consumo = parseFloat($("#Elec_Tip_Alt_Consum").val()) || 0;
+		const cargaElectrica = parseFloat($("#Elec_Carg_Elec_QTY").val()) || 0;
+
+		const total = consumo * cargaElectrica;
+
+		$("#Elec_Carg_Elec_Total").val(total.toFixed(2)); // Redondea a 2 decimales
+	}
+	// Ejecutar la función al escribir en cualquiera de los dos campos
+	$("#Elec_Tip_Alt_Consum, #Elec_Carg_Elec_QTY").on("input", calcularTotalConsumo);
+	
+	function pasarproveedorchange(){
+		const nomproveedor = $("#NombreProveedor").val();
+		$("#Finan_Proveedor").val(nomproveedor);
+	}
+	$("#NombreProveedor").on("input", pasarproveedorchange);
+	$("#NombreProveedor").on("change", pasarproveedorchange);
+
+
+	function calculoinvestimada(){
+		var monto_activo = parseFloat($("#MontoFactura_s_iva").val().replace(/,/g, '')) || 0;
+  		var importe_seguro = parseFloat($("#importeseguros").val().replace(/,/g, '')) || 0;
+		console.log(importe_seguro);
+		var inversion_estimada=0;
+		if(monto_activo>0){
+			inversion_estimada=monto_activo;
+		}else if(importe_seguro>0){
+			inversion_estimada=importe_seguro;
+		}
+		$("#Finan_Inv_Esti_Unit").val(inversion_estimada);
+		calcularTotal();
+	}
+	$("#importeseguros, #MontoFactura_s_iva").on("input", calculoinvestimada);
+	$("#importeseguros, #MontoFactura_s_iva").on("change", calculoinvestimada);
+	/////FIn del calculo
+
+
 
 	limpiarcamposproveedor=function()
 	{
@@ -5168,9 +6050,13 @@ $('#fechaDelR').datepicker({
 		limpiarcamposproveedor();
 		limpiarcamposcontabilidad();
 		limpiarcamposbaja();
-
+		limpiarcamposespecificacionestecnicas();
 		if (id != "") {
+			getespecificacionestecnicas(id);
 			// Consulta la información del Activo que ha sido pasado como parámetro (id)
+			var nameproveedor="";
+			var monto_activo=0;
+			var importe_seguro=0;
 			$.ajax({
 				type: "POST",
 				url: "../fachadas/activos/siga_activos/Siga_activosFacade.Class.php",
@@ -5182,6 +6068,7 @@ $('#fechaDelR').datepicker({
 
 					data = eval("(" + data + ")");
 					if (data.totalCount > 0) {
+						var Id_Area = $("#idareasesion").val();
 						$("#guardar").html("Actualizar Datos Generales");
 						if ($("#numserie").val() == "") {
 							$("#chknumserie").prop("checked",true);
@@ -5257,7 +6144,9 @@ $('#fechaDelR').datepicker({
 
 						$("#cmbcertificacion").val(data.data[0].ParticipaCertificacion);
 						$("#importeseguros").val(data.data[0].ImporteSeguros);
-
+						if(data.data[0].ImporteSeguros!=null && data.data[0].ImporteSeguros!=""){
+							importe_seguro=data.data[0].ImporteSeguros;
+						}
 						var $select3 = $('#numempleadoresguardo').selectize({});
 						var control3 = $select3[0].selectize;
 						control3.addItem(data.data[0].Num_Empleado);
@@ -5383,7 +6272,7 @@ $('#fechaDelR').datepicker({
 					mensajesalerta("Oh No!", "Ocurrio un error al consultar.", "error", "dark");
 				}
 			});
-
+			
 
 			$.ajax({
                 type: "POST",
@@ -5423,6 +6312,9 @@ $('#fechaDelR').datepicker({
 						$("#FechaFactura").datepicker('update');
 						$("#UUID").val(data.data[0].UUID);
 						$("#MontoFactura_s_iva").val(data.data[0].MontoFactura);
+						if(data.data[0].MontoFactura!=null && data.data[0].MontoFactura!=""){
+							monto_activo=data.data[0].MontoFactura;
+						}
 						$("#NumContrato").val(data.data[0].NumContrato);
 						$("#VidaUtilFabricante").val(data.data[0].VidaUtilFabricante);
 						$("#VidaUtilCHS").val(data.data[0].VidaUtilCHS);
@@ -5432,6 +6324,9 @@ $('#fechaDelR').datepicker({
 						$("#Fecha_Vencimiento").datepicker('update');
 						$("#Id_Proveedor").val(data.data[0].Id_Proveedor);
 						$("#NombreProveedor").val(data.data[0].NombreProveedor);
+						if(data.data[0].NombreProveedor!=""){
+							nameproveedor=data.data[0].NombreProveedor;
+						}
 						$("#Contacto").val(data.data[0].Contacto);
 						$("#Telefono").val(data.data[0].Telefono);
 						$("#Correo").val(data.data[0].Correo);
@@ -5607,8 +6502,481 @@ $('#fechaDelR').datepicker({
 					mensajesalerta("Oh No!", "Ocurrio un error al consultar.", "error", "dark");
                 }
             });
+			if(nameproveedor != ""){
+				$("#Finan_Proveedor").val(nameproveedor);
+			}
+
+			if(monto_activo > 0){
+				$("#Finan_Inv_Esti_Unit").val(monto_activo);
+			}else if(importe_seguro > 0){
+				$("#Finan_Inv_Esti_Unit").val(importe_seguro);
+			}else{
+				$("#Finan_Inv_Esti_Unit").val(0);
+			}
 		}
     }
+
+	getespecificacionestecnicas=function(id){
+		$.ajax({
+            type: "POST",
+            url: "../fachadas/activos/siga_activos/Siga_activosFacade.Class.php",
+            async: false,
+            data: {
+                Id_Activo: id,
+                accion: "getespecificacionestecnicas"
+            },
+            dataType: "html",
+            beforeSend: function (xhr) {
+
+            },
+			success: function (data) {
+                data = eval("(" + data + ")");
+                if (data.totalCount > 0) {
+					$("#Id_Esp_Tec").val(data.data[0].Id_Esp_Tec);
+					//Identificación
+					$("#Identif_Simbologia").val(data.data[0].Identif_Simbologia);
+					//Comercial
+					//$("#cmbcondicion").val(data.data[0].Com_Condicion);
+					$("#cmbproyeccion").val(data.data[0].Com_Proyeccion);
+					//Fisicas
+					$("#f_largo").val(data.data[0].F_L);
+					$("#f_profundo").val(data.data[0].F_P);
+					$("#f_alto").val(data.data[0].F_H);
+					$("#f_peso").val(data.data[0].F_Peso);
+					$("#F_Movilidad").val(data.data[0].F_Movilidad);
+					$("#f_observaciones").val(data.data[0].F_Observaciones);
+					//Mobiliario Adicional
+					$("#Mob_Req_Esp").val(data.data[0].Mob_Req_Esp);
+					$("#Mob_Lugar_Resg_Eq").val(data.data[0].Mob_Lugar_Resg_Eq);
+					$("#Mob_Observaciones").val(data.data[0].Mob_Observaciones);
+					//Electrico
+					$("#Elec_Tip_Bateria").val(data.data[0].Elec_Tip_Bateria);
+					$("#Elec_Tip_Direct_Volt").val(data.data[0].Elec_Tip_Direct_Volt);
+					$("#Elec_Tip_Direct_Amp").val(data.data[0].Elec_Tip_Direct_Amp);
+					$("#Elec_Tip_Alt_Sis_El").val(data.data[0].Elec_Tip_Alt_Sis_El);
+					$("#Elec_Tip_Alt_Volt").val(data.data[0].Elec_Tip_Alt_Volt);
+					$("#Elec_Tip_Alt_Amp").val(data.data[0].Elec_Tip_Alt_Amp);
+					$("#Elec_Tip_Alt_Consum").val(data.data[0].Elec_Tip_Alt_Consum);
+					$("#Elec_Bat_Integrada").val(data.data[0].Elec_Bat_Integrada);
+					$("#Elec_Req_UPS").val(data.data[0].Elec_Req_UPS);
+					$("#Elec_Req_Ener_Regul").val(data.data[0].Elec_Req_Ener_Regul);
+					$("#Elec_Planta_Emerg").val(data.data[0].Elec_Planta_Emerg);
+					$("#Elec_Cont_Tipo").val(data.data[0].Elec_Cont_Tipo);
+					$("#Elec_Cont_Color").val(data.data[0].Elec_Cont_Color);
+					$("#Elec_Cont_Cant").val(data.data[0].Elec_Cont_Cant);
+					$("#Elec_Cont_Alt_SNPT").val(data.data[0].Elec_Cont_Alt_SNPT);
+					$("#Elec_Cont_Ubicacion").val(data.data[0].Elec_Cont_Ubicacion);
+					$("#Elec_Observaciones").val(data.data[0].Elec_Observaciones);
+					$("#Elec_Carg_Elec_QTY").val(data.data[0].Elec_Carg_Elec_QTY);
+					$("#Elec_Carg_Elec_Total").val(data.data[0].Elec_Carg_Elec_Total);
+					//HVAC
+					$("#Hvac_Temp_Set_Point").val(data.data[0].Hvac_Temp_Set_Point);
+					$("#Hvac_Temp_Rang_Oper_Min").val(data.data[0].Hvac_Temp_Rang_Oper_Min);
+					$("#Hvac_Temp_Rang_Oper_Max").val(data.data[0].Hvac_Temp_Rang_Oper_Max);
+					$("#Hvac_Temp_Gradiente").val(data.data[0].Hvac_Temp_Gradiente);
+					$("#Hvac_Humedad_Rango_Min").val(data.data[0].Hvac_Humedad_Rango_Min);
+					$("#Hvac_Humedad_Rango_Max").val(data.data[0].Hvac_Humedad_Rango_Max);
+					$("#Hvac_Discip_Term").val(data.data[0].Hvac_Discip_Term);
+					$("#Hvac_Recam_X_Hora").val(data.data[0].Hvac_Recam_X_Hora);
+					$("#Hvac_Renovaciones_Aire").val(data.data[0].Hvac_Renovaciones_Aire);
+					$("#Hvac_Efici_Filtrado").val(data.data[0].Hvac_Efici_Filtrado);
+					//Telecomunicaciones
+					$("#Tel_Nodred_Cantidad").val(data.data[0].Tel_Nodred_Cantidad);
+					$("#Tel_Nodred_Tipo").val(data.data[0].Tel_Nodred_Tipo);
+					$("#Tel_Nodred_Alt_Sntp").val(data.data[0].Tel_Nodred_Alt_Sntp);
+					$("#Tel_Nodred_Ubicacion").val(data.data[0].Tel_Nodred_Ubicacion);
+					$("#Tel_Nodcom_Cantidad").val(data.data[0].Tel_Nodcom_Cantidad);
+					$("#Tel_Nodcom_Tipo").val(data.data[0].Tel_Nodcom_Tipo);
+					$("#Tel_Nodcom_Alt_Sntp").val(data.data[0].Tel_Nodcom_Alt_Sntp);
+					$("#Tel_Nodcom_Ubicacion").val(data.data[0].Tel_Nodcom_Ubicacion);
+					$("#Tel_Nodvideo_Cantidad").val(data.data[0].Tel_Nodvideo_Cantidad);
+					$("#Tel_Nodvideo_Tipo").val(data.data[0].Tel_Nodvideo_Tipo);
+					$("#Tel_Nodvideo_Alt_Sntp").val(data.data[0].Tel_Nodvideo_Alt_Sntp);
+					$("#Tel_Nodvideo_Ubicacion").val(data.data[0].Tel_Nodvideo_Ubicacion);
+					$("#Tel_Ec_Tipo").val(data.data[0].Tel_Ec_Tipo);
+					$("#Tel_Ec_Req_Min").val(data.data[0].Tel_Ec_Req_Min);
+					$("#Tel_Observaciones").val(data.data[0].Tel_Observaciones);
+					//Hidrosanitario
+					$("#Hid_Agcal_Material").val(data.data[0].Hid_Agcal_Material);
+					$("#Hid_Agcal_Diametro").val(data.data[0].Hid_Agcal_Diametro);
+					$("#Hid_Agcal_Presion").val(data.data[0].Hid_Agcal_Presion);
+					$("#Hid_Agcal_Gasto").val(data.data[0].Hid_Agcal_Gasto);
+					$("#Hid_Agcal_Temp").val(data.data[0].Hid_Agcal_Temp);
+					$("#Hid_Agcal_Calidad").val(data.data[0].Hid_Agcal_Calidad);
+					$("#Hid_Agcal_Cantidad").val(data.data[0].Hid_Agcal_Cantidad);
+					$("#Hid_Agcal_Alt_SNPT").val(data.data[0].Hid_Agcal_Alt_SNPT);
+					$("#Hid_Agcal_Ubicacion").val(data.data[0].Hid_Agcal_Ubicacion);
+					$("#Hid_Agfria_Material").val(data.data[0].Hid_Agfria_Material);
+					$("#Hid_Agfria_Diametro").val(data.data[0].Hid_Agfria_Diametro);
+					$("#Hid_Agfria_Presion").val(data.data[0].Hid_Agfria_Presion);
+					$("#Hid_Agfria_Gasto").val(data.data[0].Hid_Agfria_Gasto);
+					$("#Hid_Agfria_Temp").val(data.data[0].Hid_Agfria_Temp);
+					$("#Hid_Agfria_Calidad").val(data.data[0].Hid_Agfria_Calidad);
+					$("#Hid_Agfria_Cantidad").val(data.data[0].Hid_Agfria_Cantidad);
+					$("#Hid_Agfria_Alt_SNPT").val(data.data[0].Hid_Agfria_Alt_SNPT);
+					$("#Hid_Agfria_Ubicacion").val(data.data[0].Hid_Agfria_Ubicacion);
+					$("#Hid_Observaciones").val(data.data[0].Hid_Observaciones);
+					$("#Hid_Sanit_Material").val(data.data[0].Hid_Sanit_Material);
+					$("#Hid_Sanit_Diametro").val(data.data[0].Hid_Sanit_Diametro);
+					$("#Hid_Sanit_Caudal").val(data.data[0].Hid_Sanit_Caudal);
+					$("#Hid_Sanit_Cantidad").val(data.data[0].Hid_Sanit_Cantidad);
+					$("#Hid_Sanit_Alt_SNPT").val(data.data[0].Hid_Sanit_Alt_SNPT);
+					$("#Hid_Sanit_Ubicacion").val(data.data[0].Hid_Sanit_Ubicacion);
+					$("#Hid_Sanit_Observaciones").val(data.data[0].Hid_Sanit_Observaciones);
+					//Gases Medicinales
+					$("#GM_Ox_Presion_Rang_Max").val(data.data[0].GM_Ox_Presion_Rang_Max);
+					$("#GM_Ox_Presion_Rang_Min").val(data.data[0].GM_Ox_Presion_Rang_Min);
+					$("#GM_Ox_Fluj_Oper_Max").val(data.data[0].GM_Ox_Fluj_Oper_Max);
+					$("#GM_Ox_Fluj_Oper_Min").val(data.data[0].GM_Ox_Fluj_Oper_Min);
+					$("#GM_Ox_Pres_Tom_Mural").val(data.data[0].GM_Ox_Pres_Tom_Mural);
+					$("#GM_Ox_Fluj_Min").val(data.data[0].GM_Ox_Fluj_Min);
+					$("#GM_Ox_Tipo_Conect").val(data.data[0].GM_Ox_Tipo_Conect);
+					$("#GM_Ox_Cantidad").val(data.data[0].GM_Ox_Cantidad);
+					$("#GM_Ox_Alt_SNTP").val(data.data[0].GM_Ox_Alt_SNTP);
+					$("#GM_Ox_Ubicacion").val(data.data[0].GM_Ox_Ubicacion);
+					$("#GM_Ox_Observaciones").val(data.data[0].GM_Ox_Observaciones);
+					$("#GM_Air_Presion_Rang_Max").val(data.data[0].GM_Air_Presion_Rang_Max);
+					$("#GM_Air_Presion_Rang_Min").val(data.data[0].GM_Air_Presion_Rang_Min);
+					$("#GM_Air_Fluj_Oper_Max").val(data.data[0].GM_Air_Fluj_Oper_Max);
+					$("#GM_Air_Fluj_Oper_Min").val(data.data[0].GM_Air_Fluj_Oper_Min);
+					$("#GM_Air_Pres_Tom_Mural").val(data.data[0].GM_Air_Pres_Tom_Mural);
+					$("#GM_Air_Fluj_Min").val(data.data[0].GM_Air_Fluj_Min);
+					$("#GM_Air_Tipo_Conect").val(data.data[0].GM_Air_Tipo_Conect);
+					$("#GM_Air_Cantidad").val(data.data[0].GM_Air_Cantidad);
+					$("#GM_Air_Alt_SNTP").val(data.data[0].GM_Air_Alt_SNTP);
+					$("#GM_Air_Ubicacion").val(data.data[0].GM_Air_Ubicacion);
+					$("#GM_Air_Observaciones").val(data.data[0].GM_Air_Observaciones);
+					$("#GM_N2_Presion_Rang_Max").val(data.data[0].GM_N2_Presion_Rang_Max);
+					$("#GM_N2_Presion_Rang_Min").val(data.data[0].GM_N2_Presion_Rang_Min);
+					$("#GM_N2_Fluj_Oper_Max").val(data.data[0].GM_N2_Fluj_Oper_Max);
+					$("#GM_N2_Fluj_Oper_Min").val(data.data[0].GM_N2_Fluj_Oper_Min);
+					$("#GM_N2_Pres_Tom_Mural").val(data.data[0].GM_N2_Pres_Tom_Mural);
+					$("#GM_N2_Fluj_Min").val(data.data[0].GM_N2_Fluj_Min);
+					$("#GM_N2_Tipo_Conect").val(data.data[0].GM_N2_Tipo_Conect);
+					$("#GM_N2_Cantidad").val(data.data[0].GM_N2_Cantidad);
+					$("#GM_N2_Alt_SNTP").val(data.data[0].GM_N2_Alt_SNTP);
+					$("#GM_N2_Ubicacion").val(data.data[0].GM_N2_Ubicacion);
+					$("#GM_N2_Observaciones").val(data.data[0].GM_N2_Observaciones);
+					$("#GM_Co2_Presion_Rang_Max").val(data.data[0].GM_Co2_Presion_Rang_Max);
+					$("#GM_Co2_Presion_Rang_Min").val(data.data[0].GM_Co2_Presion_Rang_Min);
+					$("#GM_Co2_Fluj_Oper_Max").val(data.data[0].GM_Co2_Fluj_Oper_Max);
+					$("#GM_Co2_Fluj_Oper_Min").val(data.data[0].GM_Co2_Fluj_Oper_Min);
+					$("#GM_Co2_Pres_Tom_Mural").val(data.data[0].GM_Co2_Pres_Tom_Mural);
+					$("#GM_Co2_Fluj_Min").val(data.data[0].GM_Co2_Fluj_Min);
+					$("#GM_Co2_Tipo_Conect").val(data.data[0].GM_Co2_Tipo_Conect);
+					$("#GM_Co2_Cantidad").val(data.data[0].GM_Co2_Cantidad);
+					$("#GM_Co2_Alt_SNTP").val(data.data[0].GM_Co2_Alt_SNTP);
+					$("#GM_Co2_Ubicacion").val(data.data[0].GM_Co2_Ubicacion);
+					$("#GM_Co2_Observaciones").val(data.data[0].GM_Co2_Observaciones);
+					$("#GM_Vac_Presion_Rang_Max").val(data.data[0].GM_Vac_Presion_Rang_Max);
+					$("#GM_Vac_Presion_Rang_Min").val(data.data[0].GM_Vac_Presion_Rang_Min);
+					$("#GM_Vac_Fluj_Oper_Max").val(data.data[0].GM_Vac_Fluj_Oper_Max);
+					$("#GM_Vac_Fluj_Oper_Min").val(data.data[0].GM_Vac_Fluj_Oper_Min);
+					$("#GM_Vac_Pres_Tom_Mural").val(data.data[0].GM_Vac_Pres_Tom_Mural);
+					$("#GM_Vac_Fluj_Min").val(data.data[0].GM_Vac_Fluj_Min);
+					$("#GM_Vac_Tipo_Conect").val(data.data[0].GM_Vac_Tipo_Conect);
+					$("#GM_Vac_Cantidad").val(data.data[0].GM_Vac_Cantidad);
+					$("#GM_Vac_Alt_SNTP").val(data.data[0].GM_Vac_Alt_SNTP);
+					$("#GM_Vac_Ubicacion").val(data.data[0].GM_Vac_Ubicacion);
+					$("#GM_Vac_Observaciones").val(data.data[0].GM_Vac_Observaciones);
+					//Financiera
+					//$("#Finan_Proveedor").val(data.data[0].Finan_Proveedor);
+					$("#Finan_Inv_Esti_Unit").val(data.data[0].Finan_Inv_Esti_Unit);
+					$("#Finan_Cant_A_Adquirir").val(data.data[0].Finan_Cant_A_Adquirir);
+					$("#Finan_Tot_Inv_Estim").val(data.data[0].Finan_Tot_Inv_Estim);
+				}
+            },
+            error: function () {
+				mensajesalerta("Oh No!", "Ocurrio un error al consultar.", "error", "dark");
+            }
+        });
+	}
+
+	reporteEspecificacionesTecnicas = function(Opc, Id_Activo){
+		jsShowWindowLoad("Por favor espere, generando reporte de especificaciones técnicas");
+		$.ajax({
+			type: "POST",
+			url: "../fachadas/activos/siga_activos/Siga_activosFacade.Class.php",
+			async: true,
+			data: {
+				accion: "reporteEspecificacionesTecnicas",
+				Id_Activo: Id_Activo
+			},
+			dataType: "html",
+			beforeSend: function (xhr) {
+				jsShowWindowLoad("Por favor espere, generando reporte de especificaciones técnicas");
+			},
+			success: function (data) {
+				data = eval("(" + data + ")");
+				if (data.totalCount > 0) {
+					if(Opc==1){
+						// Limpiar el tbody específico antes de llenarlo
+						$('#tbody_especificaciones_tecnicas').empty();
+					}
+					if(Opc==2){
+						// Limpiar el tbody específico antes de llenarlo
+						$('#tbody_especificaciones_tecnicas_view').empty();
+					}
+					
+					// Iterar sobre los datos y crear filas
+					for (var i = 0; i < data.totalCount; i++) {
+						var item = data.data[i];
+						
+						var fila = '<tr>';
+						// Datos del Equipo
+						fila += '<td style="border: 1px solid #ddd;">' + (item.AF_BC || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Marca || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Modelo || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.NumSerie || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.DescLarga || '') + '</td>';
+						// Identificación
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Ubic_Prim || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Ubic_Sec || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.UbicacionEspecifica || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Identif_Simbologia || '') + '</td>';
+						// Comercial
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Propiedad || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Condicion || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Proyeccion || '') + '</td>';
+						// Físicas
+						fila += '<td style="border: 1px solid #ddd;">' + (item.F_L || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.F_P || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.F_H || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.F_Peso || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.F_Movilidad || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.F_Observaciones || '') + '</td>';
+						// Mobiliario Adicional
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Mob_Req_Esp || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Mob_Lugar_Resg_Eq || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Mob_Observaciones || '') + '</td>';
+						// Eléctrico
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Elec_Tip_Bateria || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Elec_Tip_Direct_Volt || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Elec_Tip_Direct_Amp || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Elec_Tip_Alt_Sis_El || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Elec_Tip_Alt_Volt || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Elec_Tip_Alt_Amp || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Elec_Tip_Alt_Consum || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Elec_Bat_Integrada || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Elec_Req_UPS || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Elec_Req_Ener_Regul || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Elec_Planta_Emerg || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Elec_Cont_Tipo || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Elec_Cont_Color || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Elec_Cont_Cant || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Elec_Cont_Alt_SNPT || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Elec_Cont_Ubicacion || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Elec_Observaciones || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Elec_Carg_Elec_QTY || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Elec_Carg_Elec_Total || '') + '</td>';				
+						//HVAC
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Hvac_Temp_Set_Point || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Hvac_Temp_Rang_Oper_Min || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Hvac_Temp_Rang_Oper_Max || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Hvac_Temp_Gradiente || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Hvac_Humedad_Rango_Min || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Hvac_Humedad_Rango_Max || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Hvac_Discip_Term || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Hvac_Recam_X_Hora || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Hvac_Renovaciones_Aire || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Hvac_Efici_Filtrado || '') + '</td>';
+						//Telecomunicaciones
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Tel_Nodred_Cantidad || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Tel_Nodred_Tipo || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Tel_Nodred_Alt_Sntp || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Tel_Nodred_Ubicacion || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Tel_Nodcom_Cantidad || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Tel_Nodcom_Tipo || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Tel_Nodcom_Alt_Sntp || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Tel_Nodcom_Ubicacion || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Tel_Nodvideo_Cantidad || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Tel_Nodvideo_Tipo || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Tel_Nodvideo_Alt_Sntp || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Tel_Nodvideo_Ubicacion || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Tel_Ec_Tipo || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Tel_Ec_Req_Min || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Tel_Observaciones || '') + '</td>';
+						//Hidrosanitario
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Hid_Agcal_Material || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Hid_Agcal_Diametro || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Hid_Agcal_Presion || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Hid_Agcal_Gasto || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Hid_Agcal_Temp || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Hid_Agcal_Calidad || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Hid_Agcal_Cantidad || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Hid_Agcal_Alt_SNPT || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Hid_Agcal_Ubicacion || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Hid_Agfria_Material || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Hid_Agfria_Diametro || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Hid_Agfria_Presion || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Hid_Agfria_Gasto || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Hid_Agfria_Temp || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Hid_Agfria_Calidad || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Hid_Agfria_Cantidad || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Hid_Agfria_Alt_SNPT || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Hid_Agfria_Ubicacion || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Hid_Observaciones || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Hid_Sanit_Material || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Hid_Sanit_Diametro || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Hid_Sanit_Caudal || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Hid_Sanit_Cantidad || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Hid_Sanit_Alt_SNPT || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Hid_Sanit_Ubicacion || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Hid_Sanit_Observaciones || '') + '</td>';
+						//Gases Medicinales
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Ox_Presion_Rang_Max || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Ox_Presion_Rang_Min || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Ox_Fluj_Oper_Max || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Ox_Fluj_Oper_Min || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Ox_Pres_Tom_Mural || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Ox_Fluj_Min || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Ox_Tipo_Conect || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Ox_Cantidad || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Ox_Alt_SNTP || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Ox_Ubicacion || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Ox_Observaciones || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Air_Presion_Rang_Max || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Air_Presion_Rang_Min || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Air_Fluj_Oper_Max || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Air_Fluj_Oper_Min || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Air_Pres_Tom_Mural || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Air_Fluj_Min || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Air_Tipo_Conect || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Air_Cantidad || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Air_Alt_SNTP || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Air_Ubicacion || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Air_Observaciones || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_N2_Presion_Rang_Max || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_N2_Presion_Rang_Min || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_N2_Fluj_Oper_Max || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_N2_Fluj_Oper_Min || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_N2_Pres_Tom_Mural || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_N2_Fluj_Min || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_N2_Tipo_Conect || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_N2_Cantidad || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_N2_Alt_SNTP || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_N2_Ubicacion || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_N2_Observaciones || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Co2_Presion_Rang_Max || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Co2_Presion_Rang_Min || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Co2_Fluj_Oper_Max || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Co2_Fluj_Oper_Min || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Co2_Pres_Tom_Mural || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Co2_Fluj_Min || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Co2_Tipo_Conect || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Co2_Cantidad || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Co2_Alt_SNTP || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Co2_Ubicacion || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Co2_Observaciones || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Vac_Presion_Rang_Max || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Vac_Presion_Rang_Min || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Vac_Fluj_Oper_Max || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Vac_Fluj_Oper_Min || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Vac_Pres_Tom_Mural || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Vac_Fluj_Min || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Vac_Tipo_Conect || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Vac_Cantidad || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Vac_Alt_SNTP || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Vac_Ubicacion || '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.GM_Vac_Observaciones	|| '') + '</td>';
+						//Financiera
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Finan_Proveedor	|| '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Finan_Inv_Esti_Unit	|| '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Finan_Cant_A_Adquirir	|| '') + '</td>';
+						fila += '<td style="border: 1px solid #ddd;">' + (item.Finan_Tot_Inv_Estim	|| '') + '</td>';
+
+						fila += '</tr>';
+						
+						if(Opc==1){
+							// Agregar fila al tbody específico
+							$('#tbody_especificaciones_tecnicas').append(fila);
+						}
+						if(Opc==2){
+							// Agregar fila al tbody específico
+							$('#tbody_especificaciones_tecnicas_view').append(fila);
+						}
+						
+					}
+					if(Opc==1){
+						exportarExcel();
+					}
+					
+				}
+			},
+			error: function () {
+				mensajesalerta("Oh No!", "Ocurrió un error al consultar las especificaciones técnicas.", "error", "dark");
+			},
+			complete: function() {
+				jsRemoveWindowLoad();
+			}
+		});
+	}
+
+	function exportarExcel() {
+    // Verificar que la tabla tenga datos
+    var tabla = document.getElementById("tabla_xlsxespectecnicas");
+    if (!tabla) {
+        mensajesalerta("Error", "No se encontró la tabla para exportar.", "error", "dark");
+        return;
+    }
+
+    var filas = tabla.querySelectorAll('tbody tr');
+    if (filas.length === 0) {
+        mensajesalerta("Información", "No hay datos para exportar. Genere primero el reporte.", "info", "dark");
+        return;
+    }
+
+    try {
+        // Obtener el HTML de la tabla
+        var tablaHTML = tabla.outerHTML;
+        
+        // Crear el blob con el tipo MIME correcto
+        var blob = new Blob(['\ufeff' + tablaHTML], { 
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=utf-8;' 
+        });
+
+        // Crear enlace de descarga
+        var enlace = document.createElement('a');
+        var url = URL.createObjectURL(blob);
+        
+        enlace.href = url;
+        enlace.download = 'especificaciones_tecnicas.xls';
+        enlace.style.display = 'none';
+        
+        // Agregar al DOM, hacer clic y remover
+        document.body.appendChild(enlace);
+        enlace.click();
+        document.body.removeChild(enlace);
+        
+        // Limpiar la URL del blob
+        setTimeout(function() {
+            URL.revokeObjectURL(url);
+        }, 100);
+        
+        mensajesalerta("Éxito", "Archivo Excel generado correctamente.", "success", "dark");
+        
+    } catch (error) {
+        console.error('Error al generar Excel:', error);
+        mensajesalerta("Error", "Ocurrió un error al generar el archivo Excel.", "error", "dark");
+    }
+}
+
+
+	// Función para exportar la tabla a Excel usando una librería simple
+	function exportarEspecificacionesTecnicasExcel() {
+		if ($('table tbody tr').length === 0 || $('table tbody tr').first().find('td').first().attr('colspan')) {
+			mensajesalerta("Información", "No hay datos para exportar. Genere primero el reporte.", "info", "dark");
+			return;
+		}
+		
+		// Usar table2excel (necesitas incluir la librería)
+		$('table').table2excel({
+			exclude: ".no-export",
+			name: "Especificaciones Técnicas",
+			filename: "especificaciones_tecnicas_" + new Date().getTime() + ".xls",
+			fileext: ".xls"
+		});
+	}
 
 	var variable_ir_inventario="<?php echo $variable_ir_inventario; ?>";
 	if(variable_ir_inventario!=""){
@@ -5720,6 +7088,13 @@ $('#fechaDelR').datepicker({
 		});
 	}
 
+
+//==============================================================================================================================================================================================
+//==============================================================================================================================================================================================
+	viewespeciftec = function (Id_Activo){
+		$("#modalexpeciftec").modal("show");
+		reporteEspecificacionesTecnicas(2,Id_Activo);
+	}
 	workflowreubicaciones=function(id){
 		$("#wflreubicacion").html("");
 		$("#workflowreubicacion").modal("show");
@@ -5740,6 +7115,7 @@ $('#fechaDelR').datepicker({
 				if (data.totalCount > 0) {
 					var workflow = "";
 					var sinlink=false;
+					var aceptado=0;
 					for (var i = 0; i < data.totalCount; i++) {
 						var colorwfl="amarillo";
 						if(data.data[i].Aceptado==0){
@@ -5766,8 +7142,24 @@ $('#fechaDelR').datepicker({
 							workflow += '    <small><span><b>Correo:</b> </span>' + data.data[i].Correo + '</small><br>';
 						}
 
-						if (data.data[i].Aceptado == 0 && sinlink==false) {
-							//workflow += '    <small><span><a href="">link</a></span></small>';
+						if(data.data[i].CveWorkflow==1){
+							if (data.data[i].Aceptado == 0 && sinlink==false) {
+								workflow += '<small><span><a href="acepto_reubicacion.php?Id_Workflow_Reubicacion_Activo='+data.data[i].Id_Workflow_Reubicacion_Activo+'&Id_Reubicacion_Activo='+data.data[i].Id_Reubicacion_Activo+'&Paso='+data.data[i].CveWorkflow+'" target="_blank">Link Aprobación</a></span></small>';
+							}
+						}else if(data.data[i].CveWorkflow>1){
+							if (data.data[i].Aceptado == 0 && aceptado==1 && sinlink==false) {
+								workflow += '<small><span><a href="acepto_reubicacion.php?Id_Workflow_Reubicacion_Activo='+data.data[i].Id_Workflow_Reubicacion_Activo+'&Id_Reubicacion_Activo='+data.data[i].Id_Reubicacion_Activo+'&Paso='+data.data[i].CveWorkflow+'" target="_blank">Link Aprobación</a></span></small>';
+							}
+						}
+
+						if(data.data[i].Aceptado==0){
+							aceptado=0;
+						}
+						if(data.data[i].Aceptado==1){
+							aceptado=1;
+						}
+						if(data.data[i].Aceptado==2){
+							aceptado=2;
 						}
 						workflow += '</p></div>';
 					}
@@ -5781,6 +7173,9 @@ $('#fechaDelR').datepicker({
 		});
 	
 	}
+
+//==============================================================================================================================================================================================
+//==============================================================================================================================================================================================
 
 	workflowaltaactivo=function(id){
 		$("#wflalta").html("");
@@ -5802,8 +7197,10 @@ $('#fechaDelR').datepicker({
 				if (data.totalCount > 0) {
 					var workflow = "";
 					var sinlink=false;
+					var aceptado=0;
 					for (var i = 0; i < data.totalCount; i++) {
 						var colorwfl="amarillo";
+						
 						if(data.data[i].Aceptado==0){
 							colorwfl="amarillo";
 						}
@@ -5828,9 +7225,26 @@ $('#fechaDelR').datepicker({
 							workflow += '    <small><span><b>Correo:</b> </span>' + data.data[i].Correo + '</small><br>';
 						}
 
-						if (data.data[i].Aceptado == 0 && sinlink==false) {
-							workflow += '    <small><span><a href="">link</a></span></small>';
+						if(data.data[i].CveWorkflow==1){
+							if (data.data[i].Aceptado == 0 && sinlink==false) {
+								workflow += '<small><span><a href="acepto_alta.php?Id_Activo='+data.data[i].Id_Activo+'&Id_Activo_Alta='+data.data[i].Id_Alta_Activo+'&Paso='+data.data[i].CveWorkflow+'" target="_blank">Link Aprobación</a></span></small>';
+							}
+						}else if(data.data[i].CveWorkflow>1){
+							if (data.data[i].Aceptado == 0 && aceptado==1 && sinlink==false) {
+								workflow += '<small><span><a href="acepto_alta.php?Id_Activo='+data.data[i].Id_Activo+'&Id_Activo_Alta='+data.data[i].Id_Alta_Activo+'&Paso='+data.data[i].CveWorkflow+'" target="_blank">Link Aprobación</a></span></small>';
+							}
 						}
+
+						if(data.data[i].Aceptado==0){
+							aceptado=0;
+						}
+						if(data.data[i].Aceptado==1){
+							aceptado=1;
+						}
+						if(data.data[i].Aceptado==2){
+							aceptado=2;
+						}
+						
 						workflow += '</p></div>';
 					}
 					$("#wflalta").html(workflow);	
@@ -6364,7 +7778,7 @@ $('#fechaDelR').datepicker({
 			}
 		}
 
-		function validaMantenimiento() { alert('');
+		function validaMantenimiento() { 
 			var Id_Activo = $("#Id_Activo").val();
 			var Perfil=$("#hddperfil").val();
 			var IdArea=$("#idareasesion").val();
@@ -6608,6 +8022,9 @@ $('#fechaDelR').datepicker({
 			}
 		}
 
+//===========================================================================================================================================================================================================
+//===========================================================================================================================================================================================================
+
 		function compareDate(str1) {
 			// str1 format should be dd/mm/yyyy. Separator can be anything e.g. / or -. It wont effect
 			var dt1   = parseInt(str1.substring(0,2));
@@ -6616,6 +8033,9 @@ $('#fechaDelR').datepicker({
 			var date1 = new Date(yr1, mon1-1, dt1);
 			return date1;
 		}
+
+//===========================================================================================================================================================================================================
+//===========================================================================================================================================================================================================
 
 		function validaFecha(FechaInicio,FechaFactura,mensaje,campo) {
 			if (FechaInicio != "" && FechaFactura != "") {
@@ -6635,9 +8055,15 @@ $('#fechaDelR').datepicker({
 		  $('[data-toggle="tooltip"]').tooltip();
 		})*/
 
+//===========================================================================================================================================================================================================
+//===========================================================================================================================================================================================================
+
 		$("#cmbCuenta_baja").change(function(e) {
 			$("#Cuenta_baja").val($("#cmbCuenta_baja option:selected").text());
 		});
+
+//===========================================================================================================================================================================================================
+//===========================================================================================================================================================================================================
 
 		$("#chknumserie").change(function(e){
 			if ($("#chknumserie").is(":checked"))
@@ -6646,9 +8072,15 @@ $('#fechaDelR').datepicker({
 				$("#spannunmserie").show();
 		});
 
+//===========================================================================================================================================================================================================
+//===========================================================================================================================================================================================================
+
 		$('#UUID').keyup(function () {
 			$(this).val($(this).val().toUpperCase());
 		});
+
+//===========================================================================================================================================================================================================
+//===========================================================================================================================================================================================================
 
 		$('#UUID2').focusout( function(e) {
 			var url = $('#UUID2').val();
@@ -6661,6 +8093,9 @@ $('#fechaDelR').datepicker({
 			$("#Monto_Factura").val(tt);
 		});
 
+//===========================================================================================================================================================================================================
+//===========================================================================================================================================================================================================
+
 		function getUrlParameter(sParam,url) {
 			var sPageURL = url, sURLVariables = sPageURL.split('&'), sParameterName, i;
 			for (i = 0; i < sURLVariables.length; i++) {
@@ -6671,6 +8106,9 @@ $('#fechaDelR').datepicker({
 				}
 			}
 		}
+
+//===========================================================================================================================================================================================================
+//===========================================================================================================================================================================================================
 
 		$("#cmbparticipaendepresiacion").change(function(e){
 			if ($("#cmbparticipaendepresiacion").val() == 1) {
@@ -6683,15 +8121,24 @@ $('#fechaDelR').datepicker({
 			}
 		});
 
+//===========================================================================================================================================================================================================
+//===========================================================================================================================================================================================================
+
 		$('a[data-toggle="tooltip"]').tooltip({
 			animated: 'fade',
 			placement: 'bottom',
 			html: true
 		});
 
+//===========================================================================================================================================================================================================
+//===========================================================================================================================================================================================================
+
 		$( "#NombreProveedor").focusin(function (e){
 			$( "#NombreProveedor" ).autocomplete('search');
 		});
+
+//===========================================================================================================================================================================================================
+//===========================================================================================================================================================================================================
 
 		$( "#NombreProveedor" ).autocomplete({
 			source: "buscaProveedor.php",
@@ -6703,6 +8150,9 @@ $('#fechaDelR').datepicker({
 			}
 		});
 
+//===========================================================================================================================================================================================================
+//===========================================================================================================================================================================================================
+
 		$("#cmbpropiedad").change(function (e){
 			if ($("#cmbpropiedad").val() == 1)  {
 				$("#spanFechaFactura").show();
@@ -6712,12 +8162,15 @@ $('#fechaDelR').datepicker({
 			}
 		});
 
+//===========================================================================================================================================================================================================
+//===========================================================================================================================================================================================================
+
 		if("<?php echo $Id_Menu;?>"=="25"){
 			$("#tabbaja_definitiva").click();
 		}
 
-
-
+//===========================================================================================================================================================================================================
+//===========================================================================================================================================================================================================
 
 		// Función para ver detalle en una ventana modal del Accesorio/Consumible que está ligado al activo seleccionado
 		function verAccesorioConsumible(elemento) {
@@ -6734,6 +8187,9 @@ $('#fechaDelR').datepicker({
 			});
 		}
 
+//===========================================================================================================================================================================================================
+//===========================================================================================================================================================================================================
+
 		// Función que hace el movimiento de los botones de manera horizontal al mover el Scroll en el eje X y evitar que se queden fijos por tener una posición absolute
 		function movimientoHorizontalBotonesExcel(IdTabla) {
 			$("#" + IdTabla + "_wrapper div.dataTables_scrollBody").on("scroll", function (e) {
@@ -6743,11 +8199,15 @@ $('#fechaDelR').datepicker({
 			});
 		}
 
+//===========================================================================================================================================================================================================
+//===========================================================================================================================================================================================================
+
 		// Función que generar los filtros de manera dinámica a partir de los Activos
 		var lstFiltrosTablaActivos = [];
 		var lstFiltrosTablaBajas = [];
 		var lstFiltrosTablaReubicacion = [];
 		var aplicarReloadFiltro = false;
+		
 		function filtro_multiselect_generico(elementoSelect = null) {
 			// Identificador de la Tabla
 			var IdTabla = $(elementoSelect).data("id-tabla");
@@ -6900,6 +8360,9 @@ $('#fechaDelR').datepicker({
 		}
 
 
+//===========================================================================================================================================================================================================
+//===========================================================================================================================================================================================================
+
 		// Función que actualiza la lista de filtros tipo Excel al momento de [des]marcar un checkbox que están dentro de la lista mostrada
 		function actualizarListaFiltro(Id_Select_Filtro) {
 			// Identificador de la Tabla
@@ -6965,6 +8428,9 @@ $('#fechaDelR').datepicker({
 		}
 
 
+//===========================================================================================================================================================================================================
+//===========================================================================================================================================================================================================
+
 		// WORKFLOW
 		// Función que carga el workflow en una modal de administración especifica (Alta, Baja, Reubicación)
 		function cargarWokflow(elemento) {
@@ -6992,6 +8458,9 @@ $('#fechaDelR').datepicker({
 			});
 		}
 		// Función que genera el inicio de un workflow
+
+//===========================================================================================================================================================================================================
+//===========================================================================================================================================================================================================
 
 		function iniciarWorkflow(elemento = null) {
 			if(elemento != null) {
@@ -7027,6 +8496,9 @@ $('#fechaDelR').datepicker({
 			}
 		}
 
+//===========================================================================================================================================================================================================
+//===========================================================================================================================================================================================================
+
 		function sigaSelectCondicionDeRecepcion(id_activo,id_selector){
 
 			$.ajax({
@@ -7041,6 +8513,9 @@ $('#fechaDelR').datepicker({
 
 		}
 
+//===========================================================================================================================================================================================================
+//===========================================================================================================================================================================================================
+
 		function sigaVrdAltaActivo(usuariosesion){
 			$.ajax({
 				type: "POST",
@@ -7054,9 +8529,8 @@ $('#fechaDelR').datepicker({
 			});
 
 		}
-
 	
-	</script>
+</script>
 
 <style>
 	.table-chs thead select { color: initial; font-size: 11px; }

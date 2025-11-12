@@ -217,7 +217,6 @@
 										opciones.push('<div class="text-center"><span class="cursor-pointer" onclick="workflowaltaactivo(' + obj.WAId_Activo + ')"><i style="color:blue; font-size: 14px" class="fa fa-sitemap" aria-hidden="true" ></i></span></div>');
 									}
 									<?php if(in_array(59,$AdminGralActivos)){ ?>
-
 									opciones.push('<div class="text-center"><span class="cursor-pointer" onclick="pasarelimina(' + obj.Id_Activo + ')" title="Eliminar el Activo"><i class="fa fa-trash" aria-hidden="true"></i></span></div>');
 
 								<?php } 
@@ -255,6 +254,9 @@
 							"data": function (obj) {
 								var opciones = new Array();
 								<?php if($NombreTabla == "tablaactivos") { ?>
+									if(obj.Id_Area=="Biomédica"){
+										opciones.push('<div class="text-center"><a  href="#noir" onclick="viewespeciftec(' + obj.Id_Activo + ')" title="Especificaciones Técnicas"><span class="span-file-adjunto"><i class="fa fa-eye fa-file-adjunto" aria-hidden="true"></i></span></a></div>');
+									}
 									opciones.push('<div class="text-center"><a target="_blank" href="../controladores/activos/siga_activos/Reporte-Alta.php?Id_Activo=' + obj.Id_Activo + '" title="Click para ver el PDF"><span class="span-file-adjunto"><i class="fa fa-paperclip fa-file-adjunto" aria-hidden="true"></i></span></a></div>');
 								<?php }
 								else if($NombreTabla == "tablebajas") { ?>
