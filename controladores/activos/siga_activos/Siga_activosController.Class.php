@@ -1366,7 +1366,7 @@ public function proceso_notas_salida($Id_Area, $proveedor=null){
 }
 
 
-public function historial_notas_salida($Id_Area, $proveedor=null){
+public function historial_notas_salida($Id_Area, $Fech_Inicial, $Fech_Final, $proveedor=null){
 	$respuesta = array();	
 	$Data = array();
 	$Data_Envia = array();
@@ -1375,19 +1375,37 @@ public function historial_notas_salida($Id_Area, $proveedor=null){
 	$proveedor = new Proveedor('sqlserver', 'activos');
 	$proveedor->connect();
 	$sql="
-		select Id_Nota_Salida,Empresa_Recibe, Desc_Ubic_Prim, Desc_Ubic_Sec, Desc_Motivo_Alta, Nombre_Realiza_Nota, Nombre_Quien_Autoriza, Nombre_Contacto as Recibe, Fech_Firma_Recibe
-		from siga_nota_salida 
-		left join siga_cat_ubic_prim on siga_nota_salida.Id_Ubic_Prim=siga_cat_ubic_prim.Id_Ubic_Prim 
-		left join siga_cat_ubic_sec on siga_nota_salida.Id_Ubic_Sec= siga_cat_ubic_sec.Id_Ubic_Sec
-		left join siga_cat_motivo_salida on siga_nota_salida.Id_Motivo_Salida=siga_cat_motivo_salida.Id_Motivo_Salida
-		where Id_Area_Realiza=".$Id_Area." and siga_nota_salida.Estatus_Reg<>3 and Estatus_Proceso=4";
-	
-    
+		select Id_Nota_Salida,Empresa_Recibe, Desc_Ubic_Prim, Desc_Ubic_Sec, Desc_Motivo_Alta, Nombre_Realiza_Nota, Nombre_Quien_Autoriza, Nombre_Contacto as Recibe, Fech_Firma_Recibe,
+		(select TOP 1 CONCAT(nd.Id_Solicitud_DNS,'-',FORMAT(ss.Fech_Seguimiento,'yyyy/MM/dd HH:mm:ss'),'-',FORMAT(ss.Fech_Cierre, 'yyyy/MM/dd HH:mm:ss')) as fecha_ticket  from siga_det_nota_salida nd 
+		left join siga_solicitud_tickets ss on nd.Id_Solicitud_DNS=ss.Id_Solicitud where Id_Nota_Salida_DNS=sn.Id_Nota_Salida) as fecha_ticket
+		from siga_nota_salida sn
+		left join siga_cat_ubic_prim on sn.Id_Ubic_Prim=siga_cat_ubic_prim.Id_Ubic_Prim 
+		left join siga_cat_ubic_sec on sn.Id_Ubic_Sec= siga_cat_ubic_sec.Id_Ubic_Sec
+		left join siga_cat_motivo_salida on sn.Id_Motivo_Salida=siga_cat_motivo_salida.Id_Motivo_Salida
+		where Id_Area_Realiza=".$Id_Area." and sn.Estatus_Reg<>3 and Estatus_Proceso=4  
+	";
+
+	if($Fech_Inicial!="" && $Fech_Final!=""){
+		$sql.=" and CONVERT(DATE,Fech_Firma_Recibe) BETWEEN CONVERT(DATE, '".$Fech_Inicial."') AND CONVERT(DATE, '".$Fech_Final."')  ";
+	}else{
+		$sql.=" and Fech_Firma_Recibe>=CONVERT(DATE,GETDATE()-365) ";
+	}
+
 	//echo $sql;
 	$proveedor->execute($sql);
 	if (!$proveedor->error()) {
 		if ($proveedor->rows($proveedor->stmt) > 0) {
 			while ($row = $proveedor->fetch_array($proveedor->stmt, 0)) {
+				$partes = explode("-", $row["fecha_ticket"]);
+				$Id_Solicitud="";
+				$Fecha_Seguimiento="";
+				$Fecha_Cierre="";
+				if(count($partes)>1){
+					$Id_Solicitud=$partes[0];
+					$Fecha_Seguimiento=$partes[1];
+					$Fecha_Cierre=$partes[2];
+				}
+
 				$Data= array(
 					"Id_Nota_Salida"=>$row["Id_Nota_Salida"],
 					"Empresa_Recibe"=>$row["Empresa_Recibe"],
@@ -1397,7 +1415,10 @@ public function historial_notas_salida($Id_Area, $proveedor=null){
 					"Nombre_Realiza_Nota" => rtrim(ltrim($row["Nombre_Realiza_Nota"])),
 					"Nombre_Quien_Autoriza" => rtrim(ltrim($row["Nombre_Quien_Autoriza"])),
 					"Recibe" => rtrim(ltrim($row["Recibe"])),
-					"Fech_Firma_Recibe" => rtrim(ltrim($row["Fech_Firma_Recibe"]))
+					"Fech_Firma_Recibe" => rtrim(ltrim($row["Fech_Firma_Recibe"])),
+					"Id_Solicitud" => rtrim(ltrim($Id_Solicitud)),
+					"Fecha_Seguimiento" => rtrim(ltrim($Fecha_Seguimiento)),
+					"Fecha_Cierre" => rtrim(ltrim($Fecha_Cierre))
 				);
 				
 				array_push($Data_Envia, $Data);
@@ -1420,7 +1441,7 @@ public function historial_notas_salida($Id_Area, $proveedor=null){
 	return $respuesta;
 }
 
-public function historial_cancelacion_notas_salida($Id_Area, $proveedor=null){
+public function historial_cancelacion_notas_salida($Id_Area, $Fech_Inicial, $Fech_Final, $proveedor=null){
 	$respuesta = array();	
 	$Data = array();
 	$Data_Envia = array();
@@ -1430,15 +1451,20 @@ public function historial_cancelacion_notas_salida($Id_Area, $proveedor=null){
 	$proveedor->connect();
 	$sql="
 		select 
-			Id_Cancelacion_Nota, sc.Id_Solicitud, ss.Empresa_Ext, 'Nombre: '+ss.Nombre_Act_Ext+'<br>Marca: '+ss.Marca_Act_Ext+'<br>Modelo: '+ss.Modelo_Act_Ext+'<br>No. Serie: '+ss.No_Serie_Act_Ext as Equipo, Desc_Motivio_Cancelacion, sc.Fech_Inser, su.Nombre_Usuario as Usuario_Cancelo  
+			Id_Cancelacion_Nota, sc.Id_Solicitud, ss.Empresa_Ext, 'Nombre: '+ss.Nombre_Act_Ext+'<br>Marca: '+ss.Marca_Act_Ext+'<br>Modelo: '+ss.Modelo_Act_Ext+'<br>No. Serie: '+ss.No_Serie_Act_Ext as Equipo, Desc_Motivio_Cancelacion, FORMAT(sc.Fech_Inser,'yyyy/MM/dd HH:mm:ss') as Fech_Inser, su.Nombre_Usuario as Usuario_Cancelo,
+			FORMAT(ss.Fech_Seguimiento,'yyyy/MM/dd HH:mm:ss') as Fecha_Seguimiento, 
+			CONVERT(BIGINT, FORMAT(ss.Fech_Cierre, 'yyyyMMddHHmmss')) as Fecha_Cierre
 		from siga_cancelacion_nota_salida sc 
 		left join siga_solicitud_tickets ss on sc.Id_Solicitud=ss.Id_Solicitud
 		left join siga_usuarios su on sc.Usr_Inser=su.Id_Usuario
 		where 
-			sc.Estatus_Reg<>3 and ss.Estatus_Reg<>3 and ss.Id_Area=".$Id_Area;
+			sc.Estatus_Reg<>3  and ss.Estatus_Reg<>3 and ss.Id_Area=".$Id_Area;
 	
-	
-	
+	if($Fech_Inicial!="" && $Fech_Final!=""){
+		$sql.=" and CONVERT(DATE,sc.Fech_Inser) BETWEEN CONVERT(DATE, '".$Fech_Inicial."') AND CONVERT(DATE, '".$Fech_Final."')  ";
+	}else{
+		$sql.=" and sc.Fech_Inser>=CONVERT(DATE,GETDATE()-365) ";
+	}
     
 	//echo $sql;
 	$proveedor->execute($sql);
@@ -1452,7 +1478,9 @@ public function historial_cancelacion_notas_salida($Id_Area, $proveedor=null){
 					"Equipo" => rtrim(ltrim($row["Equipo"])),
 					"Desc_Motivio_Cancelacion" => rtrim(ltrim($row["Desc_Motivio_Cancelacion"])),
 					"Usuario_Cancelo" => rtrim(ltrim($row["Usuario_Cancelo"])),
-					"Fech_Inser" => rtrim(ltrim($row["Fech_Inser"]))
+					"Fech_Inser" => rtrim(ltrim($row["Fech_Inser"])),
+					"Fecha_Seguimiento" => rtrim(ltrim($row["Fecha_Seguimiento"])),
+					"Fecha_Cierre" => rtrim(ltrim($row["Fecha_Cierre"]))
 				);
 				array_push($Data_Envia, $Data);
       }

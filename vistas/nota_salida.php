@@ -26,7 +26,7 @@
 <!-- ============================================================================================================================================================================ -->
 
   <div class="row">
-		<input type="text" id="sigaResultado">
+		<input type="text" id="sigaResultado" style="display:none">
 		<ul class="nav nav-tabs azulf" role="tablist">			
       <li role="presentation" style="display:none"><span class="label label-success"  style="display:none"></span><a onclick="" href="#Finalizados" aria-controls="Finalizados" role="tab" data-toggle="tab" >Finalizados</a></li>
       <li role="presentation" id="li_Activos_GTIQX" class="active"><a onclick="Activos_tickets_gtiqx(1)" href="#Activos_GTIQX" aria-controls="Activos_GTIQX" role="tab" data-toggle="tab"  >Activos GTIQX</a></li>
@@ -145,9 +145,35 @@
 							<div class="col-md-12" align="center">
 								<label>Realizadas</label>
 								<input type="radio" id="Historial_realizadas" onchange="Cambio_historial(1)" value="1" name="Historial_notas" checked>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-								<label>Cenceladas</label>
+								<label>Canceladas</label>
 								<input type="radio" id="Historial_canceladas" onchange="Cambio_historial(2)" value="2" name="Historial_notas">
-								<div id="tabla_historial_notas_salida">
+								<br>
+								<label>Solo se muestran los tickets registrados desde la fecha actual hasta un año atrás.</label>
+								<br>
+								<br>
+								<div class="col-md-12">
+									<div class="col-md-3"></div>
+									<div class="col-md-2">
+										<div class="form-group">
+											<label for="fechaInicial">Fecha Inicial:</label>
+											<input type="date" class="form-control" id="fechaInicial" name="fechaInicial">
+										</div>
+									</div>
+									<div class="col-md-2">
+										<div class="form-group">
+											<label for="fechaFinal">Fecha Final:</label>
+											<input type="date" class="form-control" id="fechaFinal" name="fechaFinal">
+										</div>
+									</div>
+									<div class="col-md-2">
+										<div class="form-group" align="left">
+											<label for="btn_filtrar_historial">Buscar:</label><br>
+											<button type="button" class="btn chs" id="btn_filtrar_historial" onclick="filtrar_historial_notas_salida()">Aplicar Filtro</button>
+										</div>
+									</div>
+									<div class="col-md-3"></div>
+								</div>
+								<div class="col-md-12" id="tabla_historial_notas_salida">
 									
 								</div>
 							</div>
@@ -1753,214 +1779,337 @@ $(document).ready(function(){
 //=================================================================================================================================================================================================
 //=================================================================================================================================================================================================
 
-	historial_notas_salida=function(){
-		$("#Historial_realizadas").prop("checked", true);
-		$.ajax({
-			type: "POST",
-			url: "../fachadas/activos/siga_activos/Siga_activosFacade.Class.php",
-			data: {
-				Id_Area:$("#idareasesion").val(),
-				accion: 'historial_notas_salida'
-			},
-			async: true,
-			dataType: "html",
-			beforeSend: function (objeto) {
-				//$("#gifcargando_tabla_inventario").show();
-			},
-			success: function (datos) {
-				
-				var json = "";
-				json = eval("(" + datos + ")"); //Parsear JSON
-				var tabla="";
-				tabla+='  <form name="frm-example" id="frm-example">';
-				tabla+='  <div class="table-responsive">';
-				tabla+='	<table id="display_historial_notas_salida" class="table table-bordered table-striped table-chs">';
-				tabla+='		<thead>';
-				tabla+='		<tr>';
-				tabla+='			<th align="center">Reporte</th>';
-				tabla+='			<th>Empresa</th>';
-				tabla+='			<th>Ubicación Primaria</th>';
-				tabla+='			<th>Ubicación Secundaria</th>';
-				tabla+='			<th>Motivo Salida</th>';
-				tabla+='			<th>Quien Realiza la Nota</th>';
-				tabla+='			<th>Quien Autoriza</th>';
-				tabla+='			<th>Quien Recibe</th>';
-				tabla+='			<th>Fecha</th>';
-				tabla+='		</tr>';
-				tabla+='		</thead>';
-				tabla+='		<tbody>';	
-				
-				if (json.totalCount > 0) {
-					var Request_Uri="<?php echo $_SERVER["REQUEST_URI"];?>";
-					Request_Uri = Request_Uri.split('/');
-						
-					
-					for (var i = 0; i < json.totalCount; i++) {
-						tabla+='		<tr>';
-						if(Request_Uri[1]=="sigapruebas"||Request_Uri[1]=="SIGAPRUEBAS"){
-						tabla+='			<td align="center"><a target="_blank" href="http://siga.hospitalsatelite.com:8080/SIGAPRUEBAS/controladores/activos/siga_activos/Nota_Salida.php?key='+json.data[i].Id_Nota_Salida+'&ver=0" class="fa fa-file-pdf-o" style="font-size:17px; color:#333;" aria-hidden="true"></a></td>';
-						}
-						
-						if(Request_Uri[1]=="siga"||Request_Uri[1]=="SIGA"){
-						//tabla+='			<td align="center"><a target="_blank" href="http://siga.hospitalsatelite.com/SIGA/controladores/activos/siga_activos/Nota_Salida.php?key='+json.data[i].Id_Nota_Salida+'&ver=0" class="fa fa-file-pdf-o" style="font-size:17px; color:#333;" aria-hidden="true"></a></td>';
-						tabla+='			<td align="center"><a target="_blank" href="https://apps2.hospitalsatelite.com/SIGA/controladores/activos/siga_activos/Nota_Salida.php?key='+json.data[i].Id_Nota_Salida+'&ver=0" class="fa fa-file-pdf-o" style="font-size:17px; color:#333;" aria-hidden="true"></a></td>';
-						}
-						tabla+='			<td >'+json.data[i].Empresa_Recibe+'</td>';
-						tabla+='			<td >'+json.data[i].Desc_Ubic_Prim+'</td>';
-						tabla+='			<td >'+json.data[i].Desc_Ubic_Sec+'</td>';
-						tabla+='			<td >'+json.data[i].Desc_Motivo_Alta+'</td>';
-						tabla+='			<td >'+json.data[i].Nombre_Realiza_Nota+'</td>';
-						tabla+='			<td >'+json.data[i].Nombre_Quien_Autoriza+'</td>';
-						tabla+='			<td >'+json.data[i].Recibe+'</td>';
-						tabla+='			<td >'+json.data[i].Fech_Firma_Recibe+'</td>';
-						tabla+='		</tr>';
-					}
-				}else{
-					//mensajesalerta("Informaci&oacute;n", "No se Encontro Historial", "info", "dark");
-				}
-			
-				tabla+='		</tbody>';
-				tabla+='	</table>';
-				tabla+='  </div>';
-				tabla+='  </from>';
-				
-				$("#tabla_historial_notas_salida").html(tabla);								
-				datatable_historial_notas_salida=$('#display_historial_notas_salida').DataTable({
-				  "paging": true,
-				  "lengthChange": true,
-				  "ordering": true,
-				  "info": true,
-				  "autoWidth": true,
-				  language: {
-							"decimal": "",
-							"emptyTable": "No hay información",
-							"info": "Mostrando _START_ a _END_ de _TOTAL_ Entradas",
-							"infoEmpty": "Mostrando 0 a 0 de 0 Entradas",
-							"infoFiltered": "(Filtrado de _MAX_ total entradas)",
-							"infoPostFix": "",
-							"thousands": ",",
-							"lengthMenu": "Mostrar _MENU_ Entradas",
-							"loadingRecords": "Cargando...",
-							"processing": "Procesando...",
-							"search": "Buscar:",
-							"zeroRecords": "Sin resultados encontrados",
-							"paginate": {
-									"first": "Primero",
-									"last": "Ultimo",
-									"next": "Siguiente",
-									"previous": "Anterior"
-							}
-					},
-				  'columnDefs': [{
-					 'targets': 0,
-					 'searchable':false,
-					 'orderable':false,
-					 'className': 'dt-body-center',
-					 
-				  }],
-				  'order': [8, 'desc']
-				});
-			}
-		});
-	}
+historial_notas_salida = function(fecha_inicio='', fecha_fin='') {
+    $("#Historial_realizadas").prop("checked", true);
+    $.ajax({
+        type: "POST",
+        url: "../fachadas/activos/siga_activos/Siga_activosFacade.Class.php",
+        data: {
+            Id_Area: $("#idareasesion").val(),
+            accion: 'historial_notas_salida',
+			Fech_Inicial:fecha_inicio,
+			Fech_Final:fecha_fin
+        },
+        async: true,
+        dataType: "html",
+        beforeSend: function (objeto) {
+            // $("#gifcargando_tabla_inventario").show();
+        },
+        success: function (datos) {
+            try {
+                var json = "";
+                json = eval("(" + datos + ")"); //Parsear JSON
+                
+                // Destruir DataTable existente si existe
+                if ($.fn.DataTable.isDataTable('#display_historial_notas_salida')) {
+                    $('#display_historial_notas_salida').DataTable().destroy();
+                }
+                
+                var tabla = "";
+                tabla += '<form name="frm-example" id="frm-example">';
+                tabla += '<div class="table-responsive">';
+                tabla += '<table id="display_historial_notas_salida" class="table table-bordered table-striped table-chs">';
+                tabla += '<thead>';
+                tabla += '<tr>';
+                tabla += '<th align="center">Reporte</th>';
+				tabla += '<th>Folio</th>';
+                tabla += '<th>Empresa</th>';
+                tabla += '<th>Ubicación Primaria</th>';
+                tabla += '<th>Ubicación Secundaria</th>';
+                tabla += '<th>Motivo Salida</th>';
+				tabla += '<th>Fecha Seguimiento</th>';
+				tabla += '<th>Fecha Cierre</th>';
+                tabla += '<th>Quien Realiza la Nota</th>';
+                tabla += '<th>Quien Autoriza</th>';
+                tabla += '<th>Quien Recibe</th>';
+                tabla += '<th>Fecha Quien Recibe</th>';
+                tabla += '</tr>';
+                tabla += '</thead>';
+                tabla += '<tbody>';
+                
+                if (json.totalCount > 0) {
+                    var Request_Uri = "<?php echo $_SERVER["REQUEST_URI"];?>";
+                    Request_Uri = Request_Uri.split('/');
+                    
+                    for (var i = 0; i < json.totalCount; i++) {
+                        tabla += '<tr>';
+                        if (Request_Uri[1] == "sigapruebas" || Request_Uri[1] == "SIGAPRUEBAS") {
+                            tabla += '<td align="center"><a target="_blank" href="http://siga.hospitalsatelite.com:8080/SIGAPRUEBAS/controladores/activos/siga_activos/Nota_Salida.php?key=' + json.data[i].Id_Nota_Salida + '&ver=0" class="fa fa-file-pdf-o" style="font-size:17px; color:#333;" aria-hidden="true"></a></td>';
+                        } else {
+                            tabla += '<td align="center"><a target="_blank" href="https://apps2.hospitalsatelite.com/SIGA/controladores/activos/siga_activos/Nota_Salida.php?key=' + json.data[i].Id_Nota_Salida + '&ver=0" class="fa fa-file-pdf-o" style="font-size:17px; color:#333;" aria-hidden="true"></a></td>';
+                        }
+                        tabla += '<td>' + (json.data[i].Id_Nota_Salida || '') + '</td>';
+						tabla += '<td>' + (json.data[i].Empresa_Recibe || '') + '</td>';
+                        tabla += '<td>' + (json.data[i].Desc_Ubic_Prim || '') + '</td>';
+                        tabla += '<td>' + (json.data[i].Desc_Ubic_Sec || '') + '</td>';
+                        tabla += '<td>' + (json.data[i].Desc_Motivo_Alta || '') + '</td>';
+
+						tabla += '<td>' + (json.data[i].Fecha_Seguimiento || '') + '</td>';
+						tabla += '<td>' + (json.data[i].Fecha_Cierre || '') + '</td>';
+
+                        tabla += '<td>' + (json.data[i].Nombre_Realiza_Nota || '') + '</td>';
+                        tabla += '<td>' + (json.data[i].Nombre_Quien_Autoriza || '') + '</td>';
+                        tabla += '<td>' + (json.data[i].Recibe || '') + '</td>';
+                        tabla += '<td>' + (json.data[i].Fech_Firma_Recibe || '') + '</td>';
+                        tabla += '</tr>';
+                    }
+                }
+                
+                tabla += '</tbody>';
+                tabla += '</table>';
+                tabla += '</div>';
+                tabla += '</form>';
+                
+                $("#tabla_historial_notas_salida").html(tabla);
+                
+                // Crear la segunda fila de encabezados para búsqueda
+                $('#display_historial_notas_salida thead tr').clone(true).appendTo('#display_historial_notas_salida thead');
+                
+                $('#display_historial_notas_salida thead tr:eq(1) th').each(function (i) {
+                    var title = $(this).text();
+                    $(this).html('<input type="text" class="search-input" placeholder="Buscar ' + title + '" style="width: 100%;"/>');
+                    $('.search-input').css('color', 'black');
+                    // Evento específico para cada input
+                    $('input', this).on('keyup change', function () {
+                        var table = $('#display_historial_notas_salida').DataTable();
+                        if (table.column(i).search() !== this.value) {
+                            table.column(i).search(this.value).draw();
+                        }
+                    });
+                });
+
+                // Inicializar DataTable
+                var datatable_historial_notas_salida = $('#display_historial_notas_salida').DataTable({
+                    "dom": 'Bfrtip',
+                    "lengthMenu": [
+                        [ 10, 25, 50, 100000 ],
+                        [ '10 Filas', '25 Filas', '50 Filas', 'Todos' ]
+                    ],
+                    "buttons": [
+                        //'copy', 'excel', 'pageLength'
+						'pageLength'
+					],
+                    "scrollY": 500,
+                    "scrollX": true,
+                    "processing": true,
+                    "serverSide": false,
+                    "orderCellsTop": true,
+                    "language": {
+                        "decimal": "",
+                        "emptyTable": "No hay información",
+                        "info": "Mostrando _START_ a _END_ de _TOTAL_ Entradas",
+                        "infoEmpty": "Mostrando 0 a 0 de 0 Entradas",
+                        "infoFiltered": "(Filtrado de _MAX_ total entradas)",
+                        "infoPostFix": "",
+                        "thousands": ",",
+                        "lengthMenu": "Mostrar _MENU_ Entradas",
+                        "loadingRecords": "Cargando...",
+                        "processing": "Procesando...",
+                        "search": "Buscar:",
+                        "zeroRecords": "Sin resultados encontrados",
+                        "paginate": {
+                            "first": "Primero",
+                            "last": "Último",
+                            "next": "Siguiente",
+                            "previous": "Anterior"
+                        }
+                    },
+                    'columnDefs': [{
+                        'targets': 0,
+                        'searchable': false,
+                        'orderable': false,
+                        'className': 'dt-body-center'
+                    }],
+                    'order': [8, 'desc']
+                });
+                
+            } catch (error) {
+                console.error('Error al procesar datos:', error);
+                mensajesalerta("Error", "Error al procesar los datos: " + error.message, "error", "dark");
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error AJAX:', error);
+            mensajesalerta("Error", "Error al consultar los datos: " + error, "error", "dark");
+        },
+        complete: function() {
+            // $("#gifcargando_tabla_inventario").hide();
+        }
+    });
+}
 	
 //=================================================================================================================================================================================================
 //=================================================================================================================================================================================================
 
-	historial_cancelacion_notas_salida=function(){
-		$.ajax({
-			type: "POST",
-			url: "../fachadas/activos/siga_activos/Siga_activosFacade.Class.php",
-			data: {
-				Id_Area:$("#idareasesion").val(),
-				accion: 'historial_cancelacion_notas_salida'
-			},
-			async: true,
-			dataType: "html",
-			beforeSend: function (objeto) {
-				//$("#gifcargando_tabla_inventario").show();
-			},
-			success: function (datos) {
-				
-				var json = "";
-				json = eval("(" + datos + ")"); //Parsear JSON
-				var tabla="";
-				tabla+='  <form name="frm-example" id="frm-example">';
-				tabla+='  <div class="table-responsive">';
-				tabla+='	<table id="display_historial_cancelacion_notas_salida" class="table table-bordered table-striped table-chs">';
-				tabla+='		<thead>';
-				tabla+='		<tr>';
-				tabla+='			<th>Folio Ticket</th>';
-				tabla+='			<th>Empresa</th>';
-				tabla+='			<th>Equipo</th>';
-				tabla+='			<th>Motivo Cancelación</th>';
-				tabla+='			<th>Quien Cancelo</th>';
-				tabla+='			<th>Fecha</th>';
-				tabla+='		</tr>';
-				tabla+='		</thead>';
-				tabla+='		<tbody>';	
-				
-				if (json.totalCount > 0) {
-					for (var i = 0; i < json.totalCount; i++) {
-						tabla+='		<tr>';
-						tabla+='			<td >'+json.data[i].Id_Solicitud+'</td>';
-						tabla+='			<td >'+json.data[i].Empresa_Ext+'</td>';
-						tabla+='			<td >'+json.data[i].Equipo+'</td>';
-						tabla+='			<td >'+json.data[i].Desc_Motivio_Cancelacion+'</td>';
-						tabla+='			<td >'+json.data[i].Usuario_Cancelo+'</td>';
-						tabla+='			<td >'+json.data[i].Fech_Inser+'</td>';
-						tabla+='		</tr>';
-					}
-				}
-			
-				tabla+='		</tbody>';
-				tabla+='	</table>';
-				tabla+='  </div>';
-				tabla+='  </from>';
-				
-				$("#tabla_historial_notas_salida").html(tabla);				
-				
-				display_historial_cancelacion_notas_salida=$('#display_historial_cancelacion_notas_salida').DataTable({
-				  "paging": true,
-				  "lengthChange": true,
-				  "ordering": true,
-				  "info": true,
-				  "autoWidth": true,
-				  language: {
-							"decimal": "",
-							"emptyTable": "No hay información",
-							"info": "Mostrando _START_ a _END_ de _TOTAL_ Entradas",
-							"infoEmpty": "Mostrando 0 a 0 de 0 Entradas",
-							"infoFiltered": "(Filtrado de _MAX_ total entradas)",
-							"infoPostFix": "",
-							"thousands": ",",
-							"lengthMenu": "Mostrar _MENU_ Entradas",
-							"loadingRecords": "Cargando...",
-							"processing": "Procesando...",
-							"search": "Buscar:",
-							"zeroRecords": "Sin resultados encontrados",
-							"paginate": {
-									"first": "Primero",
-									"last": "Ultimo",
-									"next": "Siguiente",
-									"previous": "Anterior"
-							}
-					},
-				  'columnDefs': [{
-					 'targets': 0,
-					 'searchable':false,
-					 'orderable':false,
-					 'className': 'dt-body-center',
-					 
-				  }],
-				  'order': [5, 'desc']
-				});
-			}
-		});
-	}
+historial_cancelacion_notas_salida = function(fecha_inicio='', fecha_fin=''){
+    $.ajax({
+        type: "POST",
+        url: "../fachadas/activos/siga_activos/Siga_activosFacade.Class.php",
+        data: {
+            Id_Area: $("#idareasesion").val(),
+            accion: 'historial_cancelacion_notas_salida',
+			Fech_Inicial:fecha_inicio,
+			Fech_Final:fecha_fin
+        },
+        async: true,
+        dataType: "html",
+        beforeSend: function (objeto) {
+            // Opcional: mostrar loading
+            // $("#gifcargando_tabla_inventario").show();
+        },
+        success: function (datos) {
+            try {
+                var json = "";
+                json = eval("(" + datos + ")"); //Parsear JSON
+                
+                // Destruir DataTable existente si existe
+                if ($.fn.DataTable.isDataTable('#display_historial_cancelacion_notas_salida')) {
+                    $('#display_historial_cancelacion_notas_salida').DataTable().destroy();
+                }
+                
+                var tabla = "";
+                tabla += '<form name="frm-example" id="frm-example">';
+                tabla += '<div class="table-responsive">';
+                tabla += '<table id="display_historial_cancelacion_notas_salida" class="table table-bordered table-striped table-chs">';
+                tabla += '<thead>';
+                tabla += '<tr>';
+                tabla += '<th style="display:none"></th>';
+				tabla += '<th>Folio Ticket</th>';
+                tabla += '<th>Empresa</th>';
+                tabla += '<th>Equipo</th>';
+                tabla += '<th>Motivo Cancelación</th>';
+				tabla += '<th>Fecha Seguimiento</th>';
+                tabla += '<th>Fecha Cierre</th>';
+                tabla += '<th>Quien Canceló</th>';
+                tabla += '<th>Fecha Cancelación</th>';
+                tabla += '</tr>';
+                tabla += '</thead>';
+                tabla += '<tbody>';
+                
+                if (json.totalCount > 0) {
+                    for (var i = 0; i < json.totalCount; i++) {
+                        tabla += '<tr>';
+                        tabla += '<td style="display:none"></td>';
+						tabla += '<td>' + (json.data[i].Id_Solicitud || '') + '</td>';
+                        tabla += '<td>' + (json.data[i].Empresa_Ext || '') + '</td>';
+                        tabla += '<td>' + (json.data[i].Equipo || '') + '</td>';
+                        tabla += '<td>' + (json.data[i].Desc_Motivio_Cancelacion || '') + '</td>';
+						tabla += '<td>' + (json.data[i].Fecha_Seguimiento || '') + '</td>';
+						tabla += '<td>' + (json.data[i].Fecha_Cierre || '') + '</td>';
+                        tabla += '<td>' + (json.data[i].Usuario_Cancelo || '') + '</td>';
+                        tabla += '<td>' + (json.data[i].Fech_Inser || '') + '</td>';
+                        tabla += '</tr>';
+                    }
+                }
+                
+                tabla += '</tbody>';
+                tabla += '</table>';
+                tabla += '</div>';
+                tabla += '</form>';
+                
+                $("#tabla_historial_notas_salida").html(tabla);
+                
+                $('#display_historial_cancelacion_notas_salida thead tr').clone(true).appendTo('#display_historial_cancelacion_notas_salida thead');
+                
+                $('#display_historial_cancelacion_notas_salida thead tr:eq(1) th').each(function (i) {
+                    var title = $(this).text();
+                    $(this).html('<input type="text" class="search-input" placeholder="Buscar ' + title + '" style="width: 100%;"/>');
+                    $('.search-input').css('color', 'black');
+                    $('input', this).on('keyup change', function () {
+                        var table = $('#display_historial_cancelacion_notas_salida').DataTable();
+                        if (table.column(i).search() !== this.value) {
+                            table.column(i).search(this.value).draw();
+                        }
+                    });
+                });
+
+                // Inicializar DataTable
+                var display_historial_cancelacion_notas_salida = $('#display_historial_cancelacion_notas_salida').DataTable({
+                    "dom": 'Bfrtip',
+                    "lengthMenu": [
+                        [ 10, 25, 50, 100000 ],
+                        [ '10 Filas', '25 Filas', '50 Filas', 'Todos' ]
+                    ],
+                    "buttons": [
+                        //'copy', 'excel', 'pageLength'
+						'pageLength'
+                    ],
+                    "scrollY": 500,
+                    "scrollX": true,
+                    "processing": true,  
+                    "serverSide": false,
+                    "orderCellsTop": true,
+                    "language": {
+                        "decimal": "",
+                        "emptyTable": "No hay información",
+                        "info": "Mostrando _START_ a _END_ de _TOTAL_ Entradas",
+                        "infoEmpty": "Mostrando 0 a 0 de 0 Entradas",
+                        "infoFiltered": "(Filtrado de _MAX_ total entradas)",
+                        "infoPostFix": "",
+                        "thousands": ",",
+                        "lengthMenu": "Mostrar _MENU_ Entradas",
+                        "loadingRecords": "Cargando...",
+                        "processing": "Procesando...",
+                        "search": "Buscar:",
+                        "zeroRecords": "Sin resultados encontrados",
+                        "paginate": {
+                            "first": "Primero",
+                            "last": "Último",
+                            "next": "Siguiente",
+                            "previous": "Anterior"
+                        }
+                    },
+                    'columnDefs': [{
+                        'targets': 0,
+                        'searchable': false,
+                        'orderable': false,
+                        'className': 'dt-body-center'
+                    }],
+                    'order': [5, 'desc']
+                });
+                
+            } catch (error) {
+                console.error('Error al procesar datos:', error);
+                mensajesalerta("Error", "Error al procesar los datos: " + error.message, "error", "dark");
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error AJAX:', error);
+            mensajesalerta("Error", "Error al consultar los datos: " + error, "error", "dark");
+        },
+        complete: function() {
+            // Ocultar loading si se mostró
+            // $("#gifcargando_tabla_inventario").hide();
+        }
+    });
+}
 
 //=================================================================================================================================================================================================
 //=================================================================================================================================================================================================
+
+
+	filtrar_historial_notas_salida=function(){
+		var fechaInicial = $('#fechaInicial').val();
+        var fechaFinal = $('#fechaFinal').val();
+		var tipo = $('input[name="Historial_notas"]:checked').val();
+
+        // Validar que las fechas no estén vacías
+        if (!fechaInicial || !fechaFinal) {
+            alert('Por favor seleccione tanto la fecha inicial como la fecha final');
+            return;
+        }
+        
+        // Validar que la fecha inicial no sea mayor que la final
+        if (new Date(fechaInicial) > new Date(fechaFinal)) {
+            alert('La fecha inicial no puede ser mayor que la fecha final');
+            return;
+        }
+		if(tipo==1){
+			historial_notas_salida(fechaInicial, fechaFinal);
+		}else{
+			historial_cancelacion_notas_salida(fechaInicial, fechaFinal);
+		}
+	}
 
 	Cambio_historial=function(tipo){
 		if(tipo==1){

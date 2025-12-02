@@ -3113,11 +3113,18 @@ $Siga_solicitud_ticketsDao = new Siga_solicitud_ticketsDAO();
 $Siga_solicitud_ticketsDto = $Siga_solicitud_ticketsDao->deleteSiga_solicitud_tickets($Siga_solicitud_ticketsDto,$proveedor);
 return $Siga_solicitud_ticketsDto;
 }
-public function llenarDataTable($draw, $columns, $order, $start, $length, $search,$Id_Estatus_Proceso, $siga_solicitud_ticketsDto, $Gestor_Solicitante, $Id_Seccion, $Tipo_Gestor, $Medio_de_Envio, $EsApp, $Todos_Tickets, $Tickets_SLA_Vencidos) {
+public function llenarDataTable($draw, $columns, $order, $start, $length, $search,$Id_Estatus_Proceso, $Subalterno, $siga_solicitud_ticketsDto, $Gestor_Solicitante, $Id_Seccion, $Tipo_Gestor, $Medio_de_Envio, $EsApp, $Todos_Tickets, $Tickets_SLA_Vencidos) {
 //echo 1;
 //print_r($siga_solicitud_ticketsDto);
 $Siga_solicitud_ticketsDao = new Siga_solicitud_ticketsDAO();
-return $Siga_solicitud_ticketsDao->llenarDataTable($draw, $columns, $order, $start, $length, $search,$Id_Estatus_Proceso, $siga_solicitud_ticketsDto, $Gestor_Solicitante, $Id_Seccion, $Tipo_Gestor, $Medio_de_Envio, $EsApp, $Todos_Tickets, $Tickets_SLA_Vencidos);
+return $Siga_solicitud_ticketsDao->llenarDataTable($draw, $columns, $order, $start, $length, $search,$Id_Estatus_Proceso, $Subalterno, $siga_solicitud_ticketsDto, $Gestor_Solicitante, $Id_Seccion, $Tipo_Gestor, $Medio_de_Envio, $EsApp, $Todos_Tickets, $Tickets_SLA_Vencidos);
+}
+
+public function DatatbleSolicitante($Id_Estatus_Proceso,$Subalterno,$Fecha_Inicial,$Fecha_Final,$Id_Area,$siga_solicitud_ticketsDto,$Gestor_Solicitante, $Id_Seccion, $Tipo_Gestor, $Medio_de_Envio, $EsApp, $Todos_Tickets, $Tickets_SLA_Vencidos) {
+//echo 1;
+//print_r($siga_solicitud_ticketsDto);
+$Siga_solicitud_ticketsDao = new Siga_solicitud_ticketsDAO();
+return $Siga_solicitud_ticketsDao->DatatbleSolicitante($Id_Estatus_Proceso,$Subalterno,$Fecha_Inicial,$Fecha_Final,$Id_Area,$siga_solicitud_ticketsDto,$Gestor_Solicitante, $Id_Seccion, $Tipo_Gestor, $Medio_de_Envio, $EsApp, $Todos_Tickets, $Tickets_SLA_Vencidos);
 }
 
 public function DataTableTickets($Id_Estatus_Proceso,$siga_solicitud_ticketsDto,$Gestor_Solicitante, $Id_Seccion, $Tipo_Gestor, $Medio_de_Envio, $EsApp, $Todos_Tickets, $Tickets_SLA_Vencidos) {

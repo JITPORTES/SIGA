@@ -270,7 +270,10 @@
     <div class="col-md-12">
       <div class="box">
         <div class="box-body">
-				
+          <div class="col-md-12" align="center">
+            <button type="button" id="btn_sinresp_subalternos" class="btn chs" onclick="abrirModalSubalternos('Busqueda sin respuesta', 1)">Subalternos</button>
+            <div id="label_subalternos1" style="display:none"><label>&nbsp;&nbsp;&nbsp;Ticket de Subalternos&nbsp;&nbsp;&nbsp;</label></div>
+          </div>
           <table id="display_sin_respuesta" class="table table-bordered table-striped table-chs" width='100%'>
 						<thead>
 							<tr>
@@ -278,6 +281,7 @@
 								<th class='columna-exportar-excel'>Folio Solicitud</th>
 								<th class='columna-exportar-excel'>Solicitado</th>
 								<th class='columna-exportar-excel'>Estatus</th>
+                <th class='columna-exportar-excel'>Solicitante</th>
 								<th class='columna-exportar-excel'>Prioridad</th>
 								<th class='columna-exportar-excel'>Secci&oacute;n</th>
 								<th class='columna-exportar-excel'>Categoría</th>
@@ -297,11 +301,14 @@
 <!-- ===================================================================================================================================================================================================== -->
 <!-- ===================================================================================================================================================================================================== -->
 
-  <div role="tabpanel" class="tab-pane" id="proceso">            
+  <div role="tabpanel" class="tab-pane" id="proceso">    
     <div class="col-md-12">
       <div class="box">
         <div class="box-body">
-          
+          <div class="col-md-12" align="center">
+            <button type="button" id="btn_seg_subalternos" class="btn chs" onclick="abrirModalSubalternos('Busqueda en seguimiento', 2)">Subalternos</button>
+            <div id="label_subalternos2" style="display:none"><br><label>&nbsp;&nbsp;&nbsp;Ticket de Subalternos&nbsp;&nbsp;&nbsp;</label></div>
+          </div>
           <table id="display_seguimiento" class="table table-bordered table-striped table-chs" width="100%">
             <thead>
               <tr>
@@ -309,6 +316,7 @@
                 <th class='columna-exportar-excel'>Folio Solicitud</th>
                 <th class='columna-exportar-excel'>En Seguimiento</th>
                 <th class='columna-exportar-excel'>Estatus</th>
+                <th class='columna-exportar-excel'>Solicitante</th>
                 <th class='columna-exportar-excel'>Gestor</th>
                 <th class='columna-exportar-excel'>Prioridad</th>
                 <th class='columna-exportar-excel'>Secci&oacute;n</th>
@@ -363,30 +371,34 @@
 <!-- ===================================================================================================================================================================================================== -->
 <!-- ===================================================================================================================================================================================================== -->
 
-	<div role="tabpanel" class="tab-pane" id="historico">            
+	<div role="tabpanel" class="tab-pane" id="historico">
 		<div class="col-md-12">
 			<div class="box">                
 				<div class="box-body">
-
-				<div class="table-responsive" align="center">
-					<ul class="inline center">						
-						<li>
-							<div class="form-group">
-								<div class="checkbox icheck">
-									<label>
-									<input type="radio" value="5" onchange="javascript:todos_tickets()" id="tickets_actuales" name="radio_tickets"><strong>Tickets Actuales a 3 Meses</strong></label>
-								</div>
-							</div>
-						</li>
-						<li>
-							<div class="form-group">
-								<div class="checkbox icheck">
-									<label>
-									<input type="radio" value="4" onchange="javascript:todos_tickets()" id="todos_tickets" name="radio_tickets"><strong>Todos los Tickets</strong></label>
-								</div>
-							</div>
-						</li>
-					</ul>
+        <div class="table-responsive" align="center">
+					<button type="button" id="btn_cerrados_subalternos" class="btn chs" onclick="abrirModalSubalternos('Busqueda cerrados', 4)">Subalternos</button>
+          <div id="label_subalternos4" style="display:none"><br><label>&nbsp;&nbsp;&nbsp;Ticket de Subalternos&nbsp;&nbsp;&nbsp;</label></div>
+          <br>
+          <div id="filtros_cerrados">
+            <ul class="inline center">						
+              <li>
+                <div class="form-group">
+                  <div class="checkbox icheck">
+                    <label>
+                    <input type="radio" value="5" onchange="javascript:todos_tickets()" id="tickets_actuales" name="radio_tickets"><strong>Tickets Actuales a 3 Meses</strong></label>
+                  </div>
+                </div>
+              </li>
+              <li>
+                <div class="form-group">
+                  <div class="checkbox icheck">
+                    <label>
+                    <input type="radio" value="4" onchange="javascript:todos_tickets()" id="todos_tickets" name="radio_tickets"><strong>Todos los Tickets</strong></label>
+                  </div>
+                </div>
+              </li>
+            </ul>
+          </div>  
 				</div>
 				<br>
 
@@ -398,6 +410,7 @@
                   <th class='columna-exportar-excel'>Folio Solicitud</th>
                   <th class='columna-exportar-excel'>Cerrado</th>
                   <th class='columna-exportar-excel'>Estatus</th>
+                  <th class='columna-exportar-excel'>Solicitante</th>
                   <th class='columna-exportar-excel'>Gestor</th>
                   <th class='columna-exportar-excel'>Prioridad</th>
                   <th class='columna-exportar-excel'>Secci&oacute;n</th>
@@ -417,3 +430,95 @@
 		</div>
 	</div>
 </div>
+
+<div class="modal fade" id="modalsubalternos" tabindex="-1" role="dialog" aria-labelledby="modalBasicoLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="titulomodalsubalterno"></h4>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <input type="text" id="hddTipoBusquedaSubalternos" style="display:none;">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="fechaInicialSubalterno">Fecha Inicial:</label>
+                            <input type="date" class="form-control" id="fechaInicialSubalterno" name="fechaInicialSubalterno">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="fechaFinalSubalterno">Fecha Final:</label>
+                            <input type="date" class="form-control" id="fechaFinalSubalterno" name="fechaFinalSubalterno">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="area">Area:</label>
+                            <select class="form-control" id="areasubalterno" name="areasubalterno">
+                                <option value="">--Todas--</option>
+                                <option value="1">Biomédica</option>
+                                <option value="2">TIC</option>
+                                <option value="3">Mantenimiento</option>
+                                <option value="6">Jurídico</option>
+                                <option value="7">Aprovisionamiento</option>
+                                <option value="8">Inteligencia De Negocios</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" id="btnBuscarSubalternos">Buscar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+  //$(document).ready(function() {
+    function abrirModalSubalternos(titulo, tipoBusqueda) {
+      $('#modalsubalternos').modal('show');
+      $('#titulomodalsubalterno').text(titulo);
+      $('#hddTipoBusquedaSubalternos').val(tipoBusqueda);
+    }
+
+
+    $('#btnBuscarSubalternos').click(function() {
+        var fechaInicial = $('#fechaInicialSubalterno').val();
+        var fechaFinal = $('#fechaFinalSubalterno').val();
+        var tipoBusqueda = $('#hddTipoBusquedaSubalternos').val();
+        var area = $('#areasubalterno').val();
+        
+        // Validar que las fechas no estén vacías
+        if (!fechaInicial || !fechaFinal) {
+            alert('Por favor seleccione tanto la fecha inicial como la fecha final');
+            return;
+        }
+        
+        // Validar que la fecha inicial no sea mayor que la final
+        if (new Date(fechaInicial) > new Date(fechaFinal)) {
+            alert('La fecha inicial no puede ser mayor que la fecha final');
+            return;
+        }
+        
+        // Cerrar modal
+        $('#modalsubalternos').modal('hide');
+        if(tipoBusqueda==1){
+          recargarTablaSinRespuesta(1);
+        } else if(tipoBusqueda==2){
+          recargarTablaSeguimiento(1);
+        } else if(tipoBusqueda==4){
+          recargarTablaCerrados(1);
+        }
+        
+        // Aquí puedes usar las fechas para filtrar tus datos
+        console.log('Fecha Inicial:', fechaInicial);
+        console.log('Fecha Final:', fechaFinal);
+    });
+  //});
+</script>  

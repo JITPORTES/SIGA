@@ -332,9 +332,9 @@ public function proceso_notas_salida($Id_Area){
 	return $jsonDto->encode($Siga_activosDto);
 }
 
-public function historial_notas_salida($Id_Area){
+public function historial_notas_salida($Id_Area, $Fech_Inicial, $Fech_Final){
 	$Siga_activosController = new Siga_activosController();
-	$Siga_activosDto = $Siga_activosController->historial_notas_salida($Id_Area);
+	$Siga_activosDto = $Siga_activosController->historial_notas_salida($Id_Area, $Fech_Inicial, $Fech_Final);
 
 	$jsonDto = new Encode_JSON();
 	return $jsonDto->encode($Siga_activosDto);
@@ -409,9 +409,9 @@ public function workflow_alta($Aceptado, $Id_Alta_Activo, $Paso){
 	return $Siga_activosController->workflow_alta($Aceptado, $Id_Alta_Activo, $Paso);
 }
 
-public function historial_cancelacion_notas_salida($Id_Area){
+public function historial_cancelacion_notas_salida($Id_Area, $Fech_Inicial, $Fech_Final){
 	$Siga_activosController = new Siga_activosController();
-	$Siga_activosDto = $Siga_activosController->historial_cancelacion_notas_salida($Id_Area);
+	$Siga_activosDto = $Siga_activosController->historial_cancelacion_notas_salida($Id_Area, $Fech_Inicial, $Fech_Final);
 
 	$jsonDto = new Encode_JSON();
 	return $jsonDto->encode($Siga_activosDto);
@@ -847,7 +847,7 @@ return $year . "-" . $mes . "-" . $dia;
 		echo $siga_activosDto;
 	}
 	else if($accion=="historial_notas_salida") {
-		$siga_activosDto=$siga_activosFacade->historial_notas_salida($Id_Area);
+		$siga_activosDto=$siga_activosFacade->historial_notas_salida($Id_Area, $Fech_Inicial, $Fech_Final);
 		echo $siga_activosDto;
 	}
 	else if($accion == "proceso_notas_salida") {
@@ -867,7 +867,7 @@ return $year . "-" . $mes . "-" . $dia;
 		echo $siga_activosDto;
 	}
 	else if($accion == "historial_cancelacion_notas_salida") {
-		$siga_activosDto=$siga_activosFacade->historial_cancelacion_notas_salida($Id_Area);
+		$siga_activosDto=$siga_activosFacade->historial_cancelacion_notas_salida($Id_Area, $Fech_Inicial, $Fech_Final);
 		echo $siga_activosDto;
 	}else if($accion == "getworkflow_alta") {
 		$siga_activosDto=$siga_activosFacade->getworkflow_alta($Id_Activo);

@@ -18,7 +18,7 @@
 <!-- ============================================================================================================================================================================================================ -->
 <!-- ============================================================================================================================================================================================================ -->
 <?php
-		include_once($_SERVER["DOCUMENT_ROOT"]."/siga/vistas/mistickets-solicitante/tablero02.com.php");
+		include_once(dirname(__FILE__)."/mistickets-solicitante/tablero02.com.php");
 ?>
 <!-- ============================================================================================================================================================================================================ -->
 <!-- ============================================================================================================================================================================================================ -->
@@ -220,7 +220,7 @@
 					if (data.totalCount > 0) {
 						$("#div_tablaactivos").html("");
 						var tabla="";
-						tabla+='<table id="tablaactivos" class="table table-bordered table-striped table-chs">';
+						tabla+='<table id="tablaactivos" class="table table-bordered table-striped table-chs" style="width:100%">';
 						tabla+='	<thead>';
 						tabla+='	<tr>';
 						tabla+='		<th>AF/BC</th>';
@@ -314,7 +314,8 @@
 			var Url_archivo="";
 			var Foto=$.trim($("#Url_Foto_Activo").val());			
 			var Id_Solicitud_Correo="";
-			 
+			var tituloArea = $('#h3Area').html();
+						
 			Seccion=$("#hddSeccion").val();				
 			
 			if(cont_ticket_biomedica>0&&Id_Area==1){
@@ -340,7 +341,7 @@
 							if(cont_ticket_juridico>0&&Id_Area==6){
 									Agregar = false;
 									mensaje_error += " -Para generar un nuevo ticket, debes cerrar los que se encuentran en la pestaña por cerrar.<br />";
-									$("#mensaje_cerrados").html("<h3><font color='red'>Para generar un nuevo ticket, debes cerrar los que se encuentran en la pestaña por cerrar.</font></h3>");
+									$("#mensaje_cerrados").html("<h5><font color='red'>Para generar un nuevo ticket, debes cerrar los que se encuentran en la pestaña por cerrar.</font></h5>");
 							}else{
 								$("#mensaje_cerrados").html("");
 								$("#desc_titulo").prop( "disabled", false );
@@ -404,8 +405,7 @@
 				mensajesalerta("Informaci&oacute;n", mensaje_error, "", "dark");			
 			}
 			
-			if(Agregar)
-			{
+			if(Agregar){
 				strDatos = "Id_Usuario="+Id_Usuario; 
 				strDatos += "&Id_Area="+Id_Area;
 				strDatos += "&Id_Activo="+Id_Activo;
@@ -431,6 +431,25 @@
 					strDatos += "&accion=guardar";
 				}
 				
+// tituloArea
+				
+Swal.fire({
+  title: "SIGA: Confirmar datos.",
+    html: `		
+		<h4><b>`+tituloArea+`</b></h4>
+    <p>No olvides agregar archivos de ser necesario.</p>
+    <p>Revisa que el <b>área</b> sea correcta.</p>
+		<p><b>Motivo:</b> `+Titulo+`</p>
+  `,
+  icon: "info",
+  showCancelButton: true,
+  confirmButtonColor: "#3085d6",
+  cancelButtonColor: "#d33",
+  confirmButtonText: "Levantar Ticket"
+}).then((result) => {
+  if (result.isConfirmed) {
+
+		
 				$.ajax({
 					type: "POST",
 					url: "../fachadas/activos/siga_solicitud_tickets/Siga_solicitud_ticketsFacade.Class.php",        
@@ -447,9 +466,9 @@
 						mensajesalerta("&Eacute;xito", "Generado Correctamente.", "success", "dark");
 						$("#tab_Sin_Respuesta").click();						
 						//$('#myModal').modal('hide');
-						$('#display_sin_respuesta').DataTable().ajax.reload();
-						$('#display_seguimiento').DataTable().ajax.reload();
-						$('#display_por_cerrar').DataTable().ajax.reload();
+						recargarTablaSinRespuesta(null);
+						recargarTablaSeguimiento(null);//$('#display_seguimiento').DataTable().ajax.reload();
+						recargarTablaPorCerrar(null);
 						Id_Solicitud_Correo=json.data[0].Id_Solicitud;
 						$("#tap_sin_respuesta").click();
 						limpiarcampos();
@@ -458,13 +477,56 @@
 						if(Id_Activo!=""){
 							cambio_estatus_activo(Id_Activo, Id_Estatus_Activo);
 						}
-						console.log(datos);
+						//console.log(datos);
 					},
 					error: function () {
 						$("#solicitar").show();
 						mensajesalerta("SIGA:", "Ocurrio un error al guardar.", "error", "dark");
 					}
 				});
+
+
+  }
+});
+
+
+				// $.ajax({
+				// 	type: "POST",
+				// 	url: "../fachadas/activos/siga_solicitud_tickets/Siga_solicitud_ticketsFacade.Class.php",        
+				// 	async: false,
+				// 	data: strDatos,
+				// 	dataType: "html",
+				// 	beforeSend: function (xhr) {
+				// 		$("#solicitar").hide();
+				// 	},
+				// 	success: function (datos) {
+				// 		var json;
+				// 		json = eval("(" + datos + ")"); //Parsear JSON
+				// 		limpiarcampos();
+				// 		mensajesalerta("&Eacute;xito", "Generado Correctamente.", "success", "dark");
+				// 		$("#tab_Sin_Respuesta").click();						
+				// 		//$('#myModal').modal('hide');
+				// 		$('#display_sin_respuesta').DataTable().ajax.reload();
+				// 		$('#display_seguimiento').DataTable().ajax.reload();
+				// 		$('#display_por_cerrar').DataTable().ajax.reload();
+				// 		Id_Solicitud_Correo=json.data[0].Id_Solicitud;
+				// 		$("#tap_sin_respuesta").click();
+				// 		limpiarcampos();
+				// 		$("#solicitar").show();
+						
+				// 		if(Id_Activo!=""){
+				// 			cambio_estatus_activo(Id_Activo, Id_Estatus_Activo);
+				// 		}
+				// 		//console.log(datos);
+				// 	},
+				// 	error: function () {
+				// 		$("#solicitar").show();
+				// 		mensajesalerta("SIGA:", "Ocurrio un error al guardar.", "error", "dark");
+				// 	}
+				// });
+
+				
+
 
 			}
 		});
@@ -480,6 +542,7 @@
 			strDatos += "&Id_Situacion_Activo="+Id_Estatus_Activo;
 			strDatos += "&Usr_Mod="+Id_Usuario;
 			strDatos += "&accion=cambiarestatusactivo";
+			
 			$.ajax({
 				type: "POST",
 				url: "../fachadas/activos/siga_solicitud_tickets/Siga_solicitud_ticketsFacade.Class.php",        
@@ -503,25 +566,42 @@
 		
 //======================================================================================================================================================================================================================
 //======================================================================================================================================================================================================================
+	recargarTablaSinRespuesta=function(subalterno) {
+		var fechaInicialSubalterno ="";
+		var fechaFinalSubalterno = "";
+		var areasubalterno = "";
+		if(subalterno==1){
+			fechaInicialSubalterno = $("#fechaInicialSubalterno").val();
+			fechaFinalSubalterno = $("#fechaFinalSubalterno").val();
+			areasubalterno = $("#areasubalterno").val();
+			$("#label_subalternos1").show();
+		}else{
+			$("#label_subalternos1").hide();
+		}
 
+		// Destruir la tabla existente
+		if ($.fn.DataTable.isDataTable('#display_sin_respuesta')) {
+			$('#display_sin_respuesta').DataTable().destroy();
+		}
 		//Tabla Sin Respuesta
 		$('#display_sin_respuesta').DataTable({
-			// Esqueleto del datatable completo (B: botones; l: longitud de cuantos resultados va a mostrar; f: filtros; <: agrega un div; "table-responsive" agrega la clase al div; t: tabla; >:cierra el div; i: información ; p: paginación)
-			"dom": '<"row"<".col-md-12 text-center"B>><"row"<"col-md-6"l><"col-md-6"f>><"table-responsive"t>ip',
-			// Celdas a exportar en el documento Excel, empezando por el indice 0
-			// Elimina también clases que definen el botón
-			"buttons": [{
-				text: '<i class="fa fa-file-excel-o"></i> Exportar a Excel',
-				className: 'btn chs export',
-				extend: 'excelHtml5',
-				init: function (api, node, config) {
-					jQuery(node).removeClass('dt-button buttons-excel buttons-html5')
-				},
-				exportOptions: { columns: ['.columna-exportar-excel'] },
-			}],
-			"ordering": false,
+			"order": [[ 2, "desc" ]],
+			//"lengthMenu": [ [10, 25, 50, 100, 100000], [10, 25, 50,100,"Todos"] ] ,
+			"dom": 'Bfrtip',
+			"lengthMenu": [
+				[ 10, 25, 50, 100000 ],
+				[ '10 Filas', '25 Filas', '50 Filas', 'Todos' ]
+			],
+			"buttons": [
+				
+				'copy',  'excel', 'pageLength'
+			],
+			"scrollY": 500,
+			"scrollX": true,
 			"processing": true,
-			"serverSide": true,
+			"serverSide": false,
+			"orderCellsTop": true,
+			"fixedHeader": false,
 			"ajax": {
 				"url": "../fachadas/activos/siga_solicitud_tickets/Siga_solicitud_ticketsFacade.Class.php",
 				"type": "POST",
@@ -541,7 +621,13 @@
 					orden:'AF_BC',
 					Id_Usuario:$("#usuariosesion").val(),
 					//Id_Area:$("#idareasesion").val(),
-					Estatus_Proceso:'1'
+					Subalterno: subalterno,
+					Fecha_Inicial:fechaInicialSubalterno,
+					Fecha_Final:fechaFinalSubalterno,
+					Id_Area:areasubalterno,
+					//Id_Area:$("#idareasesion").val(),
+					Estatus_Proceso:'1',
+					accion: "DatatbleSolicitante"
 				}
 			},
 			"columns": [
@@ -552,7 +638,7 @@
 					}
 				},
 				{ "width": "5%", "data": "Id_Solicitud"},
-				{ "width": "6%", "data": "Fecha"},
+				{ "width": "6%", "data": "Fecha_Num"},
 				{ "width": "6%", "data": function (obj) {
 						
 					
@@ -566,6 +652,17 @@
 						}
 						return Estatus;
 					}
+				},
+				{
+					"width": "8%", 
+					"data": function (obj) {
+						if (obj.Nombre_Usuario && obj.Nombre_Usuario.includes('/')) {
+							// Tomar solo la parte antes de la diagonal y quitar espacios
+							return obj.Nombre_Usuario.split('/')[0].trim();
+						}
+						return obj.Nombre_Usuario || '';
+					},
+					"visible": subalterno == 1  // Solo visible cuando subalterno es 1
 				},
 				{ "width": "5%","data": "Desc_Prioridad"},
 				{ "width": "5%", "data": "Nombre_Seccion"},
@@ -603,50 +700,78 @@
 				
 				
 			], "language": {
-				"lengthMenu": "Mostrando _MENU_ registros por p&aacute;gina",
-				"zeroRecords": "Sin Resultados",
-				"info": "Monstrando p&aacute;gina _PAGE_ de _PAGES_ , total de registros: _MAX_",
-				"infoEmpty": "Sin Resultados",
-				"infoFiltered": "(Monstrando  _MAX_ del total de registros)",
-				"search": "Busqueda: ",
+				"lengthMenu": "Mostrando _MENU_ registros por página",
+				"zeroRecords": "Sin resultados",
+				"info": "Mostrando página _PAGE_ de _PAGES_, resultados filtrados: _TOTAL_ de _MAX_ registros",
+				"infoEmpty": "Sin resultados",
+				"infoFiltered": "",
+				"search": "Búsqueda: ",
 				"paginate": {
 					"first": "Primera",
-					"last": "Ultima",
+					"last": "Última",
 					"next": "Siguiente",
 					"previous": "Anterior"
 				}
 			}
 		});
-		
-//======================================================================================================================================================================================================================
-//======================================================================================================================================================================================================================
 
+		$("#fechaInicialSubalterno").val("");
+		$("#fechaFinalSubalterno").val("");
+		$("#areasubalterno").val("");
+	}
+	recargarTablaSinRespuesta(null);
+//======================================================================================================================================================================================================================
+//======================================================================================================================================================================================================================
+	
+	recargarTablaSeguimiento=function(subalterno) {
+		var fechaInicialSubalterno ="";
+		var fechaFinalSubalterno = "";
+		var areasubalterno = "";
+		if(subalterno==1){
+			fechaInicialSubalterno = $("#fechaInicialSubalterno").val();
+			fechaFinalSubalterno = $("#fechaFinalSubalterno").val();
+			areasubalterno = $("#areasubalterno").val();
+			$("#label_subalternos2").show();
+		}else{
+			$("#label_subalternos2").hide();
+		}
+
+		// Destruir la tabla existente
+		if ($.fn.DataTable.isDataTable('#display_seguimiento')) {
+			$('#display_seguimiento').DataTable().destroy();
+		}
 		//Tabla Seguimiento
 		$('#display_seguimiento').DataTable({
-			// Esqueleto del datatable completo (B: botones; l: longitud de cuantos resultados va a mostrar; f: filtros; <: agrega un div; "table-responsive" agrega la clase al div; t: tabla; >:cierra el div; i: información ; p: paginación)
-			"dom": '<"row"<".col-md-12 text-center"B>><"row"<"col-md-6"l><"col-md-6"f>><"table-responsive"t>ip',
-			// Celdas a exportar en el documento Excel, empezando por el indice 0
-			// Elimina también clases que definen el botón
-			"buttons": [{
-				text: '<i class="fa fa-file-excel-o"></i> Exportar a Excel',
-				className: 'btn chs export',
-				extend: 'excelHtml5',
-				init: function (api, node, config) {
-					jQuery(node).removeClass('dt-button buttons-excel buttons-html5')
-				},
-				exportOptions: { columns: ['.columna-exportar-excel'] },
-			}],
-			"ordering": false,
+			"order": [[ 2, "desc" ]],
+			//"lengthMenu": [ [10, 25, 50, 100, 100000], [10, 25, 50,100,"Todos"] ] ,
+			"dom": 'Bfrtip',
+			"lengthMenu": [
+				[ 10, 25, 50, 100000 ],
+				[ '10 Filas', '25 Filas', '50 Filas', 'Todos' ]
+			],
+			"buttons": [
+				
+				'copy',  'excel', 'pageLength'
+			],
+			"scrollY": 500,
+			"scrollX": true,
 			"processing": true,
-			"serverSide": true,
+			"serverSide": false,
+			"orderCellsTop": true,
+			"fixedHeader": false,
 			"ajax": {
 				"url": "../fachadas/activos/siga_solicitud_tickets/Siga_solicitud_ticketsFacade.Class.php",
 				"type": "POST",
 				"data": {
 					orden:'AF_BC',
 					Id_Usuario:$("#usuariosesion").val(),
+					Subalterno: subalterno,
+					Fecha_Inicial:fechaInicialSubalterno,
+					Fecha_Final:fechaFinalSubalterno,
+					Id_Area:areasubalterno,
 					//Id_Area:$("#idareasesion").val(),
-					Estatus_Proceso:'2'
+					Estatus_Proceso:'2',
+					accion: "DatatbleSolicitante"
 				},
 				"dataSrc": function ( json ) {					
    					//cont_ticket_tic=0;
@@ -670,14 +795,25 @@
 						var seguimiento = '';
 						
 						if(obj.Id_Estatus_Proceso==2){
-							seguimiento = '<a href="#" data-toggle="modal" data-target="#seguimientoReporte" onclick="pasarvalores('+obj.Id_Solicitud+', 2)" data-toggle="tooltip" title="Chat"> <strong>Contestar </strong></a>';
+							seguimiento += '<span style="display:none">'+obj.solicitante_semaforo+'</span><br>';
+							let coloredit="#f8d02fff";//amarillo por default
+							if(obj.solicitante_semaforo=="rojo"){
+								coloredit="red";
+							}
+
+							if(obj.solicitante_semaforo=="verde"){
+								coloredit="green";
+							}
+
+
+							seguimiento += '<a href="#" data-toggle="modal" data-target="#seguimientoReporte" onclick="pasarvalores('+obj.Id_Solicitud+', 2)" data-toggle="tooltip" title="Chat" style="color:'+coloredit+'"> <strong>Contestar </strong></a>';
 						}
 						
 						return seguimiento;
 					}
 				},
 				{ "width": "5%","data": "Id_Solicitud"},
-				{ "width": "5%","data": "Fecha_Seguimiento"},
+				{ "width": "5%","data": "Fecha_Seguimiento_Num"},
 				{ "width": "6%","data": function (obj) {
 						var Estatus_Proceso="";
 						if(obj.Id_Estatus_Proceso==2){
@@ -692,6 +828,17 @@
 						return Estatus_Proceso;
 					}
 				
+				},
+				{ 
+					"width": "8%", 
+					"data": function (obj) {
+						if (obj.Nombre_Usuario && obj.Nombre_Usuario.includes('/')) {
+							// Tomar solo la parte antes de la diagonal y quitar espacios
+							return obj.Nombre_Usuario.split('/')[0].trim();
+						}
+						return obj.Nombre_Usuario || '';
+					},
+					"visible": subalterno == 1  // Solo visible cuando subalterno es 1
 				},
 				{ "width": "8%", "data": "Gestor"},
 				{ "width": "5%","data": "Desc_Prioridad"},
@@ -719,45 +866,54 @@
 				},
 				{ "width": "4%", "data": "Nom_Area"}
 				
-			], "language": {
-				"lengthMenu": "Mostrando _MENU_ registros por p&aacute;gina",
-				"zeroRecords": "Sin Resultados",
-				"info": "Monstrando p&aacute;gina _PAGE_ de _PAGES_ , total de registros: _MAX_",
-				"infoEmpty": "Sin Resultados",
-				"infoFiltered": "(Monstrando  _MAX_ del total de registros)",
-				"search": "Busqueda: ",
+			],
+			"language": {
+				"lengthMenu": "Mostrando _MENU_ registros por página",
+				"zeroRecords": "Sin resultados",
+				"info": "Mostrando página _PAGE_ de _PAGES_, resultados filtrados: _TOTAL_ de _MAX_ registros",
+				"infoEmpty": "Sin resultados",
+				"infoFiltered": "",
+				"search": "Búsqueda: ",
 				"paginate": {
 					"first": "Primera",
-					"last": "Ultima",
+					"last": "Última",
 					"next": "Siguiente",
 					"previous": "Anterior"
 				}
 			}
 		});
-		
+		$("#fechaInicialSubalterno").val("");
+		$("#fechaFinalSubalterno").val("");
+		$("#areasubalterno").val("");
+	}
+	recargarTablaSeguimiento(null);
 //======================================================================================================================================================================================================================
 //======================================================================================================================================================================================================================
+	recargarTablaPorCerrar=function(subalterno) {
+		// Destruir la tabla existente
+		if ($.fn.DataTable.isDataTable('#display_por_cerrar')) {
+			$('#display_por_cerrar').DataTable().destroy();
+		}
 
 		//Tabla por cerrar
 		$('#display_por_cerrar').DataTable({
-			"lengthMenu": [[200, 300, 500, -1], [200, 300, 500, "All"]],
-			// Esqueleto del datatable completo (B: botones; l: longitud de cuantos resultados va a mostrar; f: filtros; <: agrega un div; "table-responsive" agrega la clase al div; t: tabla; >:cierra el div; i: información ; p: paginación)
-			"dom": '<"row"<".col-md-12 text-center"B>><"row"<"col-md-6"l><"col-md-6"f>><"table-responsive"t>ip',
-			// Celdas a exportar en el documento Excel, empezando por el indice 0
-			// Elimina también clases que definen el botón
-			"buttons": [{
-				text: '<i class="fa fa-file-excel-o"></i> Exportar a Excel',
-				className: 'btn chs export',
-				extend: 'excelHtml5',
-				init: function (api, node, config) {
-					jQuery(node).removeClass('dt-button buttons-excel buttons-html5')
-				},
-				exportOptions: { columns: ['.columna-exportar-excel'] },
-			}],
-			"async": false,
-			"ordering": false,
+			"order": [[ 2, "desc" ]],
+			//"lengthMenu": [ [10, 25, 50, 100, 100000], [10, 25, 50,100,"Todos"] ] ,
+			"dom": 'Bfrtip',
+			"lengthMenu": [
+				[ 10, 25, 50, 100000 ],
+				[ '10 Filas', '25 Filas', '50 Filas', 'Todos' ]
+			],
+			"buttons": [
+				
+				'copy',  'excel', 'pageLength'
+			],
+			"scrollY": 500,
+			"scrollX": true,
 			"processing": true,
-			"serverSide": true,
+			"serverSide": false,
+			"orderCellsTop": true,
+			"fixedHeader": false,
 			"ajax": {
 				"url": "../fachadas/activos/siga_solicitud_tickets/Siga_solicitud_ticketsFacade.Class.php",
 				"type": "POST",
@@ -765,10 +921,16 @@
 					orden:'AF_BC',
 					Id_Usuario:$("#usuariosesion").val(),
 					//Id_Area:$("#idareasesion").val(),
-					Estatus_Proceso:'3'
+					Subalterno: subalterno,
+					Fecha_Inicial:'',
+					Fecha_Final:'',
+					Id_Area:'',
+					//Id_Area:$("#idareasesion").val(),
+					Estatus_Proceso:'3',
+					accion: "DatatbleSolicitante"
 				},
 				"dataSrc": function ( json ) {
-   				cont_ticket_biomedica=0;
+   					cont_ticket_biomedica=0;
 					cont_ticket_tic=0;
 					cont_ticket_mantenimiento=0;
 					cont_ticket_mob_equi=0;
@@ -824,7 +986,7 @@
 				},
 				{ "width": "5%","data": "Id_Solicitud"},
 				{"width": "5%","data": "Fecha"},
-				{ "width": "5%","data": "Fecha_Esp_Cierre"},
+				{ "width": "5%","data": "Fecha_Esp_Cierre_Num"},
 				{ "width": "6%", "data": function (obj) {
 						var Estatus_Proceso="";
 						if(obj.Id_Estatus_Proceso==3){
@@ -866,51 +1028,75 @@
 				{ "data": "Nom_Area"}
 				
 			], "language": {
-				"lengthMenu": "Mostrando _MENU_ registros por p&aacute;gina",
-				"zeroRecords": "Sin Resultados",
-				"info": "Monstrando p&aacute;gina _PAGE_ de _PAGES_ , total de registros: _MAX_",
-				"infoEmpty": "Sin Resultados",
-				"infoFiltered": "(Monstrando  _MAX_ del total de registros)",
-				"search": "Busqueda: ",
+				"lengthMenu": "Mostrando _MENU_ registros por página",
+				"zeroRecords": "Sin resultados",
+				"info": "Mostrando página _PAGE_ de _PAGES_, resultados filtrados: _TOTAL_ de _MAX_ registros",
+				"infoEmpty": "Sin resultados",
+				"infoFiltered": "",
+				"search": "Búsqueda: ",
 				"paginate": {
 					"first": "Primera",
-					"last": "Ultima",
+					"last": "Última",
 					"next": "Siguiente",
 					"previous": "Anterior"
 				}
 			}
 		});
-		
+	}
+	recargarTablaPorCerrar(null);
 //======================================================================================================================================================================================================================
 //======================================================================================================================================================================================================================
+	recargarTablaCerrados=function(subalterno) {
+		var fechaInicialSubalterno ="";
+		var fechaFinalSubalterno = "";
+		var areasubalterno = "";
+		if(subalterno==1){
+			fechaInicialSubalterno = $("#fechaInicialSubalterno").val();
+			fechaFinalSubalterno = $("#fechaFinalSubalterno").val();
+			areasubalterno = $("#areasubalterno").val();
+			$("#filtros_cerrados").hide();
+			$("#label_subalternos4").show();
+		}else{
+			$("#filtros_cerrados").show();
+			$("#label_subalternos4").hide();
+		}
+
+		if ($.fn.DataTable.isDataTable('#tablacerrado')) {
+			$('#tablacerrado').DataTable().destroy();
+		}
 
 		//Tabla Cerrados
 		$('#tablacerrado').DataTable({
-			// Esqueleto del datatable completo (B: botones; l: longitud de cuantos resultados va a mostrar; f: filtros; <: agrega un div; "table-responsive" agrega la clase al div; t: tabla; >:cierra el div; i: información ; p: paginación)
-			"dom": '<"row"<".col-md-12 text-center"B>><"row"<"col-md-6"l><"col-md-6"f>><"table-responsive"t>ip',
-			// Celdas a exportar en el documento Excel, empezando por el indice 0
-			// Elimina también clases que definen el botón
-			"buttons": [{
-				text: '<i class="fa fa-file-excel-o"></i> Exportar a Excel',
-				className: 'btn chs export',
-				extend: 'excelHtml5',
-				init: function (api, node, config) {
-					jQuery(node).removeClass('dt-button buttons-excel buttons-html5')
-				},
-				exportOptions: { columns: ['.columna-exportar-excel'] },
-			}],
-			"ordering": false,
+			"order": [[ 3, "desc" ]],
+			//"lengthMenu": [ [10, 25, 50, 100, 100000], [10, 25, 50,100,"Todos"] ] ,
+			"dom": 'Bfrtip',
+			"lengthMenu": [
+				[ 10, 25, 50, 100000 ],
+				[ '10 Filas', '25 Filas', '50 Filas', 'Todos' ]
+			],
+			"buttons": [
+				
+				'copy',  'excel', 'pageLength'
+			],
+			"scrollY": 500,
+			"scrollX": true,
 			"processing": true,
-			"serverSide": true,
+			"serverSide": false,
+			"orderCellsTop": true,
+			"fixedHeader": false,
 			"ajax": {
 				"url": "../fachadas/activos/siga_solicitud_tickets/Siga_solicitud_ticketsFacade.Class.php",
 				"type": "POST",
 				"data": {orden:'AF_BC',
 					Id_Usuario: $("#usuariosesion").val(),
+					Subalterno: subalterno,
+					Fecha_Inicial:fechaInicialSubalterno,
+					Fecha_Final:fechaFinalSubalterno,
+					Id_Area:areasubalterno,
+					//Id_Area:$("#idareasesion").val(),
 					Estatus_Proceso:'4',
+					accion: "DatatbleSolicitante",
 					Todos_Tickets: function() { return estatus_tickets; }
-					
-					
 				}
 			},
 			"columns": [
@@ -929,7 +1115,7 @@
 					}
 				},
 				{ "data": "Id_Solicitud"},
-				{ "data": "Fecha_Cierre"},
+				{ "data": "Fecha_Cierre_Num"},
 				{	
 					"data": function (obj) {
 						var Estatus_Proceso="";	
@@ -945,6 +1131,17 @@
 						return Estatus_Proceso;
 					}
 				
+				},
+				{
+					"width": "8%", 
+					"data": function (obj) {
+						if (obj.Nombre_Usuario && obj.Nombre_Usuario.includes('/')) {
+							// Tomar solo la parte antes de la diagonal y quitar espacios
+							return obj.Nombre_Usuario.split('/')[0].trim();
+						}
+						return obj.Nombre_Usuario || '';
+					},
+					"visible": subalterno == 1  // Solo visible cuando subalterno es 1
 				},
 				{ "data": "Gestor"},
 				{ "width": "5%","data": "Desc_Prioridad"},
@@ -975,21 +1172,25 @@
 				{ "data": "Nom_Area"}
 				
 			], "language": {
-				"lengthMenu": "Mostrando _MENU_ registros por p&aacute;gina",
-				"zeroRecords": "Sin Resultados",
-				"info": "Monstrando p&aacute;gina _PAGE_ de _PAGES_ , total de registros: _MAX_",
-				"infoEmpty": "Sin Resultados",
-				"infoFiltered": "(Monstrando  _MAX_ del total de registros)",
-				"search": "Busqueda: ",
+				"lengthMenu": "Mostrando _MENU_ registros por página",
+				"zeroRecords": "Sin resultados",
+				"info": "Mostrando página _PAGE_ de _PAGES_, resultados filtrados: _TOTAL_ de _MAX_ registros",
+				"infoEmpty": "Sin resultados",
+				"infoFiltered": "",
+				"search": "Búsqueda: ",
 				"paginate": {
 					"first": "Primera",
-					"last": "Ultima",
+					"last": "Última",
 					"next": "Siguiente",
 					"previous": "Anterior"
 				}
 			}
 		});
-
+		$("#fechaInicialSubalterno").val("");
+		$("#fechaFinalSubalterno").val("");
+		$("#areasubalterno").val("");
+	}
+	recargarTablaCerrados(null);
 //======================================================================================================================================================================================================================
 //======================================================================================================================================================================================================================
 
@@ -1001,7 +1202,7 @@
 				estatus_tickets="";
 			}
 			
-			$('#tablacerrado').DataTable().ajax.reload();
+			recargarTablaCerrados(null);
 		}
 		
 //======================================================================================================================================================================================================================
@@ -1024,10 +1225,12 @@
 		
 //======================================================================================================================================================================================================================
 //======================================================================================================================================================================================================================
-		carga_activos_vip("mis_activos");	
-		
-		selec_activo_radio=function(nombre_radio, Id_Activo, Id_Situacion_Activo){
-			console.log(estatus_activos);
+		carga_activos_vip("mis_activos");			
+//======================================================================================================================================================================================================================
+//======================================================================================================================================================================================================================
+
+		selec_activo_radio=function(nombre_radio, Id_Activo, Id_Situacion_Activo){ 
+			//console.log(estatus_activos);
 			$('select[name="EstatusActivocmb"] option').remove();
 			$('select[name="EstatusActivocmb"]').hide();
 			$("#cmbestatusActivo_"+Id_Activo).show();
@@ -1470,20 +1673,20 @@
 		$("#closeModal").click(function () {
 			$("#No_Empleado_chat").val("");
 			$("#Id_Solicitud").val("");
-			$('#display_sin_respuesta').DataTable().ajax.reload();
-			$('#display_seguimiento').DataTable().ajax.reload();
-			$('#display_por_cerrar').DataTable().ajax.reload();
-			$('#tablacerrado').DataTable().ajax.reload();
+			recargarTablaSinRespuesta(null);
+			recargarTablaSeguimiento(null);//$('#display_seguimiento').DataTable().ajax.reload();
+			recargarTablaPorCerrar(null);
+			recargarTablaCerrados(null);
 		});
 						
 //======================================================================================================================================================================================================================
 //======================================================================================================================================================================================================================
 
 		cargar_tablas=function(){
-			$('#display_sin_respuesta').DataTable().ajax.reload();
-			$('#display_seguimiento').DataTable().ajax.reload();
-			$('#display_por_cerrar').DataTable().ajax.reload();
-			$('#tablacerrado').DataTable().ajax.reload();
+			recargarTablaSinRespuesta(null);
+			recargarTablaSeguimiento(null);//$('#display_seguimiento').DataTable().ajax.reload();
+			recargarTablaPorCerrar(null);
+			recargarTablaCerrados(null);
 			$("#tickets_actuales").prop("checked", true);
 		}
 				
@@ -1744,7 +1947,7 @@
 
 	function msjticketscerrar(){
 		var Id_Area_Nuevo=$("#hddArea").val();
-		$('#display_por_cerrar').DataTable().ajax.reload();
+		recargarTablaPorCerrar(null);
 		
 		if(cont_ticket_biomedica>0&&Id_Area_Nuevo==1){
 			mensajesalerta("Informaci&oacute;n", "-Para generar un nuevo ticket, debes cerrar los que se encuentran en la pestaña por cerrar.<br />", "", "dark");
@@ -1796,6 +1999,7 @@
 //======================================================================================================================================================================================================================
 
 	function cambiaArea(idarea){
+		
 	   $("#Check_Mis_Activos").prop("checked", true); 	
 	   limpiarcampos();
 	   $("#hddArea").val(idarea);
@@ -1811,38 +2015,48 @@
 	   carga_categorias(idarea);
 	   
 	   if (idarea == 1){
-		   $("#headerArea").addClass("box-header azul with-border");
-		   $("#headerArea2").addClass("box-header azul with-border");
+		   $("#headerArea").addClass("box-header inteligencia with-border");
+		   $("#headerArea2").addClass("box-header inteligencia with-border");
 		   $("#h3Area").html("Solicitud de soporte Biomédica");
 		   $("#solicitud_mis_activos").show();
 			 $("#solicitar").html("Solicitar Soporte");
 		 }
 
 	   if (idarea == 2){	   
-		   $("#headerArea").addClass("box-header verde with-border");
-		   $("#headerArea2").addClass("box-header verde with-border");
+		   $("#headerArea").addClass("box-header inteligencia with-border");
+		   $("#headerArea2").addClass("box-header inteligencia with-border");
 		   $("#h3Area").html("Solicitud de soporte TIC");
 		   $("#solicitud_mis_activos").show();
 			 $("#solicitar").html("Solicitar Soporte");
 		 }
 
 	   if (idarea == 3){
-		   $("#headerArea").addClass("box-header amarillo with-border");
-		   $("#headerArea2").addClass("box-header amarillo with-border");
+		   $("#headerArea").addClass("box-header inteligencia with-border");
+		   $("#headerArea2").addClass("box-header inteligencia with-border");
 		   $("#h3Area").html("Solicitud de soporte Mantenimiento");
 		   $("#solicitud_mis_activos").show();
 			 $("#solicitar").html("Solicitar Soporte");
 		 }
 
+		 if (idarea == 6){
+		   $("#headerArea").addClass("box-header inteligencia with-border");
+		   $("#headerArea2").addClass("box-header inteligencia with-border");
+		   $("#h3Area").html('Solicitud de servico Jurídico');
+			 $("#solicitud_mis_activos").hide();
+			 $("#solicitar").html("Solicitar Servicio");
+			 $('#btn_prerequisitos').show();
+			 //<ul class="inline center" style="font-size:13px"><li class="infotip"></li></ul><a href="#" onclick="muestro_info_juridico()" title="Ayuda"><i class="fa fa-info-circle" aria-hidden="true" title="Ayuda II"></i></a>
+	   }	      
+
 	   if (idarea == 7){
-		   $("#headerArea").addClass("box-header informa with-border");
-		   $("#headerArea2").addClass("box-header informa with-border");
+		   $("#headerArea").addClass("box-header inteligencia with-border");
+		   $("#headerArea2").addClass("box-header inteligencia with-border");
 		   $("#h3Area").html("Solicitud de soporte Aprovisionamiento");
 		   $("#solicitud_mis_activos").show();
 			 $("#solicitar").html("Solicitar Soporte");
 			 $('#btn_requisitosAprovisionamiento').show();
-			 $('#btn_requisitosAprovisionamiento').css('color','black');
-			 $('#btn_requisitosAprovisionamiento').css('background-color','#39cccc');
+			//  $('#btn_requisitosAprovisionamiento').css('color','black');
+			//  $('#btn_requisitosAprovisionamiento').css('background-color','#39cccc');
 		 }
 
 	   if (idarea == 8){
@@ -1853,16 +2067,51 @@
 			 $("#solicitar").html("Solicitar Soporte");
 		 }
 
+	   if (idarea == 9){
+		  $("#headerArea").addClass("box-header inteligencia with-border");			 
+		  $("#headerArea2").addClass("box-header inteligencia with-border");			 
+		  $("#h3Area").html("Solicitud de Servicio Atracción de Talento");	   
+			$("#solicitar").html("Solicitar Soporte");
+			$("#solicitud_mis_activos").hide();
+			//$("#solicitud_mis_activos").show();
+			//$("#headerArea2").attr('style',  'background-color:gray');
+			//$("#headerArea").attr('style',  'background-color:gray');
+		 }
 
-		 if (idarea == 6){
-		   $("#headerArea").addClass("box-header rojo with-border");
-		   $("#headerArea2").addClass("box-header rojo with-border");
-		   $("#h3Area").html('<ul class="inline center" style="font-size:13px"><li class="infotip"><a href="#" onclick="muestro_info_juridico()" title="Ayuda"><i class="fa fa-info-circle" aria-hidden="true" title="Ayuda"></i></a></li></ul> Solicitud de servico Jurídico');
-			 $("#solicitud_mis_activos").hide();
-			 $("#solicitar").html("Solicitar Servicio");
-			 $('#btn_prerequisitos').show();
-	   }	      
-   }
+	   if (idarea == 10){
+		  $("#headerArea").addClass("box-header inteligencia with-border");			 
+		  $("#headerArea2").addClass("box-header inteligencia with-border");			 
+		  $("#h3Area").html("Solicitud de Servicio Capacitación");	   
+			$("#solicitar").html("Solicitar Soporte");
+			$("#solicitud_mis_activos").hide();
+			//$("#solicitud_mis_activos").show();
+			//$("#headerArea2").attr('style',  'background-color:gray');
+			//$("#headerArea").attr('style',  'background-color:gray');
+		 }
+
+	   if (idarea == 11){
+		  $("#headerArea").addClass("box-header inteligencia with-border");			 
+		  $("#headerArea2").addClass("box-header inteligencia with-border");			 
+		  $("#h3Area").html("Solicitud de Servicio Desarrollo Organizacional");
+			$("#solicitar").html("Solicitar Soporte");
+			$("#solicitud_mis_activos").hide();
+			//$("#solicitud_mis_activos").show();
+			//$("#headerArea2").attr('style',  'background-color:gray');
+			//$("#headerArea").attr('style',  'background-color:gray');
+		 }
+
+	   if (idarea == 12){
+		  $("#headerArea").addClass("box-header inteligencia with-border");			 
+		  $("#headerArea2").addClass("box-header inteligencia with-border");			 
+		  $("#h3Area").html("Solicitud de Servicio Nóminas");
+			$("#solicitar").html("Solicitar Servicio");
+			$("#solicitud_mis_activos").hide();
+			//$("#solicitud_mis_activos").show();
+			//$("#headerArea2").attr('style',  'background-color:gray');
+			//$("#headerArea").attr('style',  'background-color:gray');
+		 }
+
+	}
    
 //======================================================================================================================================================================================================================
 //======================================================================================================================================================================================================================
@@ -2152,9 +2401,9 @@
 					*/
 				}
 				
-				$('#display_seguimiento').DataTable().ajax.reload();
-				$('#display_por_cerrar').DataTable().ajax.reload();	
-				$('#tablacerrado').DataTable().ajax.reload();
+				recargarTablaSeguimiento(null);//$('#display_seguimiento').DataTable().ajax.reload();
+				recargarTablaPorCerrar(null);
+				recargarTablaCerrados(null);
 				limpiarcampos_tabcalificacion();
 				$(".close").click();
 				
@@ -2258,10 +2507,7 @@
 									}	
 								}
 							
-						
-						
-					}
-					
+					}					
 				},
 				error: function () {
 					mensajesalerta("SIGA:", "Ocurrio un error al guardar.", "error", "dark");
@@ -2471,7 +2717,6 @@
 			}
 		});
 
-
 			$.ajax({
 			type: "POST",
 			url: "/siga/class/biomedica/mtoPreventivo/mtoPreventivo.ajax.php",
@@ -2598,7 +2843,8 @@
 			$('#boton1').attr('class','btn btn-block btn-default'); 
 			$('#boton2').attr('class','btn btn-block btn-default'); 
 			$('#boton3').attr('class','btn btn-block btn-default'); 
-			$('#boton4').attr('class','btn btn-block btn-default'); 			
+			$('#boton4').attr('class','btn btn-block btn-default');
+			$('#btnArea01').attr('class','info-box-icon bg-navy'); 		
 		} else if(boton == 1){
 			$('#boton0').attr('class','btn btn-block btn-default');
 			$('#boton1').attr('class','btn btn-block btn-primary');
@@ -2629,4 +2875,128 @@
 //======================================================================================================================================================================================================================
 //======================================================================================================================================================================================================================
 
+
+ function areaCss(area){
+		if(area == 1){
+			$('#btnArea01').attr('class','info-box-icon bg-blue'); 
+			$('#btnArea02').attr('class','info-box-icon bg-navy'); 
+			$('#btnArea03').attr('class','info-box-icon bg-navy');			
+			$('#btnArea06').attr('class','info-box-icon bg-navy');			
+			$('#btnArea07').attr('class','info-box-icon bg-navy');
+			$('#btnArea08').attr('class','info-box-icon bg-navy');
+			$('#btnArea09').attr('class','info-box-icon bg-navy');
+			$('#btnArea10').attr('class','info-box-icon bg-navy');
+			$('#btnArea11').attr('class','info-box-icon bg-navy');
+			$('#btnArea12').attr('class','info-box-icon bg-navy');			
+		} else if (area == 2){
+			$('#btnArea01').attr('class','info-box-icon bg-navy'); 
+			$('#btnArea02').attr('class','info-box-icon bg-blue'); 
+			$('#btnArea03').attr('class','info-box-icon bg-navy');			
+			$('#btnArea06').attr('class','info-box-icon bg-navy');			
+			$('#btnArea07').attr('class','info-box-icon bg-navy');
+			$('#btnArea08').attr('class','info-box-icon bg-navy');
+			$('#btnArea09').attr('class','info-box-icon bg-navy');
+			$('#btnArea10').attr('class','info-box-icon bg-navy');
+			$('#btnArea11').attr('class','info-box-icon bg-navy');
+			$('#btnArea12').attr('class','info-box-icon bg-navy');
+		} else if (area == 3){
+			$('#btnArea01').attr('class','info-box-icon bg-navy'); 
+			$('#btnArea02').attr('class','info-box-icon bg-navy'); 
+			$('#btnArea03').attr('class','info-box-icon bg-blue');			
+			$('#btnArea06').attr('class','info-box-icon bg-navy');			
+			$('#btnArea07').attr('class','info-box-icon bg-navy');
+			$('#btnArea08').attr('class','info-box-icon bg-navy');
+			$('#btnArea09').attr('class','info-box-icon bg-navy');
+			$('#btnArea10').attr('class','info-box-icon bg-navy');
+			$('#btnArea11').attr('class','info-box-icon bg-navy');
+			$('#btnArea12').attr('class','info-box-icon bg-navy');
+		} else if (area == 6){
+			$('#btnArea01').attr('class','info-box-icon bg-navy'); 
+			$('#btnArea02').attr('class','info-box-icon bg-navy'); 
+			$('#btnArea03').attr('class','info-box-icon bg-navy');			
+			$('#btnArea06').attr('class','info-box-icon bg-blue');		
+			$('#btnArea07').attr('class','info-box-icon bg-navy');
+			$('#btnArea08').attr('class','info-box-icon bg-navy');
+			$('#btnArea09').attr('class','info-box-icon bg-navy');
+			$('#btnArea10').attr('class','info-box-icon bg-navy');
+			$('#btnArea11').attr('class','info-box-icon bg-navy');
+			$('#btnArea12').attr('class','info-box-icon bg-navy');
+		} else if (area == 7){
+			$('#btnArea01').attr('class','info-box-icon bg-navy'); 
+			$('#btnArea02').attr('class','info-box-icon bg-navy'); 
+			$('#btnArea03').attr('class','info-box-icon bg-navy');			
+			$('#btnArea06').attr('class','info-box-icon bg-navy');			
+			$('#btnArea07').attr('class','info-box-icon bg-blue');
+			$('#btnArea08').attr('class','info-box-icon bg-navy');
+			$('#btnArea09').attr('class','info-box-icon bg-navy');
+			$('#btnArea10').attr('class','info-box-icon bg-navy');
+			$('#btnArea11').attr('class','info-box-icon bg-navy');
+			$('#btnArea12').attr('class','info-box-icon bg-navy');
+		} else if (area == 8){
+			$('#btnArea01').attr('class','info-box-icon bg-navy'); 
+			$('#btnArea02').attr('class','info-box-icon bg-navy'); 
+			$('#btnArea03').attr('class','info-box-icon bg-navy');			
+			$('#btnArea06').attr('class','info-box-icon bg-navy');			
+			$('#btnArea07').attr('class','info-box-icon bg-navy');
+			$('#btnArea08').attr('class','info-box-icon bg-blue');
+			$('#btnArea09').attr('class','info-box-icon bg-navy');
+			$('#btnArea10').attr('class','info-box-icon bg-navy');
+			$('#btnArea11').attr('class','info-box-icon bg-navy');
+			$('#btnArea12').attr('class','info-box-icon bg-navy');
+		} else if (area == 9){
+			$('#btnArea01').attr('class','info-box-icon bg-navy'); 
+			$('#btnArea02').attr('class','info-box-icon bg-navy'); 
+			$('#btnArea03').attr('class','info-box-icon bg-navy');			
+			$('#btnArea06').attr('class','info-box-icon bg-navy');			
+			$('#btnArea07').attr('class','info-box-icon bg-navy');
+			$('#btnArea08').attr('class','info-box-icon bg-navy');
+			$('#btnArea09').attr('class','info-box-icon bg-blue');
+			$('#btnArea10').attr('class','info-box-icon bg-navy');
+			$('#btnArea11').attr('class','info-box-icon bg-navy');
+			$('#btnArea12').attr('class','info-box-icon bg-navy');
+		} else if (area == 10){
+			$('#btnArea01').attr('class','info-box-icon bg-navy'); 
+			$('#btnArea02').attr('class','info-box-icon bg-navy'); 
+			$('#btnArea03').attr('class','info-box-icon bg-navy');			
+			$('#btnArea06').attr('class','info-box-icon bg-navy');			
+			$('#btnArea07').attr('class','info-box-icon bg-navy');
+			$('#btnArea08').attr('class','info-box-icon bg-navy');
+			$('#btnArea09').attr('class','info-box-icon bg-navy');
+			$('#btnArea10').attr('class','info-box-icon bg-blue');
+			$('#btnArea11').attr('class','info-box-icon bg-navy');
+			$('#btnArea12').attr('class','info-box-icon bg-navy');
+		} else if (area == 11){
+			$('#btnArea01').attr('class','info-box-icon bg-navy'); 
+			$('#btnArea02').attr('class','info-box-icon bg-navy'); 
+			$('#btnArea03').attr('class','info-box-icon bg-navy');			
+			$('#btnArea06').attr('class','info-box-icon bg-navy');			
+			$('#btnArea07').attr('class','info-box-icon bg-navy');
+			$('#btnArea08').attr('class','info-box-icon bg-navy');
+			$('#btnArea09').attr('class','info-box-icon bg-navy');
+			$('#btnArea10').attr('class','info-box-icon bg-navy');
+			$('#btnArea11').attr('class','info-box-icon bg-blue');
+			$('#btnArea12').attr('class','info-box-icon bg-navy');
+		} else if (area == 12){
+			$('#btnArea01').attr('class','info-box-icon bg-navy'); 
+			$('#btnArea02').attr('class','info-box-icon bg-navy'); 
+			$('#btnArea03').attr('class','info-box-icon bg-navy');			
+			$('#btnArea06').attr('class','info-box-icon bg-navy');			
+			$('#btnArea07').attr('class','info-box-icon bg-navy');
+			$('#btnArea08').attr('class','info-box-icon bg-navy');
+			$('#btnArea09').attr('class','info-box-icon bg-navy');
+			$('#btnArea10').attr('class','info-box-icon bg-navy');
+			$('#btnArea11').attr('class','info-box-icon bg-navy');
+			$('#btnArea12').attr('class','info-box-icon bg-blue');
+		}
+
+ }
+
+//======================================================================================================================================================================================================================
+//======================================================================================================================================================================================================================
+
+
+
+
+//======================================================================================================================================================================================================================
+//======================================================================================================================================================================================================================
 </script>

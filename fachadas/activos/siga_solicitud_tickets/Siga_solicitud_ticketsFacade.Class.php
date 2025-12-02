@@ -486,13 +486,17 @@ return $dtoToJson->toJson("REGISTRO REALIZADO DE FORMA CORRECTA");
 $jsonDto = new Encode_JSON();
 return $jsonDto->encode(array("totalCount"=>"0","text"=>"OCURRIO UN ERROR AL REALIZAR EL REGISTRO"));
 }
-public function llenarDataTable($draw,$columns,$order,$start,$length,$search,$Id_Estatus_Proceso, $siga_solicitud_ticketsDto, $Gestor_Solicitante, $Id_Seccion, $Tipo_Gestor, $Medio_de_Envio, $EsApp, $Todos_Tickets, $Tickets_SLA_Vencidos) {
+public function llenarDataTable($draw,$columns,$order,$start,$length,$search,$Id_Estatus_Proceso, $Subalterno, $siga_solicitud_ticketsDto, $Gestor_Solicitante, $Id_Seccion, $Tipo_Gestor, $Medio_de_Envio, $EsApp, $Todos_Tickets, $Tickets_SLA_Vencidos) {
 $Siga_solicitud_ticketsController = new Siga_solicitud_ticketsController();
-return $Siga_solicitud_ticketsController->llenarDataTable($draw,$columns,$order,$start,$length,$search,$Id_Estatus_Proceso, $siga_solicitud_ticketsDto, $Gestor_Solicitante, $Id_Seccion, $Tipo_Gestor, $Medio_de_Envio, $EsApp, $Todos_Tickets, $Tickets_SLA_Vencidos);
+return $Siga_solicitud_ticketsController->llenarDataTable($draw,$columns,$order,$start,$length,$search,$Id_Estatus_Proceso, $Subalterno, $siga_solicitud_ticketsDto, $Gestor_Solicitante, $Id_Seccion, $Tipo_Gestor, $Medio_de_Envio, $EsApp, $Todos_Tickets, $Tickets_SLA_Vencidos);
 }
 public function DataTableTickets($Id_Estatus_Proceso,$siga_solicitud_ticketsDto,$Gestor_Solicitante, $Id_Seccion, $Tipo_Gestor, $Medio_de_Envio, $EsApp, $Todos_Tickets, $Tickets_SLA_Vencidos) {
 $Siga_solicitud_ticketsController = new Siga_solicitud_ticketsController();
 return $Siga_solicitud_ticketsController->DataTableTickets($Id_Estatus_Proceso,$siga_solicitud_ticketsDto,$Gestor_Solicitante, $Id_Seccion, $Tipo_Gestor, $Medio_de_Envio, $EsApp, $Todos_Tickets, $Tickets_SLA_Vencidos);
+}
+public function DatatbleSolicitante($Id_Estatus_Proceso,$Subalterno,$Fecha_Inicial,$Fecha_Final,$Id_Area,$siga_solicitud_ticketsDto,$Gestor_Solicitante, $Id_Seccion, $Tipo_Gestor, $Medio_de_Envio, $EsApp, $Todos_Tickets, $Tickets_SLA_Vencidos) {
+$Siga_solicitud_ticketsController = new Siga_solicitud_ticketsController();
+return $Siga_solicitud_ticketsController->DatatbleSolicitante($Id_Estatus_Proceso,$Subalterno,$Fecha_Inicial,$Fecha_Final,$Id_Area,$siga_solicitud_ticketsDto,$Gestor_Solicitante, $Id_Seccion, $Tipo_Gestor, $Medio_de_Envio, $EsApp, $Todos_Tickets, $Tickets_SLA_Vencidos);
 }
 public function updateSiga_solicitud_tickets($Siga_solicitud_ticketsDto){
 $Siga_solicitud_ticketsController = new Siga_solicitud_ticketsController();
@@ -878,6 +882,11 @@ echo $siga_solicitud_ticketsDto;
 $Id_Estatus_Proceso = isset($_POST["Estatus_Proceso"])?$_POST["Estatus_Proceso"]:'';
 $siga_solicitud_ticketsDto=$siga_solicitud_ticketsFacade->DataTableTickets($Id_Estatus_Proceso,$siga_solicitud_ticketsDto,$Gestor_Solicitante, $Id_Seccion, $Tipo_Gestor, $Medio_de_Envio, $EsApp, $Todos_Tickets, $Tickets_SLA_Vencidos);
 echo $siga_solicitud_ticketsDto;
+}else if($accion=="DatatbleSolicitante"){
+$Id_Estatus_Proceso = isset($_POST["Estatus_Proceso"])?$_POST["Estatus_Proceso"]:'';
+$Subalterno=isset($_POST["Subalterno"])?$_POST["Subalterno"]:'';
+$siga_solicitud_ticketsDto=$siga_solicitud_ticketsFacade->DatatbleSolicitante($Id_Estatus_Proceso,$Subalterno,$Fecha_Inicial,$Fecha_Final,$Id_Area,$siga_solicitud_ticketsDto,$Gestor_Solicitante, $Id_Seccion, $Tipo_Gestor, $Medio_de_Envio, $EsApp, $Todos_Tickets, $Tickets_SLA_Vencidos);
+echo $siga_solicitud_ticketsDto;
 }
 
 else if (isset ($draw) && ($draw != "")) {
@@ -887,7 +896,8 @@ $start = isset($_POST["start"])?$_POST["start"]:'';
 $length = isset($_POST["length"])?$_POST["length"]:'';
 $search = isset($_POST["search"])?$_POST["search"]:'';
 $Id_Estatus_Proceso = isset($_POST["Estatus_Proceso"])?$_POST["Estatus_Proceso"]:'';
-echo  $siga_solicitud_ticketsFacade->llenarDataTable($draw,$columns,$order,$start,$length,$search,$Id_Estatus_Proceso, $siga_solicitud_ticketsDto, $Gestor_Solicitante, $Id_Seccion, $Tipo_Gestor, $Medio_de_Envio, $EsApp, $Todos_Tickets, $Tickets_SLA_Vencidos);
+$Subalterno=isset($_POST["Subalterno"])?$_POST["Subalterno"]:'';
+echo  $siga_solicitud_ticketsFacade->llenarDataTable($draw,$columns,$order,$start,$length,$search,$Id_Estatus_Proceso, $Subalterno, $siga_solicitud_ticketsDto, $Gestor_Solicitante, $Id_Seccion, $Tipo_Gestor, $Medio_de_Envio, $EsApp, $Todos_Tickets, $Tickets_SLA_Vencidos);
 }
 
 

@@ -1088,7 +1088,7 @@ unset($sql);
 return $tmp;
 }
 
-public function llenarDataTable($draw,$columns,$order,$start,$length,$search,$Id_Estatus_Proceso,$siga_solicitud_ticketsDto,$Gestor_Solicitante, $Id_Seccion, $Tipo_Gestor, $Medio_de_Envio, $EsApp, $Todos_Tickets, $Tickets_SLA_Vencidos, $proveedor = null) {
+public function llenarDataTable($draw,$columns,$order,$start,$length,$search,$Id_Estatus_Proceso,$Subalterno,$siga_solicitud_ticketsDto,$Gestor_Solicitante, $Id_Seccion, $Tipo_Gestor, $Medio_de_Envio, $EsApp, $Todos_Tickets, $Tickets_SLA_Vencidos, $proveedor = null) {
         $recordsTotal = 0;
         $data = array();
         if ($proveedor == null) {
@@ -1151,7 +1151,17 @@ public function llenarDataTable($draw,$columns,$order,$start,$length,$search,$Id
 		$Id_Usuario="";
 		if($Gestor_Solicitante!="gestor"){
 			if($siga_solicitud_ticketsDto->getId_Usuario()!=""){
-				$Id_Usuario="  ST.Id_Usuario=".$siga_solicitud_ticketsDto->getId_Usuario()." and ";
+				if($Subalterno=="1"){
+					$Id_Usuario="  ST.Id_Usuario in (SELECT su.Id_Usuario
+						FROM siga_usuarios su
+						JOIN [CHSTCASOL].CHS_APPS.dbo.empleados_chs ec
+							ON su.No_Usuario COLLATE Modern_Spanish_CI_AS = ec.num_empleado 
+						JOIN siga_usuarios jefe
+							ON ec.jefe_num_emp COLLATE Modern_Spanish_CI_AS = jefe.No_Usuario 
+						WHERE jefe.Id_Usuario = ".$siga_solicitud_ticketsDto->getId_Usuario().") and ";
+				}else{
+					$Id_Usuario="  ST.Id_Usuario=".$siga_solicitud_ticketsDto->getId_Usuario()." and ";
+				}	
 			}
 		}
 		
@@ -1263,10 +1273,12 @@ public function llenarDataTable($draw,$columns,$order,$start,$length,$search,$Id
 					//$Cerrados_por_mes.=" and Fech_Seguimiento>=CONVERT(DATE,GETDATE()-90) ";
 					//$Cerrados_por_mes.=" and Fech_Solicitud>=CONVERT(DATE,GETDATE()-90) ";	
 				}else{
-					// 3 Meses
-					$Cerrados_por_mes=" and Fech_Cierre>=CONVERT(DATE,GETDATE()-90) ";
-					//$Cerrados_por_mes.=" and Fech_Seguimiento>=CONVERT(DATE,GETDATE()-90) ";
-					//$Cerrados_por_mes.=" and Fech_Solicitud>=CONVERT(DATE,GETDATE()-90) ";
+					if($Subalterno!="1"){
+						// 3 Meses
+						$Cerrados_por_mes=" and Fech_Cierre>=CONVERT(DATE,GETDATE()-90) ";
+						//$Cerrados_por_mes.=" and Fech_Seguimiento>=CONVERT(DATE,GETDATE()-90) ";
+						//$Cerrados_por_mes.=" and Fech_Solicitud>=CONVERT(DATE,GETDATE()-90) ";
+					}
 				}
 			}
 			if($search["value"]!=""){
@@ -1297,6 +1309,11 @@ public function llenarDataTable($draw,$columns,$order,$start,$length,$search,$Id
 				$Busqueda.=" or Estatus_Proceso like '%".$search["value"]."%' ";
 				$Busqueda.=" ) ";
 			}
+		}
+
+		$semaforoSolicitante="";
+		if($Id_Estatus_Proceso=="2"){
+			$semaforoSolicitante=" (select top 1 case when Id_UsuarioGestor is not null then 'rojo' when Id_Usuario is not null then 'verde' end as semaforosolicitante from siga_ticket_chat chat where chat.Id_Solicitud=ST.Id_Solicitud order by chat.Fecha_Alta desc) as semaforosolicitante, ";
 		}
 		
 		if($Id_Estatus_Proceso=="1,2,3,4" && $search["value"]!=""){
@@ -1356,11 +1373,9 @@ public function llenarDataTable($draw,$columns,$order,$start,$length,$search,$Id
 		}
 		
 		
-		
-		
-		//Fin Filtros Busqueda 
-		$this->_proveedor->execute("select * from (SELECT 
+		$query="select * from (SELECT 
 		ST.Nombre_Ejecutante,
+		".$semaforoSolicitante."
 		ST.AF_BC_Ext, ST.Iniciar_SLA_Juridico, FORMAT(ST.Fecha_Inicio_SLA_Juridico,'dd/MM/yyyy hh:mm:ss') as Fecha_Inicio_SLA_Juridico, ST.Justificacion_Pausa_SLA, ST.Estatus_SLA, ST.Usr_Inicia_SLA_Juridico, ST.Nombre_Act_Ext, ST.Marca_Act_Ext, ST.Modelo_Act_Ext, ST.No_Serie_Act_Ext, 
 		case when ST.Id_Activo is not null then 
 			(select top 1 Desc_Estatus from siga_cat_estatus where siga_cat_estatus.Id_Estatus=(select Id_Situacion_Activo from siga_activos ACT where ST.Id_Activo=ACT.Id_Activo)) 
@@ -1390,43 +1405,14 @@ public function llenarDataTable($draw,$columns,$order,$start,$length,$search,$Id
 		left join siga_cat_motivo_real MR on ST.Id_Motivo_Real=MR.Id_Motivo_Real
 		where ST.Estatus_Reg <> '3' ".$Tickets_SLA_Vencidos."
 		and ".$Id_Usuario.$Id_Gestor.$Seccion.$Area.$Id_Categoria." Id_Solicitud LIKE '%%' "
-                .$filtro.$Cerrados_por_mes." ) siga_solicitud_tickets ".$Busqueda.$ordenamiento.$pagina);
-		/*
-		echo "<pre>";	
-		echo "select * from (SELECT 
-		ST.AF_BC_Ext, ST.Iniciar_SLA_Juridico, FORMAT(ST.Fecha_Inicio_SLA_Juridico,'dd/MM/yyyy hh:mm:ss') as Fecha_Inicio_SLA_Juridico, ST.Usr_Inicia_SLA_Juridico, ST.Nombre_Act_Ext, ST.Marca_Act_Ext, ST.Modelo_Act_Ext, ST.No_Serie_Act_Ext, 
-		case when ST.Id_Activo is not null then 
-			(select top 1 Desc_Estatus from siga_cat_estatus where siga_cat_estatus.Id_Estatus=(select Id_Situacion_Activo from siga_activos ACT where ST.Id_Activo=ACT.Id_Activo)) 
-		else
-			(select top 1 Desc_Estatus from siga_cat_estatus where siga_cat_estatus.Id_Estatus=ST.Id_Est_Equipo) 
-		end as Estatus_final_equipo,
-		A.AF_BC,A.Nombre_Activo, A.Marca, A.Modelo, A.NumSerie,UP.Desc_Ubic_Prim,US.Desc_Ubic_Sec,ST.Id_Solicitud,ST.Asist_Especial,ST.Id_Activo, '[Nombre Activo: '+rtrim(ltrim(A.Nombre_Activo))+'] '+'[AF/BC: '+rtrim(ltrim(A.AF_BC))+'] '+'[Ubicaci&oacute;n Primaria: '+rtrim(ltrim(UP.Desc_Ubic_Prim))+'] '+'[Ubicaci&oacute;n Secundaria: '+rtrim(ltrim(US.Desc_Ubic_Sec))+'] '+'[Usuario Responsable: '+rtrim(ltrim(A.Nombre_Completo))+']' as Activo,ST.Estatus_Proceso as Id_Estatus_Proceso, ST.Id_Usuario,concat((select U.Nombre_Usuario from siga_usuarios U where ST.Id_Usuario=U.Id_Usuario),' / ',(select U.Nombre_Usuario from siga_usuarios U where ST.Id_Gestor=U.Id_Usuario)) Nombre_Usuario,CA.Nom_Area,ST.Id_Area,ST.Seccion,ST.Titulo,ST.Id_Categoria,ST.Id_Subcategoria,SCMR.Desc_Categoria,SCTS.Desc_Subcategoria,ST.Desc_Motivo_Reporte,ST.Prioridad,ST.Url_archivo,ST.Fech_Inser,CONVERT(VARCHAR(10),ST.Fech_Inser,103) +' '+SUBSTRING(CONVERT(VARCHAR(20), ST.Fech_Inser, 9), 13, 5)+' '+SUBSTRING(CONVERT(VARCHAR(30), ST.Fech_Inser, 9), 25, 2) as Fecha,
-		".$Fechas_Ticket."
-		ST.Usr_Inser,ST.Fech_Mod,ST.Usr_Mod,ST.Estatus_Reg
-		,(select count(*) from siga_sla_ticket SLA where SLA.proceso_ticket=1 and  SLA.Estatus_Reg<>3 and SLA.Id_Solicitud=ST.Id_Solicitud) as SLAs_Enviados_Nuevo_Ticket
-		,(select C.Desc_Seccion from siga_cat_ticket_seccion C where C.Id_Seccion=ST.Seccion) Nombre_Seccion,Id_Gestor, Id_Gestor_Reasignado
-		,(select U.Nombre_Usuario from siga_usuarios U where ST.Id_Gestor=U.Id_Usuario) Gestor
-		,(select P.Desc_Proceso from siga_cat_ticket_proceso P where P.Id_Estatus_Proceso=ST.Estatus_Proceso) Estatus_Proceso, 
-		ST.TituloCierre, ST.ComentarioCierre,ST.ComentarioCierreGestor,Usr.Nombre_Usuario as Nom_usr_reasignado
-		,ST.Id_Actividad, CASE ST.Asist_Especial when 1 then 'Asistencia Especial' END as A_Especial, CASE ST.Prioridad when 1 then 'Alta' when 2 then 'Media' when 3 then 'Baja' END as Desc_Prioridad,
-		isnull((select count(*) from siga_ticket_calificacion C  where C.Id_Solicitud=ST.Id_Solicitud),0) as Num_Calif,MA.Desc_Motivo_Aparente,MR.Desc_Motivo_Real
-		FROM siga_solicitud_tickets  ST 
-		left join siga_cat_ticket_categoria SCMR on ST.Id_Categoria=SCMR.Id_Categoria 
-		left join siga_cat_ticket_subcategoria SCTS on ST.Id_Subcategoria=SCTS.Id_Subcategoria 
-		left join siga_catareas CA on ST.Id_Area=CA.Id_Area 
-		left join siga_activos A on ST.Id_Activo=A.Id_Activo 
-		left join siga_cat_ubic_prim UP on ST.Id_Ubic_Prim=UP.Id_Ubic_Prim 
-		left join siga_cat_ubic_sec US on ST.Id_Ubic_Sec=US.Id_Ubic_Sec 
-		left join siga_usuarios Usr on ST.Id_Gestor_Reasignado=Usr.Id_Usuario 
-		left join siga_cat_motivo_aparente MA on ST.Id_Motivo_Aparente=MA.Id_Motivo_Aparente
-		left join siga_cat_motivo_real MR on ST.Id_Motivo_Real=MR.Id_Motivo_Real
+                .$filtro.$Cerrados_por_mes." ) siga_solicitud_tickets ".$Busqueda.$ordenamiento.$pagina;
 		
-		
-		where ST.Estatus_Reg <> '3' 
-		and ".$Id_Usuario.$Id_Gestor.$Seccion.$Area.$Id_Categoria.$Tickets_SLA_Vencidos." Id_Solicitud LIKE '%%' "
-                .$filtro.$Cerrados_por_mes." ) siga_solicitud_tickets ".$Busqueda.$ordenamiento.$pagina;	
-		echo "</pre>";
-		*/
+		//Fin Filtros Busqueda 
+		$this->_proveedor->execute($query);
+		//echo "<pre>";
+		//echo $query;
+		//echo "</pre>";
+
 		//Genera la tabla dinamica
 		if (!$this->_proveedor->error() AND $this->_proveedor->rows($this->_proveedor->stmt) > 0) {
             while ($row = $this->_proveedor->fetch_array($this->_proveedor->stmt, 0)) {
@@ -1454,9 +1440,17 @@ public function llenarDataTable($draw,$columns,$order,$start,$length,$search,$Id
 						}
 					}
 				}
+
+
+				$solicitante_semaforo="";
+				if(isset($row["semaforosolicitante"])){
+					$solicitante_semaforo=$row["semaforosolicitante"];
+				}else{
+					$solicitante_semaforo="amarillo";
+				}
 				
-          $data[] = array("Id_Solicitud" => $row["Id_Solicitud"],
-          "Id_Usuario" => $row["Id_Usuario"],
+          		$data[] = array("Id_Solicitud" => $row["Id_Solicitud"],
+          			"Id_Usuario" => $row["Id_Usuario"],
 					"Id_Area" => $row["Id_Area"],
 					"Seccion" => $row["Seccion"],
 					"Titulo" => $row["Titulo"],
@@ -1508,7 +1502,8 @@ public function llenarDataTable($draw,$columns,$order,$start,$length,$search,$Id
 					"Justificacion_Pausa_SLA"=>rtrim(ltrim($row["Justificacion_Pausa_SLA"])),
 					"Estatus_SLA"=>rtrim(ltrim($row["Estatus_SLA"])),
 					"Not_SLA_Enviadas"=>$Tot_Not_SLA_Env,
-					"Datos_Activo"=>$Datos_Activo
+					"Datos_Activo"=>$Datos_Activo,
+					"solicitante_semaforo"=>$solicitante_semaforo
 				);
             }
 
@@ -1594,6 +1589,273 @@ public function llenarDataTable($draw,$columns,$order,$start,$length,$search,$Id
         }
         return '{"draw":' . $draw . ',"recordsTotal":' . $recordsTotal . ',"recordsFiltered":' . $recordsTotal . ',"data":' . json_encode($data).'}';
     }
+
+	public function DatatbleSolicitante($Id_Estatus_Proceso,$Subalterno,$Fecha_Inicial, $Fecha_Final, $Id_Area,$siga_solicitud_ticketsDto,$Gestor_Solicitante, $Id_Seccion, $Tipo_Gestor, $Medio_de_Envio, $EsApp, $Todos_Tickets, $Tickets_SLA_Vencidos, $proveedor = null) {
+        $recordsTotal = 0;
+        $data = array();
+        if ($proveedor == null) {
+            $this->_conexion(null);
+        } else if ($proveedor != null) {
+            $this->_proveedor = $proveedor;
+        }
+        
+        $filtro = "";
+		if ($Id_Estatus_Proceso != "")
+		{
+			$filtro .= " and Estatus_Proceso in(".$Id_Estatus_Proceso.")";	
+		}
+		
+		$Area="";
+		if($siga_solicitud_ticketsDto->getId_Area()!=""){
+			
+			if($siga_solicitud_ticketsDto->getId_Area()!='5'){
+				$Area="  ST.Id_Area=".$siga_solicitud_ticketsDto->getId_Area()." and ";
+			}
+		}
+		
+		$Id_Categoria="";
+		if($siga_solicitud_ticketsDto->getId_Categoria()!=""){
+			$Id_Categoria="  ST.Id_Categoria=".$siga_solicitud_ticketsDto->getId_Categoria()." and ";
+		}
+		
+		$Id_Usuario="";
+		if($Gestor_Solicitante!="gestor"){
+			if($siga_solicitud_ticketsDto->getId_Usuario()!=""){
+				if($Subalterno=="1"){
+					$Id_Usuario="  ST.Id_Usuario in (SELECT su.Id_Usuario
+						FROM siga_usuarios su
+						JOIN [CHSTCASOL].CHS_APPS.dbo.empleados_chs ec
+							ON su.No_Usuario COLLATE Modern_Spanish_CI_AS = ec.num_empleado 
+						JOIN siga_usuarios jefe
+							ON ec.jefe_num_emp COLLATE Modern_Spanish_CI_AS = jefe.No_Usuario 
+						WHERE jefe.Id_Usuario = ".$siga_solicitud_ticketsDto->getId_Usuario().") and ";
+				}else{
+					$Id_Usuario="  ST.Id_Usuario=".$siga_solicitud_ticketsDto->getId_Usuario()." and ";
+				}	
+			}
+		}
+		
+		$Seccion="";
+		if($Id_Seccion!=""){
+			$Seccion=" ST.Seccion=".$Id_Seccion." and ";
+		}
+		
+		$Id_Gestor="";
+		if($siga_solicitud_ticketsDto->getId_Gestor()!=""){
+			$Id_Gestor=" ST.Id_Gestor=".$siga_solicitud_ticketsDto->getId_Gestor()." and ";
+		}
+		
+		if($Tickets_SLA_Vencidos=="si"){
+			$Tickets_SLA_Vencidos="  
+				and ((Estatus_Proceso=1 and (select count(*) from siga_sla_ticket SLA where SLA.proceso_ticket=1 and  SLA.Estatus_Reg<>3 and SLA.Id_Solicitud=ST.Id_Solicitud)>0 )
+				or (Estatus_Proceso=2 and (select count(*) from siga_sla_ticket SLA where SLA.proceso_ticket=2 and  SLA.Estatus_Reg<>3 and SLA.Id_Solicitud=ST.Id_Solicitud)>0 ))
+			";
+		}
+		
+		//Filtros Busqueda
+		$Cerrados_por_mes="";
+		if($Id_Estatus_Proceso=="4"){
+			if($Todos_Tickets!=1){
+				if($Medio_de_Envio!=""){
+					//2 meses
+					$Cerrados_por_mes=" and Fech_Cierre>=CONVERT(DATE,GETDATE()-60) ";
+					//$Cerrados_por_mes.=" and Fech_Seguimiento>=CONVERT(DATE,GETDATE()-90) ";
+					//$Cerrados_por_mes.=" and Fech_Solicitud>=CONVERT(DATE,GETDATE()-90) ";	
+				}else{
+					if($Subalterno!="1"){
+						// 3 Meses
+						$Cerrados_por_mes=" and Fech_Cierre>=CONVERT(DATE,GETDATE()-90) ";
+						//$Cerrados_por_mes.=" and Fech_Seguimiento>=CONVERT(DATE,GETDATE()-90) ";
+						//$Cerrados_por_mes.=" and Fech_Solicitud>=CONVERT(DATE,GETDATE()-90) ";
+					}
+				}
+			}
+			
+		}
+
+		$semaforoSolicitante="";
+		if($Id_Estatus_Proceso=="2"){
+			$semaforoSolicitante=" (select top 1 case when Id_UsuarioGestor is not null then 'rojo' when Id_Usuario is not null then 'verde' end as semaforosolicitante from siga_ticket_chat chat where chat.Id_Solicitud=ST.Id_Solicitud order by chat.Fecha_Alta desc) as semaforosolicitante, ";
+		}
+		
+		
+		
+		$Fechas_Ticket="";
+		//Solo aplica para la app
+		if($EsApp=="1"){
+			
+			//$Cerrados_por_mes=" and ((Fech_Cierre>=CONVERT(DATE,GETDATE()-30) and Estatus_Proceso=4) or Estatus_Proceso=3) ";
+			//$Cerrados_por_mes.=" and ((Fech_Seguimiento>=CONVERT(DATE,GETDATE()-30) and Estatus_Proceso=4) or Estatus_Proceso=3) ";
+			$Cerrados_por_mes=" and ((Fech_Solicitud>=DATEADD(month, DATEDIFF(month, -1, getdate()) - 2, 0) and Estatus_Proceso=4) or Estatus_Proceso=3) ";
+		
+			$Fechas_Ticket="
+				--CONVERT(VARCHAR(10),ST.Fech_Solicitud,103) +' '+SUBSTRING(CONVERT(VARCHAR(20), ST.Fech_Solicitud, 9), 13, 5)+' '+SUBSTRING(CONVERT(VARCHAR(30), ST.Fech_Solicitud, 9), 25, 2) as Fecha_Solicitud, 
+				FORMAT(ST.Fech_Seguimiento,'dd/MM/yyyy hh:mm:ss') as Fecha_Seguimiento,
+				FORMAT(ST.Fech_Espera_Cierre,'dd/MM/yyyy hh:mm:ss') as Fecha_Esp_Cierre,
+				FORMAT(ST.Fech_Cierre,'dd/MM/yyyy hh:mm:ss') as Fech_Solicitud,
+			";
+		}else{
+			
+			$Fechas_Ticket="
+				FORMAT(ST.Fech_Inser,'yyyy/MM/dd HH:mm:ss') as Fecha_Num,
+				CONVERT(VARCHAR(10),ST.Fech_Solicitud,103) +' '+SUBSTRING(CONVERT(VARCHAR(20), ST.Fech_Solicitud, 9), 13, 5)+' '+SUBSTRING(CONVERT(VARCHAR(30), ST.Fech_Solicitud, 9), 25, 2) as Fecha_Solicitud, 
+				CONVERT(BIGINT, FORMAT(ST.Fech_Solicitud, 'yyyyMMddHHmmss')) as Fecha_Solicitud_Num,
+				FORMAT(ST.Fech_Seguimiento,'dd/MM/yyyy hh:mm:ss') as Fecha_Seguimiento,
+				FORMAT(ST.Fech_Seguimiento,'yyyy/MM/dd HH:mm:ss') as Fecha_Seguimiento_Num,
+				FORMAT(ST.Fech_Espera_Cierre,'dd/MM/yyyy hh:mm:ss') as Fecha_Esp_Cierre,
+				FORMAT(ST.Fech_Espera_Cierre,'yyyy/MM/dd HH:mm:ss') as Fecha_Esp_Cierre_Num,
+				FORMAT(ST.Fech_Cierre,'dd/MM/yyyy hh:mm:ss') as Fecha_Cierre,
+				FORMAT(ST.Fech_Cierre,'yyyy/MM/dd HH:mm:ss') as Fecha_Cierre_Num,
+			";
+		}
+		
+		$busquedasubalternos="";
+		if($Subalterno=="1"){
+			if($Id_Estatus_Proceso=="1"){
+				$busquedasubalternos=" and CONVERT(DATE, ST.Fech_Inser) BETWEEN CONVERT(DATE, '".$Fecha_Inicial."') AND CONVERT(DATE, '".$Fecha_Final."') ";
+			}
+			if($Id_Estatus_Proceso=="2"){
+				$busquedasubalternos=" and CONVERT(DATE, ST.Fech_Seguimiento) BETWEEN CONVERT(DATE, '".$Fecha_Inicial."') AND CONVERT(DATE, '".$Fecha_Final."') ";
+			}
+			if($Id_Estatus_Proceso=="4"){
+				$busquedasubalternos=" and CONVERT(DATE, ST.Fech_Cierre) BETWEEN CONVERT(DATE, '".$Fecha_Inicial."') AND CONVERT(DATE, '".$Fecha_Final."') ";
+			}
+		}
+
+		$query="select * from (SELECT 
+		ST.Nombre_Ejecutante,
+		".$semaforoSolicitante."
+		ST.AF_BC_Ext, ST.Iniciar_SLA_Juridico, FORMAT(ST.Fecha_Inicio_SLA_Juridico,'dd/MM/yyyy hh:mm:ss') as Fecha_Inicio_SLA_Juridico, ST.Justificacion_Pausa_SLA, ST.Estatus_SLA, ST.Usr_Inicia_SLA_Juridico, ST.Nombre_Act_Ext, ST.Marca_Act_Ext, ST.Modelo_Act_Ext, ST.No_Serie_Act_Ext, 
+		case when ST.Id_Activo is not null then 
+			(select top 1 Desc_Estatus from siga_cat_estatus where siga_cat_estatus.Id_Estatus=(select Id_Situacion_Activo from siga_activos ACT where ST.Id_Activo=ACT.Id_Activo)) 
+		else
+			(select top 1 Desc_Estatus from siga_cat_estatus where siga_cat_estatus.Id_Estatus=ST.Id_Est_Equipo) 
+		end as Estatus_final_equipo,
+		A.AF_BC,A.Nombre_Activo, A.Marca, A.Modelo, A.NumSerie,UP.Desc_Ubic_Prim,US.Desc_Ubic_Sec,ST.Id_Solicitud,ST.Asist_Especial,ST.Id_Activo, '[Nombre Activo: '+rtrim(ltrim(A.Nombre_Activo))+'] '+'[AF/BC: '+rtrim(ltrim(A.AF_BC))+'] '+'[Ubicaci&oacute;n Primaria: '+rtrim(ltrim(UP.Desc_Ubic_Prim))+'] '+'[Ubicaci&oacute;n Secundaria: '+rtrim(ltrim(US.Desc_Ubic_Sec))+'] '+'[Usuario Responsable: '+rtrim(ltrim(A.Nombre_Completo))+']' as Activo,ST.Estatus_Proceso as Id_Estatus_Proceso, ST.Id_Usuario,concat((select U.Nombre_Usuario from siga_usuarios U where ST.Id_Usuario=U.Id_Usuario),' / ',(select U.Nombre_Usuario from siga_usuarios U where ST.Id_Gestor=U.Id_Usuario)) Nombre_Usuario,CA.Nom_Area,ST.Id_Area,ST.Seccion,ST.Titulo,ST.Id_Categoria,ST.Id_Subcategoria,SCMR.Desc_Categoria,SCTS.Desc_Subcategoria,ST.Desc_Motivo_Reporte,ST.Prioridad,ST.Url_archivo,ST.Fech_Inser,CONVERT(VARCHAR(10),ST.Fech_Inser,103) +' '+SUBSTRING(CONVERT(VARCHAR(20), ST.Fech_Inser, 9), 13, 5)+' '+SUBSTRING(CONVERT(VARCHAR(30), ST.Fech_Inser, 9), 25, 2) as Fecha,
+		".$Fechas_Ticket."
+		ST.Usr_Inser,ST.Fech_Mod,ST.Usr_Mod,ST.Estatus_Reg
+		,(select count(*) from siga_sla_ticket SLA where SLA.proceso_ticket=1 and  SLA.Estatus_Reg<>3 and SLA.Id_Solicitud=ST.Id_Solicitud) as SLAs_Enviados_Nuevo_Ticket
+		,(select count(*) from siga_sla_ticket SLA where SLA.proceso_ticket=2 and  SLA.Estatus_Reg<>3 and SLA.Id_Solicitud=ST.Id_Solicitud) as SLAs_Enviados_Seg_Ticket
+		,(select C.Desc_Seccion from siga_cat_ticket_seccion C where C.Id_Seccion=ST.Seccion) Nombre_Seccion,Id_Gestor, Id_Gestor_Reasignado
+		,(select U.Nombre_Usuario from siga_usuarios U where ST.Id_Gestor=U.Id_Usuario) Gestor
+		,(select P.Desc_Proceso from siga_cat_ticket_proceso P where P.Id_Estatus_Proceso=ST.Estatus_Proceso) Estatus_Proceso, 
+		ST.TituloCierre, ST.ComentarioCierre,ST.ComentarioCierreGestor,Usr.Nombre_Usuario as Nom_usr_reasignado
+		,ST.Id_Actividad, CASE ST.Asist_Especial when 1 then 'Asistencia Especial' END as A_Especial, CASE ST.Prioridad when 1 then 'Alta' when 2 then 'Media' when 3 then 'Baja' END as Desc_Prioridad,
+		isnull((select count(*) from siga_ticket_calificacion C  where C.Id_Solicitud=ST.Id_Solicitud),0) as Num_Calif,MA.Desc_Motivo_Aparente,MR.Desc_Motivo_Real
+		FROM siga_solicitud_tickets  ST 
+		left join siga_cat_ticket_categoria SCMR on ST.Id_Categoria=SCMR.Id_Categoria 
+		left join siga_cat_ticket_subcategoria SCTS on ST.Id_Subcategoria=SCTS.Id_Subcategoria 
+		left join siga_catareas CA on ST.Id_Area=CA.Id_Area 
+		left join siga_activos A on ST.Id_Activo=A.Id_Activo 
+		left join siga_cat_ubic_prim UP on ST.Id_Ubic_Prim=UP.Id_Ubic_Prim 
+		left join siga_cat_ubic_sec US on ST.Id_Ubic_Sec=US.Id_Ubic_Sec 
+		left join siga_usuarios Usr on ST.Id_Gestor_Reasignado=Usr.Id_Usuario 
+		left join siga_cat_motivo_aparente MA on ST.Id_Motivo_Aparente=MA.Id_Motivo_Aparente
+		left join siga_cat_motivo_real MR on ST.Id_Motivo_Real=MR.Id_Motivo_Real
+		where ST.Estatus_Reg <> '3' ".$Tickets_SLA_Vencidos." and ".$Id_Usuario.$Id_Gestor.$Seccion.$Area.$Id_Categoria." ST.Id_Solicitud LIKE '%%' " .$filtro.$Cerrados_por_mes.$busquedasubalternos." ) siga_solicitud_tickets ";
+		//Fin Filtros Busqueda 
+		$this->_proveedor->execute($query);
+		//echo "<pre>";
+		//echo $query;
+		//echo "</pre>";
+
+		//Genera la tabla dinamica
+		if (!$this->_proveedor->error() AND $this->_proveedor->rows($this->_proveedor->stmt) > 0) {
+            while ($row = $this->_proveedor->fetch_array($this->_proveedor->stmt, 0)) {
+				$recordsTotal=$recordsTotal+1;
+				$Datos_Activo="";
+				if($row["Nombre_Act_Ext"]!=""){
+					$Datos_Activo="AF/BC: ".$row["AF_BC_Ext"]."<br>";
+					$Datos_Activo.="Nombre: ".$row["Nombre_Act_Ext"]."<br>";
+					$Datos_Activo.="Marca: ".$row["Marca_Act_Ext"]."<br>";
+					$Datos_Activo.="Modelo: ".$row["Modelo_Act_Ext"]."<br>";
+					$Datos_Activo.="Num. Serie: ".$row["No_Serie_Act_Ext"]."<br>";
+					$Datos_Activo.="Ubic. Prim: ".$row["Desc_Ubic_Prim"]."<br>";
+					$Datos_Activo.="Ubic. Sec: ".$row["Desc_Ubic_Sec"];
+				}
+				
+				$Not_Sla=$row["SLAs_Enviados_Nuevo_Ticket"];
+				$Tot_Not_SLA_Env="";
+				if($Not_Sla!=NULL){
+					if($Not_Sla>0){
+						if($Not_Sla==1){
+							$Tot_Not_SLA_Env="<br><font color='red'>Se ha enviado 1 Notificación de SLA</font>";
+						}else{
+							if($Not_Sla>1){
+								$Tot_Not_SLA_Env="<br><font color='red'>Se han enviado ".$Not_Sla." Notificaciones de SLA</font>";
+							}
+						}
+					}
+				}
+
+
+				$solicitante_semaforo="";
+				if(isset($row["semaforosolicitante"])){
+					$solicitante_semaforo=$row["semaforosolicitante"];
+				}else{
+					$solicitante_semaforo="amarillo";
+				}
+				
+          		$data[] = array("Id_Solicitud" => $row["Id_Solicitud"],
+          			"Id_Usuario" => $row["Id_Usuario"],
+					"Id_Area" => $row["Id_Area"],
+					"Seccion" => $row["Seccion"],
+					"Titulo" => $row["Titulo"],
+					"Id_Categoria" => $row["Id_Categoria"],
+					"Id_Subcategoria" => $row["Id_Subcategoria"],
+					"Desc_Categoria" => $row["Desc_Categoria"],
+					"Desc_Subcategoria"=> $row["Desc_Subcategoria"],
+					"Desc_Motivo_Reporte" => $row["Desc_Motivo_Reporte"],
+					"Prioridad" => $row["Prioridad"],
+					"Desc_Prioridad"=> $row["Desc_Prioridad"],
+					"Num_Calif"=> $row["Num_Calif"],
+					"Url_archivo" => rtrim(ltrim($row["Url_archivo"])),
+					"Fecha" => $row["Fecha"],
+					"Fecha_Num"=> $row["Fecha_Num"],
+					"Fecha_Solicitud_Num"=> $row["Fecha_Solicitud_Num"],
+					"Fecha_Seguimiento_Num"=> $row["Fecha_Seguimiento_Num"],
+					"Fecha_Esp_Cierre_Num"=> $row["Fecha_Esp_Cierre_Num"],
+					"Fecha_Cierre_Num"=> $row["Fecha_Cierre_Num"],
+					"Nom_Area" => $row["Nom_Area"],
+					"Nombre_Usuario" => $row["Nombre_Usuario"],
+					"Nombre_Seccion" => $row["Nombre_Seccion"],
+					"Id_Gestor" => $row["Id_Gestor"],
+					"Nombre_Ejecutante" => $row["Nombre_Ejecutante"],
+					"Id_Gestor_Reasignado"=> $row["Id_Gestor_Reasignado"],
+					"Gestor" => $row["Gestor"],
+					"Estatus_Proceso" => $row["Estatus_Proceso"],
+					"Id_Estatus_Proceso"=> $row["Id_Estatus_Proceso"],
+					"TituloCierre"=> $row["TituloCierre"],
+					"ComentarioCierre"=> $row["ComentarioCierre"],
+					"ComentarioCierreGestor"=> $row["ComentarioCierreGestor"],
+					"Activo"=> str_replace("<br>", "\n", $Datos_Activo), //$row["Activo"],
+					"Id_Activo"=>$row["Id_Activo"],
+					"Asist_Especial"=>$row["Asist_Especial"],
+					"A_Especial"=>$row["A_Especial"],
+					"Nom_usr_reasignado"=>$row["Nom_usr_reasignado"],
+					"Fecha_Seguimiento"=>$row["Fecha_Seguimiento"],
+					"Fecha_Esp_Cierre"=>$row["Fecha_Esp_Cierre"],
+					"Fecha_Cierre"=>$row["Fecha_Cierre"],
+					"Fecha_Solicitud"=>$row["Fecha_Solicitud"],
+					"Desc_Motivo_Aparente"=>$row["Desc_Motivo_Aparente"],
+					"SLAs_Enviados_Nuevo_Ticket"=>$row["SLAs_Enviados_Nuevo_Ticket"],
+					"SLAs_Enviados_Seg_Ticket"=>$row["SLAs_Enviados_Seg_Ticket"],
+					"Desc_Motivo_Real"=>$row["Desc_Motivo_Real"],
+					"Id_Actividad"=>rtrim(ltrim($row["Id_Actividad"])),
+					"Desc_Est_Equipo"=>rtrim(ltrim($row["Estatus_final_equipo"])),
+					"Iniciar_SLA_Juridico"=>rtrim(ltrim($row["Iniciar_SLA_Juridico"])),
+					"Fecha_Inicio_SLA_Juridico"=>rtrim(ltrim($row["Fecha_Inicio_SLA_Juridico"])),
+					"Usr_Inicia_SLA_Juridico"=>rtrim(ltrim($row["Usr_Inicia_SLA_Juridico"])),
+					"Justificacion_Pausa_SLA"=>rtrim(ltrim($row["Justificacion_Pausa_SLA"])),
+					"Estatus_SLA"=>rtrim(ltrim($row["Estatus_SLA"])),
+					"Not_SLA_Enviadas"=>$Tot_Not_SLA_Env,
+					"Datos_Activo"=>$Datos_Activo,
+					"solicitante_semaforo"=>$solicitante_semaforo
+				);
+            }
+        }
+        return '{"recordsTotal":' . $recordsTotal . ',"recordsFiltered":' . $recordsTotal . ',"data":' . json_encode($data).'}';
+    }
 		
 	public function DataTableTickets($Id_Estatus_Proceso,$siga_solicitud_ticketsDto,$Gestor_Solicitante, $Id_Seccion, $Tipo_Gestor, $Medio_de_Envio, $EsApp, $Todos_Tickets, $Tickets_SLA_Vencidos, $proveedor = null) {
         $recordsTotal = 0;
@@ -1607,7 +1869,14 @@ public function llenarDataTable($draw,$columns,$order,$start,$length,$search,$Id
 		$filtro = "";
 		if ($Id_Estatus_Proceso != "")
 		{
-			$filtro .= " and Estatus_Proceso in(".$Id_Estatus_Proceso.")";	
+			if($Id_Estatus_Proceso!="Cancelados"){
+				$filtro .= " and Estatus_Proceso in(".$Id_Estatus_Proceso.")";	
+			}	
+		}
+
+		$semaforoGestor="";
+		if($Id_Estatus_Proceso=="2"){
+			$semaforoGestor=" (select top 1 case when Id_UsuarioGestor is not null then 'verde' when Id_Usuario is not null then 'rojo' end as semaforogestor from siga_ticket_chat chat where chat.Id_Solicitud=ST.Id_Solicitud order by chat.Fecha_Alta desc) as semaforogestor, ";
 		}
 
 		$Area="";
@@ -1664,6 +1933,10 @@ public function llenarDataTable($draw,$columns,$order,$start,$length,$search,$Id
 				}
 			}
 		}
+
+		if($Id_Estatus_Proceso=="Cancelados"){
+			$Cerrados_por_mes=" and C.Fech_Inser>=CONVERT(DATE,GETDATE()-120) ";
+		}
 		
 		
 		$Fechas_Ticket="";
@@ -1697,6 +1970,7 @@ public function llenarDataTable($draw,$columns,$order,$start,$length,$search,$Id
 
 		$sql="select * from (SELECT 
 		ST.Nombre_Ejecutante,
+		".$semaforoGestor."
 		ST.AF_BC_Ext, ST.Iniciar_SLA_Juridico, FORMAT(ST.Fecha_Inicio_SLA_Juridico,'dd/MM/yyyy hh:mm:ss') as Fecha_Inicio_SLA_Juridico, ST.Justificacion_Pausa_SLA, ST.Estatus_SLA, ST.Usr_Inicia_SLA_Juridico, ST.Nombre_Act_Ext, ST.Marca_Act_Ext, ST.Modelo_Act_Ext, ST.No_Serie_Act_Ext, 
 		case when ST.Id_Activo is not null then 
 			(select top 1 Desc_Estatus from siga_cat_estatus where siga_cat_estatus.Id_Estatus=(select Id_Situacion_Activo from siga_activos ACT where ST.Id_Activo=ACT.Id_Activo)) 
@@ -1713,8 +1987,13 @@ public function llenarDataTable($draw,$columns,$order,$start,$length,$search,$Id
 		,(select P.Desc_Proceso from siga_cat_ticket_proceso P where P.Id_Estatus_Proceso=ST.Estatus_Proceso) Estatus_Proceso, 
 		ST.TituloCierre, ST.ComentarioCierre,ST.ComentarioCierreGestor,Usr.Nombre_Usuario as Nom_usr_reasignado
 		,ST.Id_Actividad, CASE ST.Asist_Especial when 1 then 'Asistencia Especial' END as A_Especial, CASE ST.Prioridad when 1 then 'Alta' when 2 then 'Media' when 3 then 'Baja' END as Desc_Prioridad,
-		isnull((select count(*) from siga_ticket_calificacion C  where C.Id_Solicitud=ST.Id_Solicitud),0) as Num_Calif,MA.Desc_Motivo_Aparente,MR.Desc_Motivo_Real
-		FROM siga_solicitud_tickets  ST 
+		isnull((select count(*) from siga_ticket_calificacion C  where C.Id_Solicitud=ST.Id_Solicitud),0) as Num_Calif,MA.Desc_Motivo_Aparente,MR.Desc_Motivo_Real";
+		
+		if($Id_Estatus_Proceso=="Cancelados"){
+			$sql.=" ,C.Desc_Motivio_Cancelacion, FORMAT(C.Fech_Inser,'yyyy/MM/dd HH:mm:ss') as Fecha_Cancelacion, (select USU.Nombre_Usuario from siga_usuarios USU where USU.Id_Usuario=C.Usr_Inser) as Usuario_Cancelo ";
+		}
+		
+		$sql.=" FROM siga_solicitud_tickets  ST 
 		left join siga_cat_ticket_categoria SCMR on ST.Id_Categoria=SCMR.Id_Categoria 
 		left join siga_cat_ticket_subcategoria SCTS on ST.Id_Subcategoria=SCTS.Id_Subcategoria 
 		left join siga_catareas CA on ST.Id_Area=CA.Id_Area 
@@ -1723,10 +2002,21 @@ public function llenarDataTable($draw,$columns,$order,$start,$length,$search,$Id
 		left join siga_cat_ubic_sec US on ST.Id_Ubic_Sec=US.Id_Ubic_Sec 
 		left join siga_usuarios Usr on ST.Id_Gestor_Reasignado=Usr.Id_Usuario 
 		left join siga_cat_motivo_aparente MA on ST.Id_Motivo_Aparente=MA.Id_Motivo_Aparente
-		left join siga_cat_motivo_real MR on ST.Id_Motivo_Real=MR.Id_Motivo_Real
-		where ST.Estatus_Reg <> '3' ".$Tickets_SLA_Vencidos."
-		and ".$Id_Usuario.$Id_Gestor.$Seccion.$Area.$Id_Categoria." Id_Solicitud LIKE '%%' "
-                .$filtro.$Cerrados_por_mes." ) siga_solicitud_tickets ";
+		left join siga_cat_motivo_real MR on ST.Id_Motivo_Real=MR.Id_Motivo_Real";
+		if($Id_Estatus_Proceso=="Cancelados"){
+			$sql.=" left join siga_motivo_cancelacion C on C.Id_Solicitud=ST.Id_Solicitud  ";
+		}
+
+		$sql.=" where  ";
+		
+		if($Id_Estatus_Proceso!="Cancelados"){
+			$sql.=" ST.Estatus_Reg <> '3' ";
+		}else{
+			//Entra cuando busca los tickets cancelados
+			$sql.=" C.Id_Solicitud is not null ";
+		}
+		
+		$sql.=$Tickets_SLA_Vencidos." and ".$Id_Usuario.$Id_Gestor.$Seccion.$Area.$Id_Categoria." ST.Id_Solicitud LIKE '%%' " .$filtro.$Cerrados_por_mes." ) siga_solicitud_tickets ";
 		//Fin Filtros Busqueda 
 		
 		//echo "<pre>";
@@ -1763,8 +2053,16 @@ public function llenarDataTable($draw,$columns,$order,$start,$length,$search,$Id
 					}
 				}
 				
-          $data[] = array("Id_Solicitud" => $row["Id_Solicitud"],
-          "Id_Usuario" => $row["Id_Usuario"],
+				$gestor_semaforo="";
+				if(isset($row["semaforogestor"])){
+					$gestor_semaforo=$row["semaforogestor"];
+				}else{
+					$gestor_semaforo="amarillo";
+				}
+
+         		$data[] = array(
+					"Id_Solicitud" => $row["Id_Solicitud"],
+          			"Id_Usuario" => $row["Id_Usuario"],
 					"Id_Area" => $row["Id_Area"],
 					"Seccion" => $row["Seccion"],
 					"Titulo" => $row["Titulo"],
@@ -1816,7 +2114,12 @@ public function llenarDataTable($draw,$columns,$order,$start,$length,$search,$Id
 					"Justificacion_Pausa_SLA"=>rtrim(ltrim($row["Justificacion_Pausa_SLA"])),
 					"Estatus_SLA"=>rtrim(ltrim($row["Estatus_SLA"])),
 					"Not_SLA_Enviadas"=>$Tot_Not_SLA_Env,
-					"Datos_Activo"=>$Datos_Activo
+					"Datos_Activo"=>$Datos_Activo,
+
+					"Desc_Motivio_Cancelacion"=>rtrim(ltrim($row["Desc_Motivio_Cancelacion"])),
+					"Fecha_Cancelacion"=>rtrim(ltrim($row["Fecha_Cancelacion"])),
+					"Usuario_Cancelo"=>rtrim(ltrim($row["Usuario_Cancelo"])),
+					"semaforogestor"=>rtrim(ltrim($gestor_semaforo))
 				);
             }
 		}

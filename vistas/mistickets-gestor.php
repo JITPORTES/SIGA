@@ -233,6 +233,9 @@ input[class="super-sad03"]:focus + svg {
 		<li role="presentation" id="li_tab_cerrados">
 			<a onclick="cargar_tablas()" href="#historico" aria-controls="cerrado" role="tab" data-toggle="tab"  id="tabCerrado">Cerrado</a>
 		</li>
+		<li role="presentation" id="li_tab_cancelados">
+			<a onclick="cargar_tabla_cancelados()" href="#cancelados" aria-controls="cancelados" role="tab" data-toggle="tab"  id="tabCancelado">Cancelados</a>
+		</li>
 		<!-- <li class="export" style="display:none">
 			<a href="#"><i class="fa fa-file-excel-o" aria-hidden="true"></i> Exportar</a>
 		</li> -->
@@ -343,7 +346,7 @@ input[class="super-sad03"]:focus + svg {
 							<thead>
 								<tr>
 									<th>No.</th>
-									<th>Editar(350)</th>
+									<th>Editar</th>
 									<th><i class="fa fa-paperclip" aria-hidden="true"></i></th>
 									<th><i class="fa fa-info-circle" aria-hidden="true"></i></th>
 									<th>Fecha Solicitud</th>
@@ -387,7 +390,7 @@ input[class="super-sad03"]:focus + svg {
 				<table id="tablaCierre" class="table table-bordered table-striped table-chs" width="100%">
 					<thead>
 						<tr>
-							<th>No.(393)</th>
+							<th>No.</th>
 							<th><i class="fa fa-info-circle" aria-hidden="true"></i></th>
 							<th><i class="fa fa-paperclip" aria-hidden="true"></i></th>
 							<th><i class="fa fa-info-circle" aria-hidden="true"></i></th>
@@ -412,6 +415,46 @@ input[class="super-sad03"]:focus + svg {
 					</thead>
 					
 				</table>
+				</div>
+			</div>
+			<!-- /.box-body -->
+		</div>
+		<!-- /.box -->
+	</div>
+</div>
+
+<div role="tabpanel" class="tab-pane" id="cancelados">
+	<!-- table-results -->
+	<div class="col-md-12">
+		<div class="box">
+			<!-- /.box-header -->
+			<div class="box-body">
+				<div class="table-responsive">
+					<table id="tablaCancelados" class="table table-bordered table-striped table-chs" width="100%">
+						<thead>
+							<tr>
+								<th>No.</th>
+								<!-- <th>Editar</th> -->
+								<th><i class="fa fa-paperclip" aria-hidden="true"></i></th>
+								<th><i class="fa fa-info-circle" aria-hidden="true"></i></th>
+								<th>Fecha Solicitud</th>
+								<th>Fecha Seguimiento</th>
+								<th>Estatus</th>
+								<th>Usuario<br>Solicitante</th>
+								<th>Gestor<br>asignado</th>
+								<th>Usuario<br>cancelo</th>
+								<th>Motivo<br>cancelación</th>
+								<th>Fecha<br>cancelación</th>
+								<th>Prioridad</th>
+								<th>Sección</th>
+								<th>Categoria</th>
+								<th>Subcategoria</th>
+								<th><?php echo $Espacios; ?>Titulo Reporte<?php echo $Espacios; ?></th>
+								<th><?php echo $Espacios; ?>Descripción&nbsp;Detalle de lo Reportado<?php echo $Espacios; ?></th>
+								<th>Datos Activo</th>
+							</tr>
+						</thead>
+					</table>
 				</div>
 			</div>
 			<!-- /.box-body -->
@@ -711,7 +754,7 @@ input[class="super-sad03"]:focus + svg {
               <li role="presentation" class="active" ><a id="tab_datos_generales" href="#datos" aria-controls="datos" role="tab" data-toggle="tab">Datos Generales</a></li>
               <li role="presentation" onclick="cargachat()"><a id="tab_chat_seguimiento" href="#chat" aria-controls="chat" role="tab" data-toggle="tab">Chat Seguimiento</a></li>
               <li role="presentation" ><span class="label label-success" id="Indicador_Adjuntos" style="display:none"></span><a id="tab_adjuntos" href="#adjuntos" aria-controls="adjuntos" role="tab" data-toggle="tab">Adjuntos</a></li>
-              <li role="presentation" style="display:none" id="li_actividades"><a id="tab_ver_actividades" href="#actividades" aria-controls="actividades" role="tab" data-toggle="tab">(730)Ver Actividades</a></li>
+              <li role="presentation" style="display:none" id="li_actividades"><a id="tab_ver_actividades" href="#actividades" aria-controls="actividades" role="tab" data-toggle="tab">(.)Ver Actividades</a></li>
 							<li role="presentation" style="display:none" id="li_materiales" ><a id="tab_ver_materiales" href="#materiales" aria-controls="materiales" role="tab" data-toggle="tab">Ver Materiales</a></li>
 			  			<li role="presentation" ><a id="tab_cerrar_ticket" href="#cerrar" aria-controls="cerrar" role="tab" data-toggle="tab">Solicitar Cierre</a></li>
 
@@ -789,7 +832,7 @@ input[class="super-sad03"]:focus + svg {
               <div class="col-md-6">
                  <div class="form-group">
 						  		<span><font color="red">*</font></span>	
-						  		<label class="control-label" style="font-size: 11px;">(808)Subcategoria</label>	<label id="error_cmbsubcategoria" class="control-label" style="font-size: 11px;"></label>	
+						  		<label class="control-label" style="font-size: 11px;">Subcategoria</label>	<label id="error_cmbsubcategoria" class="control-label" style="font-size: 11px;"></label>	
                   <select class="demo-default"  id="cmbsubcategoria" placeholder="Subcategoria">
                   </select>
                 </div>
@@ -806,7 +849,7 @@ input[class="super-sad03"]:focus + svg {
 						<div class="col-md-12">
 							<div class="form-group">
 								<span><font color="red">*</font></span>
-									<label class="control-label" style="font-size: 11px;">(2) Descripción Detallada de lo Reportado</label>
+									<label class="control-label" style="font-size: 11px;">Descripción Detallada de lo Reportado</label>
 								<br>								
 									<textarea rows="7" class="form-control" id="Descripcion" placeholder="Descripción Detallada de lo Reportado(500 caracteres)" readonly style="resize: none;"></textarea>
 							</div>
@@ -871,7 +914,7 @@ input[class="super-sad03"]:focus + svg {
             <div class="modal-footer">
             	<button style="font-size:13px" type="button" class="btn chs" id="ticket_actualizar_categoria" type="button">Actualiza Categoría</button>
 							<button style="font-size:13px" type="button" class="btn chs" id="cambiar_area" type="button" onclick="abrir_modal_cambiar_area()">Cambiar Área</button>
-							<button style="font-size:13px" type="button" class="btn chs" id="seguimiento">Dar seguimiento(877)</button>
+							<button style="font-size:13px" type="button" class="btn chs" id="seguimiento">Dar seguimiento</button>
 							<button style="font-size:13px" type="button" class="btn chs" id="reasignar" >Dividir Ticket</button>
 							<button style="font-size:13px" type="button" class="btn btn-danger" id="Cancelar_reasig" style="display:none">Cancelar</button>
 						</div>
@@ -1207,7 +1250,7 @@ input[class="super-sad03"]:focus + svg {
 					<div class="col-md-12">
 						<div class="form-group">
 						  <span><font color="red">*</font></span>
-						  <label class="control-label" style="font-size: 11px;">(1169)Motivo Real Encontrado:</label>		
+						  <label class="control-label" style="font-size: 11px;">Motivo Real Encontrado:</label>		
 						  <select class="demo-default" id="cmb_motivo_real">
 						  </select>
 						</div>
@@ -1215,7 +1258,7 @@ input[class="super-sad03"]:focus + svg {
 					<div class="col-md-12">
 						<div class="form-group">
 						  <span><font color="red">*</font></span>
-						  <label class="control-label" style="font-size: 11px;" id="Estat_Final_2">Estatus Final del Equipo:</label>		
+						  <label class="control-label" style="font-size: 11px;" id="Estat_Final_2">Estatus Final:</label>		
 						  <select class="form-control" id="cmb_estatus_equipo">
 						  </select>
 						</div>
@@ -1223,8 +1266,8 @@ input[class="super-sad03"]:focus + svg {
 					<div class="col-md-12" id="div_usuarios_enf" style="display:none">
 						<div class="form-group">
 						  <span><font color="red">*</font></span>
-						  <label class="control-label" style="font-size: 11px;">Usuario Final</label>		
-						  <select id="cmb_usuarios_enf" class="demo-default" placeholder="Usuario Final" style="display:none"></select>
+						  <label class="control-label" style="font-size: 11px;">Usuario Final::</label>		
+						  <select id="cmb_usuarios_enf"  name="cmb_usuarios_enf" class="demo-default" placeholder="Usuario Final" style="display:none"></select>
 						</div>
 					</div>					
 					
@@ -2325,11 +2368,6 @@ input[class="super-sad03"]:focus + svg {
 //==============================================================================================================================================================================================================
 //==============================================================================================================================================================================================================
 
-	if($("#idareasesion").val()=="1"){
-		$("#div_desc_acc_real_gest").hide();
-	}else{
-		$("#div_desc_acc_real_gest").show();
-	}
 
 //==============================================================================================================================================================================================================
 //==============================================================================================================================================================================================================
@@ -2648,6 +2686,12 @@ let Id_Area=$("#idareasesion").val();
 			backgroundColor: 'rgba(255, 255, 255, 0)',
 			penColor: 'rgb(0, 0, 0)',
 	});
+
+	if(Id_Area==1){
+		$("#div_desc_acc_real_gest").hide();
+	}else{
+		$("#div_desc_acc_real_gest").show();
+	}
 
 //==============================================================================================================================================================================================================
 //==============================================================================================================================================================================================================
@@ -3317,7 +3361,7 @@ var tab_activex=1;
 //==============================================================================================================================================================================================================
 //==============================================================================================================================================================================================================
 	
-	$("#solicitar").click(function () { alert('3299');
+	$("#solicitar").click(function () { 
 		var Agregar = true;
 		var mensaje_error = "";
 		var strDatos={};		
@@ -4182,13 +4226,22 @@ gestores_ejecutantes();
 						}
 					}
 					*/
-					
+					seguimiento += '<span style="display:none">'+obj.semaforogestor+'</span><br>';
+					let coloredit="#f39c12";//amarillo por default
+					if(obj.semaforogestor=="rojo"){
+						coloredit="red";
+					}
+
+					if(obj.semaforogestor=="verde"){
+						coloredit="green";
+					}
+
 					if(obj.Id_Estatus_Proceso==2){
-						seguimiento += '<a href="#" data-toggle="modal" data-target="#seguimientoTickets" onclick="pasarvalores('+obj.Id_Solicitud+', 2,0,0),cargachat();"><span><i class="fa fa-pencil" aria-hidden="true"></i></span></a>';
+						seguimiento += '<a href="#" data-toggle="modal" data-target="#seguimientoTickets" onclick="pasarvalores('+obj.Id_Solicitud+', 2,0,0),cargachat();"><span><i class="fa fa-pencil" style="font-size:12px;color:'+coloredit+'" aria-hidden="true"></i></span></a>';
 						
 						if($("#hddTipo_Gestor").val()=="1"){
 							//Cancelar Cita
-							seguimiento += '<a href="#"  data-toggle="modal" data-target="#Modal_Cancelacion" onclick="Pasar_val_cancelacion('+obj.Id_Solicitud+','+obj.Id_Actividad+')"><span><i class="fa fa-ban" style="font-size:11px;color:red" aria-hidden="true"></i></span></a>';
+							seguimiento += '<a href="#"  data-toggle="modal" data-target="#Modal_Cancelacion" onclick="Pasar_val_cancelacion('+obj.Id_Solicitud+','+obj.Id_Actividad+')"><span><i class="fa fa-ban" style="font-size:12px;color:red" aria-hidden="true"></i></span></a>';
 						}
 					}
 					
@@ -4273,9 +4326,9 @@ gestores_ejecutantes();
 				"data": function (obj) {
 					var Desc = '';
 					
-					if(obj.Datos_Activo != "") {
-						Desc = "<a href=\"#noir\" id=\"Ver_Info_Activos" + obj.Id_Solicitud + "\" onclick=\"Ver_info_Activos(" + obj.Id_Solicitud + ")\" style=\"display:none\">Activos </a>";
-						Desc += "<div id=\"Div_Info_Activos" + obj.Id_Solicitud + "\" style=\"display:inline\">" + obj.Datos_Activo + "</div>";
+					if(obj.Datos_Activo!=""){
+						Desc='<a href="#noir" id="Ver_Info_Activos'+obj.Id_Solicitud+'" onclick="Ver_info_Activos('+obj.Id_Solicitud+')" style="display:none">Activos </a>';//Desc+='<a href="#noir" id="Ocult_Activos'+obj.Id_Solicitud+'" onclick="Ocultar_info_Activos('+obj.Id_Solicitud+')" style="display:none">Ocultar Info Activos</a>';
+						Desc+='<div id="Div_Info_Activos'+obj.Id_Solicitud+'" style="display:inline">'+obj.Datos_Activo+"</div>";
 					}
 					return Desc;
 				}
@@ -4480,7 +4533,7 @@ gestores_ejecutantes();
 				}
 			
 			},
-			{ "width": "10%","data": "Desc_Subcategoria"},
+			{ "width": "10%","data": "ComentarioCierre"},
 			{ "width": "20%", "data": function (obj) {
 					var Desc = '';
 					
@@ -4706,6 +4759,170 @@ gestores_ejecutantes();
 	
 //==============================================================================================================================================================================================================
 //==============================================================================================================================================================================================================	
+
+	$('#tablaCancelados thead tr').clone(true).appendTo('#tablaCancelados thead');
+	$('#tablaCancelados thead tr:eq(1) th').each(function (i) {
+		var title = $(this).text();
+		$(this).html('<input type="text" class="search-input" placeholder="Buscar ' + title + '" style="width: 100%;"/>');
+		$('.search-input').css('color', 'black');
+		// Agregar evento de búsqueda por columna
+		$('input', this).on('keyup change', function () {
+		if ($('#tablaCancelados').DataTable().column(i).search() !== this.value) {
+			$('#tablaCancelados').DataTable()
+			.column(i)
+			.search(this.value)
+			.draw();
+		}
+		});
+	});
+	
+	$('#tablaCancelados').DataTable({
+		"order": [[ 3, "desc" ]],
+		"dom": 'Bfrtip',
+        "lengthMenu": [
+            [ 10, 25, 50, 100000 ],
+            [ '10 Filas', '25 Filas', '50 Filas', 'Todos' ]
+        ],
+		"buttons": [
+            'copy',  'excel', 'pageLength'
+        ],
+	    "scrollY": 500,
+        "scrollX": true,
+        "processing": true,
+        "serverSide": false,
+		"orderCellsTop": true,
+       	"fixedHeader": false,
+		"ajax": {
+			"url": "../fachadas/activos/siga_solicitud_tickets/Siga_solicitud_ticketsFacade.Class.php",
+			"type": "POST",
+			"dataSrc": function ( json ) {
+				return json.data;
+			},
+			"data": {orden:'AF_BC',
+				Id_Area:$("#idareasesion").val(),
+				Id_Seccion:$("#hddId_Seccion").val(),
+				Estatus_Proceso:'Cancelados',
+				accion: "DataTableTickets"
+			}
+		},
+		"columns": [
+		    { "width": "5%","data": "Id_Solicitud", "visible": false},
+			/* { "width": "12%","data": function (obj) {
+					var seguimiento = '';
+					if(obj.Id_Estatus_Proceso==2){
+						seguimiento += '<a href="#" data-toggle="modal" data-target="#seguimientoTickets" onclick="pasarvalores('+obj.Id_Solicitud+', 2,0,0),cargachat();"><span><i class="fa fa-pencil" aria-hidden="true"></i></span></a>';
+						if($("#hddTipo_Gestor").val()=="1"){
+							seguimiento += '<a href="#"  data-toggle="modal" data-target="#Modal_Cancelacion" onclick="Pasar_val_cancelacion('+obj.Id_Solicitud+','+obj.Id_Actividad+')"><span><i class="fa fa-ban" style="font-size:11px;color:red" aria-hidden="true"></i></span></a>';
+						}
+					}
+					return seguimiento;
+				}
+			}, */
+			{ "width": "5%","data": function (obj) {
+					var clip = '';
+					clip += '<i class="fa fa-paperclip" aria-hidden="true"></i>';
+					return clip;
+				},"visible": false
+			},
+			{ "width": "4%","data": "Id_Solicitud"},
+			{"width": "5%","data": function (obj) {
+					
+					let Fecha = '<span style="display:none">'+obj.Fecha_Num+'</span><br>';
+					Fecha+= obj.Fecha;
+					return obj.Fecha_Num;
+				}
+			},
+			{"width": "5%","data": function (obj) {
+					
+					let Fecha = '<span style="display:none">'+obj.Fecha_Seguimiento_Num+'</span><br>';
+					Fecha+= obj.Fecha_Seguimiento;
+					return obj.Fecha_Seguimiento;
+				}
+			},
+			{ "width": "6%","data": function (obj) {
+					var Estatus_Proceso="";
+					//if(obj.Id_Estatus_Proceso==2){
+						Estatus_Proceso = '<font>'+obj.Estatus_Proceso;
+						
+						if(obj.Asist_Especial=="1"){
+							Estatus_Proceso += ' ('+obj.A_Especial+')'; 
+						}
+						Estatus_Proceso+='</font>';
+					//}					
+					return Estatus_Proceso;
+				}
+			},
+			{ "width": "8%","data": "Nombre_Usuario"},
+			{"width": "8%","data": function (obj) {
+				if(obj.Id_Estatus_Proceso!=1){	
+					var Gestor = obj.Gestor;
+					if(obj.Nombre_Ejecutante!=""){
+						if(obj.Nombre_Ejecutante!=null){
+							Gestor += '<br>';
+							Gestor +="<font color='green' >EJECUTANTE: "+obj.Nombre_Ejecutante+"</span>"; 
+						}
+					}
+					return Gestor;
+				}else{
+					return "";
+				}
+			}
+			},
+			{ "width": "5%","data": "Usuario_Cancelo"},
+			{ "width": "5%","data": "Desc_Motivio_Cancelacion"},
+			{ "width": "5%","data": "Fecha_Cancelacion"},
+			{ "width": "5%","data": "Desc_Prioridad"},
+			{ "width": "5%","data": "Nombre_Seccion"},
+			{ "width": "10%","data": "Desc_Categoria"},
+			{ "width": "10%","data": "Desc_Subcategoria"},
+			{ "width": "15%","data": function (obj) {
+					var Desc = '';
+					Desc=obj.Titulo;
+					
+					return Desc;
+				}
+			},
+			{ "width": "15%","data": function (obj) {
+					var Desc = '';
+					
+					if(obj.Id_Actividad!=""){
+						Desc='<a href="#noir" id="Ver_Act'+obj.Id_Solicitud+'" onclick="ver_actividades('+obj.Id_Solicitud+')">Actividades </a>';
+						Desc+='<div id="Desc_Motiv_Repor'+obj.Id_Solicitud+'" style="display:none">'+obj.Desc_Motivo_Reporte+"</div>";
+					}else{
+						Desc=obj.Desc_Motivo_Reporte;
+					}
+					
+					return Desc;
+				}
+			
+			},
+			{ "width": "20%",
+				"data": function (obj) {
+					var Desc = '';
+					if(obj.Datos_Activo != "") {
+						Desc = "<a href=\"#noir\" id=\"Ver_Info_Activos" + obj.Id_Solicitud + "\" onclick=\"Ver_info_Activos(" + obj.Id_Solicitud + ")\" style=\"display:none\">Activos </a>";
+						Desc += "<div id=\"Div_Info_Activos" + obj.Id_Solicitud + "\" style=\"display:inline\">" + obj.Datos_Activo + "</div>";
+					}
+					return Desc;
+				}
+			}
+		],
+		"language": {
+			"lengthMenu": "Mostrando _MENU_ registros por página",
+			"zeroRecords": "Sin resultados",
+			"info": "Mostrando página _PAGE_ de _PAGES_, resultados filtrados: _TOTAL_ de _MAX_ registros",
+			"infoEmpty": "Sin resultados",
+			"infoFiltered": "",
+			"search": "Búsqueda: ",
+			"paginate": {
+				"first": "Primera",
+				"last": "Última",
+				"next": "Siguiente",
+				"previous": "Anterior"
+			}
+		}
+	});
+
 
 	Pasar_val_cancelacion=function(Id_Solicitud, Id_Actividad){
 		$("#hdd_Id_Solicitud").val(Id_Solicitud);
@@ -6905,7 +7122,12 @@ validar_si_existe_imagen(id);
 		$('#tablaPorCerrar').DataTable().ajax.reload();
 		$('#tablaSeguimiento').DataTable().ajax.reload();
 		$('#tablaCierre').DataTable().ajax.reload();
+		$('#tablaCancelados').DataTable().ajax.reload();
 		Carga_Perfil_Gestor();
+	}
+
+	cargar_tabla_cancelados=function(){
+		$('#tablaCancelados').DataTable().ajax.reload();
 	}
 	
 //==============================================================================================================================================================================================================
